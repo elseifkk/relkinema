@@ -1,0 +1,25 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>mBox</class>
+<widget class="QWidget">
+    <property name="name">
+        <cstring>mBox</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>600</width>
+            <height>480</height>
+        </rect>
+    </property>
+    <property name="font">
+        <font>
+            <family>Sans Serif</family>
+        </font>
+    </property>
+    <property name="caption">
+        <string>message</string>
+    </property>
+</widget>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
