@@ -30,12 +30,12 @@ int const col_K3   = 3;
 int const col_p3   = 4;
 int const col_J3   = 5;
 int const col_ks   = 6;
-int const col_th4  = 7;
-int const col_th4c = 8;
-int const col_K4   = 9;
-int const col_p4   = 10;
-int const col_J4   = 11;
-int const col_fk   = 12;
+int const col_fk   = 7;
+int const col_th4  = 8;
+int const col_th4c = 9;
+int const col_K4   = 10;
+int const col_p4   = 11;
+int const col_J4   = 12;
 
 class resultWindowCls: public resultWindow
 {
@@ -47,7 +47,8 @@ class resultWindowCls: public resultWindow
 		                         double incidentEnergy, double incidentMomentum,
 		                         double Ex, double QValue,
 		                         double beta, double gamma,
-		                         double m1, double m2, double m3, double m4 );
+		                         double m1, double m2, double m3, double m4,
+		                         QString double_format );
 		void setPlotPoints ( int ,int ,int,int );
 		void setPlotMinMax ( int,int );
 		void changeFontSize ( int );

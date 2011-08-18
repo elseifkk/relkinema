@@ -612,7 +612,7 @@
                 </column>
                 <column>
                     <property name="text">
-                        <string>J3</string>
+                        <string>dO3CM/dO3Lab</string>
                     </property>
                     <property name="pixmap">
                         <pixmap></pixmap>
@@ -621,6 +621,14 @@
                 <column>
                     <property name="text">
                         <string>dK3/dTheta3LAB</string>
+                    </property>
+                    <property name="pixmap">
+                        <pixmap></pixmap>
+                    </property>
+                </column>
+                <column>
+                    <property name="text">
+                        <string>1/p3(dp3/dTheta3Lab)</string>
                     </property>
                     <property name="pixmap">
                         <pixmap></pixmap>
@@ -660,15 +668,7 @@
                 </column>
                 <column>
                     <property name="text">
-                        <string>J4</string>
-                    </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>1/p3(dp3/dTheta3Lab)</string>
+                        <string>dO4CM/dO4Lab</string>
                     </property>
                     <property name="pixmap">
                         <pixmap></pixmap>

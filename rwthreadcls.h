@@ -27,25 +27,30 @@
 
 class rwThreadCls: public QObject, QThread
 {
-	Q_OBJECT
+		Q_OBJECT
 
 	public:
 
-	RelKinemaCls *rk;
-	resultWindowCls *rw;
-	double eu;
-	double au;
-	int irmax;
-	int col_first;
+		RelKinemaCls *rk;
+		resultWindowCls *rw;
+		double eu;
+		double au;
+		int irmin;
+		int irmax;
+		int col_first;
+		QString fmt;
 
-	rwThreadCls(RelKinemaCls *rk, resultWindowCls *rw,
-			double eu, double au, int irmax, int col_first)
-		:rk(rk), rw(rw), eu(eu), au(au), irmax(irmax), col_first(col_first){}
+		rwThreadCls ( RelKinemaCls *rk, resultWindowCls *rw,
+		              double eu, double au, int irmin, int irmax, int col_first,
+		              QString fmt )
+				:rk ( rk ), rw ( rw ), eu ( eu ),
+				au ( au ), irmin ( irmin ), irmax ( irmax ), col_first ( col_first ),
+				fmt ( fmt ) {}
 
-	virtual void run();
+		virtual void run();
 
 	signals:
-		void done(resultWindowCls*);
+		void done ( resultWindowCls* );
 };
 
 #endif

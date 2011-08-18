@@ -42,20 +42,25 @@ resultWindowCls::resultWindowCls ( QWidget *parent, const char *name )
 	nplots=0;
 }
 
-void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnergy, double incidentMomentum, double Ex, double QValue, double beta, double gamma, double m1, double m2, double m3, double m4 )
+void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnergy, double incidentMomentum, double Ex, double QValue, double beta, double gamma, double m1, double m2, double m3, double m4, QString fmt )
 {
+	QString s,t;
 	resultDescBox->clear();
-	this->setCaption ( "Results: "+reaction+", incident "+QString::number ( incidentEnergy ) +" MeV" );
+	setCaption ( "Results: "+reaction+", incident "+QString::number ( incidentEnergy ) +" MeV" );
 	resultDescBox->append ( "Reaction: "+reaction );
 	resultDescBox->append ( "Mass: M2(M1, M3)M4" );
-	resultDescBox->append ( QString::number ( m2 ) +" ( "+QString::number ( m1 ) +", "+QString::number ( m3 ) +" ) "+QString::number ( m4 ) );
-	resultDescBox->append ( "Incident Energy: "+QString::number ( incidentEnergy ) +" MeV" );
-	resultDescBox->append ( "Incident Momentum: "+QString::number ( incidentMomentum ) +" MeV/c" );
-	resultDescBox->append ( "Excitation Energy: "+QString::number ( Ex ) +" MeV" );
-	resultDescBox->append ( "Q Value: "+QString::number ( QValue ) +" MeV" );
-	resultDescBox->append ( "beta: "+QString::number ( beta ) );
-	resultDescBox->append ( "1/gamma: "+QString::number ( 1./gamma ) );
-	resultDescBox->append ( "gamma*beta: "+QString::number ( gamma*beta ) );
+	t=s.sprintf ( fmt,m2 ) +" ( ";
+	t+=s.sprintf ( fmt,m1 ) +", ";
+	t+=s.sprintf ( fmt,m3 ) +" ) ";
+	t+=s.sprintf ( fmt,m4 );
+	resultDescBox->append ( t );
+	resultDescBox->append ( "Incident Energy: "+s.sprintf ( fmt, incidentEnergy ) +" MeV" );
+	resultDescBox->append ( "Incident Momentum: "+s.sprintf ( fmt, incidentMomentum ) +" MeV/c" );
+	resultDescBox->append ( "Excitation Energy: "+s.sprintf ( fmt, Ex ) +" MeV" );
+	resultDescBox->append ( "Q Value: "+s.sprintf ( fmt, QValue ) +" MeV" );
+	resultDescBox->append ( "beta: "+s.sprintf ( fmt, beta ) );
+	resultDescBox->append ( "1/gamma: "+s.sprintf ( fmt, 1./gamma ) );
+	resultDescBox->append ( "gamma*beta: "+s.sprintf ( fmt, gamma*beta ) );
 }
 
 void resultWindowCls::saveasSlot()

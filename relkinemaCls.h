@@ -30,8 +30,7 @@ class RelKinemaCls: public RelKinemaDlg
 
 	public:
 		RelKinemaCls ( QWidget *parent = 0, const char *name = 0 );
-		void setVer(const char*);
-		void changeTheta();
+		void setVer ( const char* );
 
 	private:
 		double getMass ( QString a, QString n, int *A, int *Z, bool calc=false );
@@ -46,7 +45,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void showEnergyLE ( double, QLineEdit * );
 		void showEnergyL ( double, QLineEdit *, QString prep="" );
 		void initReactionConditionBox();
-		double E2p ( double, double );
+		double K2p ( double, double );
 		double p2E ( double, double );
 		void procK1_common ( int );
 		void procK1();
@@ -59,15 +58,12 @@ class RelKinemaCls: public RelKinemaDlg
 		void setE3c ( double );
 		void initResultBox();
 		void initEmissionAngleBox();
-		void showEmissionEnergyL();
-		void showEmissionEnergyC();
 		void showAngleLE ( double, QLineEdit*, QString prep="" );
 		void setThetaMax();
 		void setExmax ( double );
-		void initEmissionEnergyBox();
 		double x2Rad ( double d );
 		double getTheta3CM ( double );
-		void setK34 ( double );
+		void setK3 ( double );
 		void showValueLE ( double, QLineEdit* );
 		void setJ34 ( double );
 		void initThetaBar();
@@ -94,6 +90,17 @@ class RelKinemaCls: public RelKinemaDlg
 		void showThetaMax();
 		void showStrLE ( QString s, QLineEdit *b );
 		QString getAngleUnit();
+		double theta3ToTheta3CM ( double );
+		double theta3CMToTheta3 ( double );
+		void setThetaBarStep ( double min, double max, double d, double v );
+		void showKp3();
+		void showKp4();
+		void showKp34c();
+		void showTheta4();
+		void setK3vCM ( double );
+		void setK4 ( double );
+		double getThetaBarPosInRad();
+		double getThetaBarPos();
 
 	public:
 		double th3,th4;
@@ -115,7 +122,7 @@ class RelKinemaCls: public RelKinemaDlg
 		double K1c,K2c,K3c,K4c;
 		double p1c,p2c,p3c,p4c;
 		double gamma,beta;
-		double thetaMax;
+		double thetaMax, limThetaCM, limq;
 		double m10,m20,m30,m40; // original mass
 		double m1,m2,m3,m4; // Projectile, Target, Ejectile, Residual
 		int a1,a2,a3,a4;
@@ -123,18 +130,21 @@ class RelKinemaCls: public RelKinemaDlg
 		double QValue;
 		double qmin,qmax;
 		bool inv,thetaMaxNe;
-		int K3sign;
-		bool massSet[4];
-		bool rectSet[4];
-		int timerid;
-		bool flip[8];
-		QMutex timerProcMt;
 		bool K1Set;
 		bool ExOk;
+		int K3sign;
+		int timerid;
+		bool massSet[4];
+		bool rectSet[4];
+		bool flip[8];
+		QMutex timerProcMt;
 		int flipoff[9];
 		bool whitedone[9];
 		QString nc1,nc2,nc3,nc4;
 		QString theReaction;
+
+	public slots:
+		void thetaBarSlot();
 
 	private slots:
 		void setMassSlot_0();
@@ -165,7 +175,6 @@ class RelKinemaCls: public RelKinemaDlg
 		void mass2EditSlot();
 		void mass3EditSlot();
 		void mass4EditSlot();
-		void thetaBarSlot();
 		void scrTypeSlot();
 		void anotherSolutionSlot();
 		void mass4TypeSlot();

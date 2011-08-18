@@ -46,7 +46,6 @@ void mboxCls::keyPressEvent ( QKeyEvent*e )
 
 void mboxCls::closeEvent ( QCloseEvent *e )
 {
-	delete mlbl;
 	delete this;
 }
 

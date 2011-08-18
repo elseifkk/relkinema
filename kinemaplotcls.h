@@ -48,7 +48,7 @@ class kinemaPlotCls: public kinemaPlot
 		void getRootWindowSize ( int*,int* );
 		void toggleOnTop();
 		void setMeasureGeom();
-		void drawDots ( QPainter*, int shape=0 );
+		void drawDots ( QPainter*, int, int, int shape=0 );
 		bool msrOn;
 		bool dotOn;
 		QTable *table;
@@ -80,7 +80,7 @@ class kinemaPlotCls: public kinemaPlot
 		int iread;
 		int fpw,fph,fpm;
 		QFont thefont;
-		int maxlenytitle;
+		unsigned int maxlenytitle;
 		bool showlegend;
 		QString messStr;
 		QColor messCol;

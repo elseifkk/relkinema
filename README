@@ -1,0 +1,112 @@
+RelKinema
+==========
+
+Relativistic two body kinematics calculator for nuclear reaction,
+including mass data manager, result list browser and plotter.
+
+
+
+
+Requirements
+============
+
+RelKinema mainly depends on the following packages:
+
+kdelibs-3.5.10
+qt-3.3.8
+
+
+
+
+Build
+=====
+
+RelKinema uses "libkio" to handle file open dialog. You need to 
+locate the library on your system and let it know to the compiler. 
+
+Here's an example of build steps:
+
+setenv CXXFLAGS "-O2 -g0"
+setenv LDFLAGS "-L/usr/local/lib -lkio"
+./configure --prefix=/usr/local --without-arts
+gmake install
+
+
+
+
+Atmic mass data
+===============
+
+RelKinema depends on atomic mass data files located in a local directory.
+The current version uses mass data files extracted from a source data
+file available at http://amdc.in2p3.fr/masstables/Ame2003/mass.mas03.
+
+
+
+
+Note
+====
+* In main window, the reaction can be set when four of three nuclei
+  are specified; hit enter for completion.
+* massdata/A.dat contains particle masses in MeV, which includes
+  photon(g), electron(e), proton(p), neutron(n) deuteron(d), triton(t)
+  and alpha(a). 
+* In plot window, hit H key to show key-bindings.
+* In result window, selected columns of the same unit can be plotted.
+  The leftmost column will be used as X axis. You can move columns 
+  with the CTRL key pressed.
+* Some configurations are saved in ~/.relkinemarc.
+
+
+
+Notations
+=========
+
+We assume a nuclear reaction of type M2(M1,M3)M4', where
+ M1:    projectile,
+ M2:    target,
+ M3:    ejectile,
+ M4':   residual including excitation energy(M4+Ex).
+
+(Lab. frame)
+                     M3
+                     /
+                    /
+                   /
+                  / ) theta3
+M1 -----------> M2 -----------------
+                  \  ) theta4
+                   \
+                    \
+                     \
+                    M4+Ex
+
+Each particle has four-momentum whose magnitude is denoted as
+ 
+    M^2 = E^2 - p^2
+
+where E and p are energy and magnitude of spatial momentum,
+respectively. The kinetic energy of the particle is represented as
+K and the total energy of the projectile is written as,
+
+    E = K + M.
+
+
+
+
+References 
+==========
+
+1) L.D. Landau, E.M. Lifshitz (1975), "The Classical Theory of
+Fields", Vol. 2 (4th ed.). Butterworth-Heinemann. ISBN
+978-0-750-62768-9.
+
+
+
+
+Contacts
+========
+
+All reports and requests are welcome to
+https://sourceforge.net/projects/relkinema/
+E-Mail: elseifkk@gmail.com

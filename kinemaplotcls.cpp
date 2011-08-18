@@ -275,6 +275,7 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 			getInput ( "DX = " );
 			return;
 		case Qt::Key_Y:
+			iread=IR_DY;
 			getInput ( "DY = " );
 			return;
 		case Qt::Key_P:
@@ -427,7 +428,6 @@ void kinemaPlotCls::setPlotMinMax()
 {
 	double x,y;
 	bool ok;
-	int iy;
 	xmin=1e38;
 	xmax=-1e38;
 	ymin=1e38;
@@ -499,6 +499,7 @@ int kinemaPlotCls::ylabelMaxLen ( double y, double my )
 	{
 		y+=my;
 		if ( y>=ymax ) break;
+		if ( fabs ( y ) <my/2. ) y=0.;
 		ylen=QString::number ( y ).length();
 		if ( ylenmax<ylen ) ylenmax=ylen;
 	}
@@ -599,13 +600,16 @@ void kinemaPlotCls::setMeasureGeom()
 	}
 }
 
-void kinemaPlotCls::drawDots ( QPainter *p, int shape )
+void kinemaPlotCls::drawDots ( QPainter *p, int ixmin, int iymax, int shape )
 {
 	p->save();
 	p->setBrush ( p->pen().color() );
 	for ( int i=0;i<nplots;i++ )
 	{
-		p->drawEllipse ( pa->point ( i ).x()-2,pa->point ( i ).y()-2,5,5 );//,0,5760);
+		int x=pa->point ( i ).x()-2;
+		int y=pa->point ( i ).y()-2;
+		if ( ixmin<=x&&x<width()-1&&0<y&&y<=iymax )
+			p->drawEllipse ( x,y,5,5 );
 	}
 	p->restore();
 }
@@ -729,7 +733,7 @@ void kinemaPlotCls::paintEvent ( QPaintEvent *e )
 		pline.setColor ( pc[iy] );
 		p.setPen ( pline );
 		p.drawPolyline ( *pa );
-		if ( dotOn ) drawDots ( &p );
+		if ( dotOn ) drawDots ( &p, x0, y0 );
 //		p.drawPoints(*pa);
 		delete pa;
 	}
@@ -787,7 +791,7 @@ void kinemaPlotCls::showUsage()
 	    "    +ctrl:    \tmagnify/reduce\n"
 	    "    +shft:    \tmove/magnify/reduce large\n"
 	    "    +alt:     \tset x/y min/max\n"
-	    "    +cntl+alt:\tsame as above\n\n"
+	    "    +ctrl+alt:\tsame as above\n\n"
 	    "  home:       \tto original position\n"
 	    "  plus:       \tenlarge font\n"
 	    "  minus:      \tshrink font\n"
