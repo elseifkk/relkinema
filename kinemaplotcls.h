@@ -33,6 +33,15 @@ class kinemaPlotCls: public kinemaPlot
 	public:
 		kinemaPlotCls ( QWidget *parent = 0, const char *name = 0 );
 		void setPlotMinMax();
+
+	public:
+		QTable *table;
+		int xcol,ycol;
+		int ycols[8];
+		int nycol;
+		QString homedir;
+
+	private:
 		void setPlotPoints ( int );
 		int getX ( double );
 		int getY ( double );
@@ -43,19 +52,21 @@ class kinemaPlotCls: public kinemaPlot
 		void saveas();
 		void getInput ( QString );
 		void changeFontSize ( int );
-		void showUsage();
 		void eraseCoord ( QPainter* );
-		void getRootWindowSize ( int*,int* );
+//		void getRootWindowSize ( int*,int* );
 		void toggleOnTop();
 		void setMeasureGeom();
 		void drawDots ( QPainter*, int, int, int shape=0 );
+		void rescaleX ( double );
+		void rescaleY ( double );
+		void shiftX ( double );
+		void shiftY ( double );
+		void showMenu();
+
+	private:
 		bool msrOn;
 		bool dotOn;
-		QTable *table;
 		int nx,ny;
-		int xcol,ycol;
-		int ycols[8];
-		int nycol;
 		double xmin,xmax;
 		double ymin,ymax;
 		double xmin0,xmax0;
@@ -67,7 +78,6 @@ class kinemaPlotCls: public kinemaPlot
 		double xmaxmar;
 		int x0,y0;
 		unsigned int lendigitmax;
-		QString homedir;
 		bool rep;
 		int timerid;
 		QString xunit;
@@ -90,12 +100,18 @@ class kinemaPlotCls: public kinemaPlot
 		double drgymax0,drgymin0;
 		double drgdx,drgdy;
 		int rootw, rooth;
+		int sdx, sdy;
 
 	signals:
 		void done();
 
 	private slots:
 		void readInput();
+		void setXMin();
+		void setXMax();
+		void setYMin();
+		void setYMax();
+		void showUsage();
 
 	protected:
 		void paintEvent ( QPaintEvent* );

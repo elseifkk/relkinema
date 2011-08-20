@@ -84,6 +84,7 @@ static const char *Particle[]=
 	0
 };
 
+int const Zmax=118;
 static const char *Element[]=
 {
 	"H",
@@ -205,14 +206,36 @@ static const char *Element[]=
 	"Uuo",
 	0
 };
+int const Zmin_new=110; // of Ea, should be Ds
+static const char *newElement[]=
+{
+	"Ea",
+	"Ea",
+	"Ea",
+	"Ea",
+	"Ea",
+	"Ea",
+	"Ea",
+	"Ea",
+	"Ea",
+	0
+};
 
 class mdmCls: public massDataManager
 {
 		Q_OBJECT
 	public:
 		mdmCls ( QWidget *parent = 0, const char *name = 0 );
-
 		void openMassData ( int A );
+
+	public:
+		QString home;
+		double AMU; // in MeV
+		double Me,Mn,Mp,Md,Mt,Ma; // in MeV&&
+		QString massdata;
+		QString wb;
+
+	private:
 		void showMass ( QString m );
 		void setReady ( bool );
 		double readMass ( double );
@@ -221,24 +244,23 @@ class mdmCls: public massDataManager
 		void warn ( QString );
 		void warnDiscard();
 		void stopTimer();
-		QString massdata;
-		QString home;
+
+	private:
 		QString currentFile;
 		bool currentFileExists;
 		int currentA;
 		QStringList MList;
 		int discardOk;
-		bool changeVeto;
-		double AMU; // in MeV
-		double Me,Mn,Mp,Md,Mt,Ma; // in MeV&&
 		int timer;
 		QString warnmess;
 		bool blink;
-		QString wb;
 
 	public:
 		static int getZ ( QString );
 		static int getParticleAZ ( QString n, int *a, int *z );
+
+	private:
+		static int getZ_from_List ( QString, const char** );
 
 	private slots:
 		void EBoxSlot();

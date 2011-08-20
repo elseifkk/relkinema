@@ -343,7 +343,7 @@ DISCLAIMER OF WARRANTIES:
             </font>
         </property>
         <property name="text">
-            <string>&lt;b&gt;relkinema &lt;i&gt;Relativistic two body kinematics calculator&lt;/i&gt;&lt;/b&gt;</string>
+            <string>&lt;b&gt;relkinema &lt;i&gt;Relativistic two-body kinematics calculator&lt;/i&gt;&lt;/b&gt;</string>
         </property>
         <property name="alignment">
             <set>WordBreak|AlignCenter</set>

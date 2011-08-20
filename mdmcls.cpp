@@ -42,7 +42,7 @@
 int const MU_EV  = 0;
 int const MU_KEV = 1;
 int const MU_MEV = 2;
-int const MU_TEV = 3;
+int const MU_GEV = 3;
 int const MU_AMU = 4;
 
 mdmCls::mdmCls ( QWidget *parent, const char *name )
@@ -53,7 +53,6 @@ mdmCls::mdmCls ( QWidget *parent, const char *name )
 	currentA=0;
 	currentFile="";
 	currentFileExists=false;
-	changeVeto=false;
 	timer=0;
 	blink=false;
 	QPalette pal = EBox->palette();
@@ -111,16 +110,16 @@ double mdmCls::readMass ( double m )
 		switch ( MUnitBox->currentItem() )
 		{
 			case MU_EV:
-				return m/1000000.;
+				return m*1.0e-6;
 				break;
 			case MU_KEV:
-				return m/1000.;
+				return m*1.0e-3;
 				break;
 			case MU_MEV:
 				return m;
 				break;
-			case MU_TEV:
-				return m*1000.;
+			case MU_GEV:
+				return m*1.0e3;
 				break;
 			case MU_AMU:
 				return m*AMU;
@@ -136,19 +135,19 @@ double mdmCls::readMass ( double m )
 			switch ( MUnitBox->currentItem() )
 			{
 				case MU_EV:
-					return m/1000.;
+					return m*1.0e-3;
 					break;
 				case MU_KEV:
 					return m;
 					break;
 				case MU_MEV:
-					return m*1000.;
+					return m*1.0e3;
 					break;
-				case MU_TEV:
-					return m*1000000.;
+				case MU_GEV:
+					return m*1.0e6;
 					break;
 				case MU_AMU:
-					return m*AMU*1000.;
+					return m*AMU*1.0e3;
 					break;
 			}
 		}
@@ -158,19 +157,19 @@ double mdmCls::readMass ( double m )
 			switch ( MUnitBox->currentItem() )
 			{
 				case MU_EV:
-					return m/1000.-m0;
+					return m*1.0e-3-m0;
 					break;
 				case MU_KEV:
 					return m-m0;
 					break;
 				case MU_MEV:
-					return m*1000.-m0;
+					return m*1.0e3-m0;
 					break;
-				case MU_TEV:
-					return m*1000000.-m0;
+				case MU_GEV:
+					return m*1.0e6-m0;
 					break;
 				case MU_AMU:
-					return m*AMU*1000.-m0;
+					return m*AMU*1.0e3-m0;
 					break;
 			}
 		}
@@ -199,7 +198,7 @@ void mdmCls::showMass ( QString m )
 				break;
 			case MU_MEV:
 				break;
-			case MU_TEV:
+			case MU_GEV:
 				mass*=1./1000.;
 				break;
 			case MU_AMU:
@@ -216,18 +215,18 @@ void mdmCls::showMass ( QString m )
 			switch ( MUnitBox->currentItem() )
 			{
 				case MU_EV:
-					mass=mass*1000.;
+					mass=mass*1.0e3;
 					break;
 				case MU_KEV:
 					break;
 				case MU_MEV:
-					mass=mass/1000.;
+					mass=mass*1.0e-3;
 					break;
-				case MU_TEV:
-					mass=mass/1000000.;
+				case MU_GEV:
+					mass=mass*1.0e-6;
 					break;
 				case MU_AMU:
-					mass= ( mass/1000. ) /AMU;
+					mass= ( mass*1.0e-3 ) /AMU;
 					break;
 			}
 		}
@@ -238,27 +237,27 @@ void mdmCls::showMass ( QString m )
 			switch ( MUnitBox->currentItem() )
 			{
 				case MU_EV:
-					mass=m0*1000000.+mass*1000.;
+					mass=m0*1.0e6+mass*1.0e3;
 					break;
 				case MU_KEV:
-					mass=m0*1000.+mass;
+					mass=m0*1.0e3+mass;
 					break;
 				case MU_MEV:
-					mass=m0+mass/1000.;
+					mass=m0+mass*1.0e-3;
 					break;
-				case MU_TEV:
-					mass=m0/1000.+mass/1000000.;
+				case MU_GEV:
+					mass=m0*1.0e-3+mass*1.0e-6;
 					break;
 				case MU_AMU:
-					mass= ( m0+mass/1000. ) /AMU;
+					mass= ( m0+mass*1.0e-3 ) /AMU;
 					break;
 			}
 		}
 	}
-	changeVeto=true;
+	massBox->blockSignals ( true );
 	massBox->setText ( QString::number ( mass, 'g',9 ) );
+	massBox->blockSignals ( false );
 	rawLbl->setText ( m );
-	changeVeto=false;
 }
 
 void mdmCls::EBoxSlot()
@@ -268,9 +267,9 @@ void mdmCls::EBoxSlot()
 	if ( it!=NULL )
 	{
 		showMass ( *it );
-		changeVeto=true;
+		EeditBox->blockSignals ( true );
 		EeditBox->setText ( EBox->currentText() );
-		changeVeto=false;
+		EeditBox->blockSignals ( false );
 		if ( currentA>0 )
 		{
 			int z=getZ ( EBox->currentText().simplifyWhiteSpace() );
@@ -287,14 +286,13 @@ void mdmCls::warnDiscard()
 {
 	warn ( "Discard Changes? Proceed if ok." );
 	discardOk=-1;
-	changeVeto=true;
+	ABox->blockSignals ( true );
 	ABox->setValue ( currentA );
-	changeVeto=false;
+	ABox->blockSignals ( false );
 }
 
 void mdmCls::changeASlot()
 {
-	if ( changeVeto ) return;
 	if ( appBut->isEnabled() &&discardOk>=0 )
 	{
 		warnDiscard();
@@ -347,7 +345,6 @@ void mdmCls::neweSlot()
 
 void mdmCls::massChangedSlot()
 {
-	if ( changeVeto ) return;
 	appBut->setEnabled ( true );
 	bool ok;
 	double v=massBox->text().toDouble ( &ok );
@@ -362,12 +359,11 @@ void mdmCls::massChangedSlot()
 
 void mdmCls::EChangedSlot()
 {
-	if ( changeVeto ) return;
-	changeVeto=true;
+	EeditBox->blockSignals ( true );
 	EeditBox->setText ( EeditBox->text().simplifyWhiteSpace() );
+	EeditBox->blockSignals ( false );
 	appBut->setEnabled ( true );
 	EBox->changeItem ( EeditBox->text(),EBox->currentItem() );
-	changeVeto=false;
 }
 
 void mdmCls::appSlot()
@@ -552,7 +548,8 @@ void mdmCls::extMassDataSlot()
 				if ( opened ) ostream.setDevice ( &ofile );
 			}
 			if ( opened )
-				ostream << EL.leftJustify ( 9,' ' ) << m.simplifyWhiteSpace() << endl;
+				if ( useFormalBox->isChecked() &&Z>=Zmin_new ) EL=Element[Z-1];
+			ostream << EL.leftJustify ( 9,' ' ) << m.simplifyWhiteSpace() << endl;
 		}
 		if ( opened ) ofile.close();
 		file.close();
@@ -645,23 +642,38 @@ void mdmCls::gotoamdcSlot()
 	p.start();
 }
 
-int mdmCls::getZ ( QString n )
+int mdmCls::getZ_from_List ( QString n, const char **el )
 {
 	int z=0;
 	unsigned int lin=strlen ( n.latin1() );
-	while ( Element[z]!=0 )
+	while ( el[z]!=0 )
 	{
-		if ( strlen ( Element[z] ) ==lin )
+		if ( strlen ( el[z] ) ==lin )
 		{
 #if defined(HAVE_STRNSTR) && (HAVE_STRNSTR == 1)
-			if ( strnstr ( Element[z],n.latin1(),lin ) !=NULL ) return z+1;
+			if ( strnstr ( el[z],n.latin1(),lin ) !=NULL ) return z+1;
 #else
-			if ( strstr ( Element[z],n.latin1() ) !=NULL ) return z+1;
+			if ( strstr ( el[z],n.latin1() ) !=NULL ) return z+1;
 #endif
 		}
 		z++;
 	}
 	return -1;
+}
+
+int mdmCls::getZ ( QString n )
+{
+	int z;
+	unsigned int lin=strlen ( n.latin1() );
+
+	z=getZ_from_List ( n, Element );
+	if ( z==-1 )
+	{
+		z=getZ_from_List ( n, newElement );
+		if ( z!=-1 ) z+=Zmin_new-1;
+	}
+
+	return z;
 }
 
 int mdmCls::getParticleAZ ( QString n, int *a, int *z )

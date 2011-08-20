@@ -72,8 +72,8 @@ QString const double_format_def="%.6g";
 // NIST (2005)
 #define hbarc_DEF "197.326968"
 #define AMU_DEF "931.494043"
-double hbarc = 197.326968; // MeV fm
-double AMU   = 931.494043; // in MeV
+double hbarc; // MeV fm
+double AMU; // in MeV
 double const RTD=180./M_PI;
 double Me,Mn,Mp,Mt,Md,Ma;
 
@@ -181,7 +181,7 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name )
 	tbTarg=&th3;
 
 	HOME=getenv ( "HOME" );
-	if ( HOME.length() ==0 )
+	if ( HOME.isEmpty() )
 		QMessageBox::critical ( this, "relkinema: ", "We have no HOME!", tr ( "&ok" ) );
 	loadConfig ( HOME+CONFIG );
 	if ( !QFile::exists ( HOME+CONFIG ) ) saveConfig ( HOME+CONFIG );
@@ -203,10 +203,10 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name )
 	thetaStepBox->blockSignals ( false );
 
 	int aa1=a1,aa2=a2,aa3=a3,aa4=a4;
-	if ( nc2.length() >0 ) ETargBox->setText ( nc2 );
-	if ( nc1.length() >0 ) EProjBox->setText ( nc1 );
-	if ( nc3.length() >0 ) EEjecBox->setText ( nc3 );
-	if ( nc4.length() >0 ) EResiBox->setText ( nc4 );
+	if ( !nc2.isEmpty() ) ETargBox->setText ( nc2 );
+	if ( !nc1.isEmpty() ) EProjBox->setText ( nc1 );
+	if ( !nc3.isEmpty() ) EEjecBox->setText ( nc3 );
+	if ( !nc4.isEmpty() ) EResiBox->setText ( nc4 );
 	if ( aa2>0 ) ATargBox->setText ( QString::number ( aa2 ) );
 	if ( aa1>0 ) AProjBox->setText ( QString::number ( aa1 ) );
 	if ( aa3>0 ) AEjecBox->setText ( QString::number ( aa3 ) );
@@ -600,7 +600,7 @@ double RelKinemaCls::getMass ( QString a, QString n, int *A, int *Z, bool calc )
 	QString f;
 	int pid;
 
-	if ( a.length() ==0 )
+	if ( a.isEmpty() )
 	{
 		if ( calc ) return -1;
 		pid=mdmCls::getParticleAZ ( n, A, Z );
@@ -656,22 +656,18 @@ void RelKinemaCls::unsetMassSlot_3()
 void RelKinemaCls::setMassSlot_0()
 {
 	setMassSlot_all();
-//	setFocus();
 }
 void RelKinemaCls::setMassSlot_1()
 {
 	setMassSlot_all();
-//	setFocus();
 }
 void RelKinemaCls::setMassSlot_2()
 {
 	setMassSlot_all();
-//	setFocus();
 }
 void RelKinemaCls::setMassSlot_3()
 {
 	setMassSlot_all();
-//	setFocus();
 }
 
 void RelKinemaCls::setMassSlot_all()
@@ -702,7 +698,7 @@ void RelKinemaCls::unsetMassSlot_all()
 
 double RelKinemaCls::stripMass ( double m, int z )
 {
-	return m-z*Me+z*hcRinf*1.e-6;
+	return m-z*Me;
 }
 
 void RelKinemaCls::setMass ( int id, bool comp )
@@ -765,15 +761,17 @@ void RelKinemaCls::setMass ( int id, bool comp )
 			MT=mass4TypeBox;
 			break;
 	}
+
 	sa=AB->text().stripWhiteSpace();
 	sn=EB->text().stripWhiteSpace();
+
 	if ( MT->currentItem() ==MT_CALC ) calc=true;
-	if ( sa.length() !=0 )
+	if ( !sa.isEmpty() )
 	{
 		*a=sa.toUInt();
 		sn.replace ( 0,1,sn.at ( 0 ).upper() );
 	}
-	else if ( sn.length() ==0 )
+	else if ( sn.isEmpty() )
 	{
 		massSet[id]=false;
 		rectSet[id]=false;
@@ -928,7 +926,7 @@ void RelKinemaCls::unsetMass ( int id, bool clear )
 			break;
 	}
 	massSet[id]=false;
-	rectSet[id]=EB->text().length() >0;
+	rectSet[id]=!EB->text().isEmpty();
 	if ( rectSet[id] )
 	{
 		L1->setText ( "" );
@@ -942,8 +940,12 @@ void RelKinemaCls::unsetMass ( int id, bool clear )
 	*z=0;
 	if ( clear )
 	{
+		EB->blockSignals ( true );
+		AB->blockSignals ( true );
 		EB->clear();
 		AB->clear();
+		EB->blockSignals ( false );
+		AB->blockSignals ( false );
 	}
 	ReactionConditionBox->setEnabled ( false );
 	EmissionAngleBox->setEnabled ( false );
@@ -982,7 +984,7 @@ void RelKinemaCls::compRect()
 	int k;
 	for ( i=0;i<4;i++ )
 	{
-		if ( !massSet[i] )
+		if ( !rectSet[i] )
 		{
 			if ( i<=1 )
 			{
@@ -1021,7 +1023,6 @@ void RelKinemaCls::compRect()
 	EB->blockSignals ( true );
 	AB->blockSignals ( true );
 
-	EB->clear();
 	if ( aa>=0&&zz>=0 )
 	{
 		switch ( aa )
@@ -1031,7 +1032,7 @@ void RelKinemaCls::compRect()
 				{
 					EB->setText ( "g" );
 				}
-				else if ( zz==1 )
+				else if ( abs ( zz ) ==1 )
 				{
 					EB->setText ( "e" );
 				}
@@ -1056,11 +1057,12 @@ void RelKinemaCls::compRect()
 				if ( zz==2 ) EB->setText ( "a" );
 				break;
 		}
-		if ( EB->text().length() ==0 )
+		if ( EB->text().isEmpty() && zz<=Zmax && zz>=1 )
 		{
 			AB->setText ( QString::number ( aa ) );
 			EB->setText ( Element[zz-1] );
 		}
+		rectSet[i]=!EB->text().isEmpty();
 	}
 	EB->blockSignals ( false );
 	AB->blockSignals ( false );
