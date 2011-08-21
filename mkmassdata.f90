@@ -10,7 +10,7 @@ program mkmassdata
   integer NsubZ,N,Z,A
   character*3 Decay
   character*8 El
-  real MassExcess
+  real*8 MassExcess
   character*13 me
   logical begin
   integer ounit
