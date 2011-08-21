@@ -522,7 +522,7 @@ void RelKinemaCls::loadConfig ( QString f )
 }
 
 
-double RelKinemaCls::readMass ( QString f, QString n )
+double RelKinemaCls::readMass ( QString f, QString n, bool *ok )
 {
 	QString fin;
 	FILE *fp;
@@ -530,17 +530,18 @@ double RelKinemaCls::readMass ( QString f, QString n )
 	double value,m;
 	unsigned int lin=strlen ( n.latin1() );
 
+	if ( ok!=NULL ) *ok=false;
+
 	fin=MASSDATA;
 	fin+="/"+f;
-	if ( !QFile::exists ( fin ) ) return -2;
+	if ( !QFile::exists ( fin ) ) return 0.;
 
 	fp=fopen ( fin.latin1(),"r" );
-	if ( f==NULL ) return -2;
+	if ( f==NULL ) return 0.;
 
-	m=-2;
+	m=0.;
 	while ( fscanf ( fp,"%s %lf",name,&value ) !=EOF )
 	{
-
 		if ( strlen ( name ) !=lin ) continue;
 #if defined(HAVE_STRNSTR) && (HAVE_STRNSTR == 1)
 		if ( strnstr ( name,n.latin1(),lin ) !=NULL )
@@ -548,11 +549,13 @@ double RelKinemaCls::readMass ( QString f, QString n )
 		if ( strstr ( name,n.latin1() ) !=NULL )
 #endif
 		{
+			if ( ok!=NULL ) *ok=true;
 			m=value; // Mass excess in keV or particle mass in MeV
 			break;
 		}
 	}
 	fclose ( fp );
+
 	return m;
 }
 
@@ -618,14 +621,14 @@ double RelKinemaCls::getMass ( QString a, QString n, int *A, int *Z, bool calc )
 	if ( !calc )
 	{
 		f="A"+a+".dat";
-		m=readMass ( f,n );
+		m=readMass ( f,n, &ok );
 
 		// m in keV, AMU in MeV, return in MeV
-		if ( pid==-2&& m>=0 )
+		if ( pid==-2&& ok )
 		{
 			m= ( *A ) *AMU+m/1000.0;
 		}
-		else if ( m==-2 && pid>=0 )
+		else if ( !ok && pid>=0 )
 		{
 			m=ParticleM[pid];
 		}
@@ -925,6 +928,15 @@ void RelKinemaCls::unsetMass ( int id, bool clear )
 			el=&nc4;
 			break;
 	}
+	if ( clear )
+	{
+		EB->blockSignals ( true );
+		AB->blockSignals ( true );
+		EB->clear();
+		AB->clear();
+		EB->blockSignals ( false );
+		AB->blockSignals ( false );
+	}
 	massSet[id]=false;
 	rectSet[id]=!EB->text().isEmpty();
 	if ( rectSet[id] )
@@ -938,15 +950,6 @@ void RelKinemaCls::unsetMass ( int id, bool clear )
 	}
 	*a=0;
 	*z=0;
-	if ( clear )
-	{
-		EB->blockSignals ( true );
-		AB->blockSignals ( true );
-		EB->clear();
-		AB->clear();
-		EB->blockSignals ( false );
-		AB->blockSignals ( false );
-	}
 	ReactionConditionBox->setEnabled ( false );
 	EmissionAngleBox->setEnabled ( false );
 	tableBut->setEnabled ( false );
@@ -2244,6 +2247,7 @@ void RelKinemaCls::thetaStepSlot()
 		return;
 	}
 	setThetaBarStep ( min,max,d,v );
+	thetaBar->setEnabled ( true );
 }
 
 void RelKinemaCls::updateThetaBar()

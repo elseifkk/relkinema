@@ -34,7 +34,7 @@ class RelKinemaCls: public RelKinemaDlg
 
 	private:
 		double getMass ( QString a, QString n, int *A, int *Z, bool calc=false );
-		double readMass ( QString f, QString n );
+		double readMass ( QString f, QString n, bool *ok=NULL );
 		void setMass ( int id, bool comp=true );
 		void reloadMass_all();
 		void unsetMass ( int id, bool clear=false );
