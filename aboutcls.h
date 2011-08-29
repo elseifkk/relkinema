@@ -20,14 +20,16 @@
 #ifndef ABOUTCLS_H
 #define ABOUTCLS_H
 
-#include <qpixmap.h>
 #include "about.h"
+
+#include <qpixmap.h>
+#include <qmutex.h>
 
 class aboutcls: public aboutdlg
 {
 		Q_OBJECT
 	public:
-		aboutcls ( QWidget *parent = 0, const char *name = 0 );
+		aboutcls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0 );
 		int tid;
 		QImage *img;
 		bool drawing;
@@ -48,6 +50,7 @@ class aboutcls: public aboutdlg
 		QString wb;
 		double z0;
 		bool titledone;
+		QMutex tveto;
 
 	private slots:
 		void urlSlot();

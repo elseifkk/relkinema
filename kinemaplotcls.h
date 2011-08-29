@@ -26,22 +26,25 @@
 #include <qpainter.h>
 #include <qlabel.h>
 #include <qtable.h>
+#include <qmutex.h>
+#include <qfontmetrics.h>
 
 class kinemaPlotCls: public kinemaPlot
 {
 		Q_OBJECT
 	public:
-		kinemaPlotCls ( QWidget *parent = 0, const char *name = 0 );
+		kinemaPlotCls ( QWidget *parent = 0, const char *name = 0, WFlags=0 );
 		void setPlotMinMax();
 
 	public:
 		QTable *table;
 		int xcol,ycol;
-		int ycols[8];
+		int ycols[12];
 		int nycol;
 		QString homedir;
 
 	private:
+		int getMaxlenytitle();
 		void setPlotPoints ( int );
 		int getX ( double );
 		int getY ( double );
@@ -49,23 +52,42 @@ class kinemaPlotCls: public kinemaPlot
 		double tegY ( int );
 		int ylabelMaxLen ( double,double );
 		void mess ( QPainter* );
-		void saveas();
-		void getInput ( QString );
+		void getInput ( QString , int );
 		void changeFontSize ( int );
 		void eraseCoord ( QPainter* );
 //		void getRootWindowSize ( int*,int* );
 		void toggleOnTop();
-		void setMeasureGeom();
+		void setMeasureGeom ( int,int );
 		void drawDots ( QPainter*, int, int, int shape=0 );
 		void rescaleX ( double );
 		void rescaleY ( double );
 		void shiftX ( double );
 		void shiftY ( double );
 		void showMenu();
+		void drawAxis ( QPainter* );
+		void drawLegend ( QPainter* );
+		void drawPlots ( QPainter* );
+		void drawTitle ( QPainter* );
+		void drawMeasure ( QPainter* );
+		void drawSubMeasure ( QPainter* );
+		void printPlot ( QString );
+		void setPlotColors ( int );
+		void drawFrame ( QPainter* );
+		QString bool2str ( bool );
+		void setBB ( QString,double );
+		void setFontSize ( int );
+		void drawCross ( int,int );
+		void eraseCross();
+		void putCross ( int,int );
+		void updateA();
+		void procLB ( QPoint );
 
 	private:
+		int theWidth, theHeight;
+		double scale;
 		bool msrOn;
 		bool dotOn;
+		bool crossOn;
 		int nx,ny;
 		double xmin,xmax;
 		double ymin,ymax;
@@ -76,6 +98,8 @@ class kinemaPlotCls: public kinemaPlot
 		int leftmar;
 		double ymaxmar;
 		double xmaxmar;
+		int vs,hs;
+		double x_start,y_start;
 		int x0,y0;
 		unsigned int lendigitmax;
 		bool rep;
@@ -90,7 +114,6 @@ class kinemaPlotCls: public kinemaPlot
 		int iread;
 		int fpw,fph,fpm;
 		QFont thefont;
-		unsigned int maxlenytitle;
 		bool showlegend;
 		QString messStr;
 		QColor messCol;
@@ -101,6 +124,22 @@ class kinemaPlotCls: public kinemaPlot
 		double drgdx,drgdy;
 		int rootw, rooth;
 		int sdx, sdy;
+		QMutex rveto;
+		QMutex pveto;
+		QMutex mveto;
+		QColor colTitle; // green
+		QColor colLegendRect; // gray
+		QColor colLegendText; // green
+		QColor colAxis; // green
+		QColor colSubMeasure; // 0 50 0
+		QColor colMeasureLabel; // green
+		QColor colMeasure;      // darkgreen
+		QRect plotRect;
+		bool colorps;
+		QFontMetrics *fm;
+		int fontsz;
+		int cx, cy;
+		int linewidth;
 
 	signals:
 		void done();
@@ -112,6 +151,11 @@ class kinemaPlotCls: public kinemaPlot
 		void setYMin();
 		void setYMax();
 		void showUsage();
+		void toggleColorPS();
+		void saveas ( int mode=0 );
+		void toggleDotOn();
+		void toggleMsrOn();
+		void toggleCrossOn();
 
 	protected:
 		void paintEvent ( QPaintEvent* );

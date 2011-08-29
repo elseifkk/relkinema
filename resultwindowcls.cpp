@@ -21,7 +21,6 @@
 #include "kinemaplotcls.h"
 
 #include <qtextedit.h>
-#include <kfiledialog.h>
 #include <qlistview.h>
 #include <qpainter.h>
 #include <qpointarray.h>
@@ -30,13 +29,16 @@
 #include <qpushbutton.h>
 #include <qtable.h>
 
+#include <kfiledialog.h>
+#include <kmessagebox.h>
+
 int const plot_width_def  = 600;
 int const plot_height_def = 400;
 int const min_pointsize=4;
 int const max_pointsize=32;
 
-resultWindowCls::resultWindowCls ( QWidget *parent, const char *name )
-		:resultWindow ( parent, name )
+resultWindowCls::resultWindowCls ( QWidget *parent, const char *name, WFlags wf )
+		:resultWindow ( parent, name, wf )
 {
 	msgLbl->clear();
 	nplots=0;
@@ -61,6 +63,30 @@ void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnerg
 	resultDescBox->append ( "beta: "+s.sprintf ( fmt, beta ) );
 	resultDescBox->append ( "1/gamma: "+s.sprintf ( fmt, 1./gamma ) );
 	resultDescBox->append ( "gamma*beta: "+s.sprintf ( fmt, gamma*beta ) );
+}
+
+void resultWindowCls::initCTI()
+{
+	QStringList s;
+	s.append ( "" );
+	s.append ( "X" );
+	s.append ( "Y" );
+	QPalette pal=resultTable->palette();
+	QPalette palorig=pal;
+	pal.setColor(QColorGroup::ButtonText,"blue");
+	resultTable->setPalette(pal);
+	resultTable->horizontalHeader()->setPalette(palorig);
+	resultTable->verticalHeader()->setPalette(palorig);
+	for ( int ic=0;ic<resultTable->numCols();ic++ )
+	{
+		cti[ic] = new QComboTableItem ( resultTable,NULL );
+		cti[ic]->setStringList ( s );
+		resultTable->setItem ( 0,ic,cti[ic] );
+	}
+	for ( int ir=1;ir<resultTable->numRows();ir++ )
+	{
+		resultTable->setRowReadOnly ( ir,true );
+	}
 }
 
 void resultWindowCls::saveasSlot()
@@ -101,7 +127,7 @@ void resultWindowCls::saveasSlot()
 			stream << resultTable->horizontalHeader()->label ( iic );
 		}
 		stream << "\n#";
-		for ( int ir=0;ir<nrow;ir++ )
+		for ( int ir=1;ir<nrow;ir++ ) //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		{
 			for ( ic=0;ic<ncol;ic++ )
 			{
@@ -162,25 +188,76 @@ void resultWindowCls::plotSlot()
 {
 	int cols[resultTable->numCols() ];
 	int k=0;
-	for ( int ic=0;ic<resultTable->numCols();ic++ )
+	int xc,yc;
+	int px=-1;
+
+	xc=countCTI ( 1,&px );
+	yc=countCTI ( 2 );
+	if ( xc>1 )
 	{
-		if ( resultTable->isColumnSelected ( ic,true ) )
+		KMessageBox::sorry ( this, "More than one column selected for x-data","error" );
+		return;
+	}
+	if ( xc==1 )
+	{
+		k++;
+		cols[0]=px;
+	}
+	if ( yc==0 )
+	{
+		for ( int ic=0;ic<resultTable->numCols();ic++ )
 		{
-			if ( k>=2 )
+			if ( ic==px ) continue;
+			if ( resultTable->isColumnSelected ( ic,true ) )
 			{
-				if ( resultTable->text ( 0,cols[1] ) !=resultTable->text ( 0,ic ) ) continue;
+				QComboTableItem *c;
+				int ci;
+				if ( k==0 )
+				{
+					ci=1;
+				}
+				else
+				{
+					ci=2;
+				}
+				c= ( QComboTableItem* ) resultTable->item ( 0,ic );
+				c->setCurrentItem ( ci );
+				cols[k]=ic;
+				k++;
 			}
-			cols[k]=ic;
-			k++;
 		}
 	}
-	if ( k<2 )
+	else if ( xc==1 )
 	{
-		cols[0]=0;
-		cols[1]=1;
-		k=2;
+		for ( int ic=0;ic<resultTable->numCols();ic++ )
+		{
+			QComboTableItem *c;
+			c= ( QComboTableItem* ) resultTable->item ( 0,ic );
+			if ( c->currentItem() ==2 )
+			{
+				cols[k]=ic;
+				k++;
+			}
+		}
 	}
-	kinemaPlotCls *win = new kinemaPlotCls();
+	else
+	{
+		KMessageBox::sorry ( this, "No y-data selected","error" );
+		return;
+	}
+	switch ( k )
+	{
+		case 0:
+			cols[0]=0;
+			cols[1]=1;
+			k=2;
+			break;
+		case 1:
+			cols[1]=0;
+			k=2;
+			break;
+	}
+	kinemaPlotCls *win = new kinemaPlotCls ( NULL,NULL, Qt::WDestructiveClose );
 	win->resize ( plot_width_def, plot_height_def );
 	win->setCaption ( this->caption().replace ( "Results:","Plots: " ) );
 	win->table=resultTable;
@@ -197,7 +274,6 @@ void resultWindowCls::plotSlot()
 	nplots++;
 	exitBut->setEnabled ( false );
 	win->show();
-
 }
 
 void resultWindowCls::changeFontSize ( int d )
@@ -228,6 +304,13 @@ void resultWindowCls::adjTable()
 	{
 		resultTable->adjustColumn ( i );
 	}
+	QFontMetrics fm ( font() );
+	int l=fm.width ( ( const QString& ) QString::number ( resultTable->numRows() ) );
+	int l2=fm.width ( ( const QString& ) QString ( "unit" ) );
+	if ( l<l2 ) l=l2;
+	l= ( double ) l*1.4;//<<<<<<<<<<<<<<
+	resultTable->setLeftMargin ( l );
+	resultTable->verticalHeader()->setFixedWidth ( l );
 	int h=resultTable->rowHeight ( 0 );
 	resultTable->setTopMargin ( h );
 	resultTable->horizontalHeader()->setFixedHeight ( h );
@@ -263,7 +346,32 @@ void resultWindowCls::plotDone()
 
 void resultWindowCls::closeEvent ( QCloseEvent *e )
 {
-	if ( nplots==0 ) delete this;
+	if ( nplots==0 )
+	{
+		e->accept();
+	}
+	else
+	{
+		e->ignore();
+	}
+}
+
+int resultWindowCls::countCTI ( int i, int *liid )
+{
+	int s=0;
+	for ( int ic=0;ic<resultTable->numCols();ic++ )
+	{
+		if ( cti[ic]->currentItem() ==i )
+		{
+			s++;
+			if ( liid!=NULL ) *liid=ic;
+		}
+	}
+	return s;
+}
+
+void resultWindowCls::rtSlot ( int r, int c )
+{
 }
 
 #include "resultwindowcls.moc"

@@ -28,7 +28,7 @@ void rwThreadCls::run()
 	rk->thetaBar->blockSignals ( true );
 	int ic=rk->thetaBar->value();
 	QString s;
-	int k=0;
+	int k=1; //<<<<<<<<<<<<
 	for ( int ir=irmin;ir<=irmax;ir++ )
 	{
 		k++;
@@ -47,9 +47,11 @@ void rwThreadCls::run()
 		rw->resultTable->setText ( k,col_p4,   s.sprintf ( fmt, rk->p4*eu ) );
 		rw->resultTable->setText ( k,col_J4,   s.sprintf ( fmt, rk->J4 ) );
 		rw->resultTable->setText ( k,col_fk,   s.sprintf ( fmt, rk->factorK ) );
-		rw->resultTable->verticalHeader()->setLabel ( k,QString::number ( ir ) );
+		rw->resultTable->verticalHeader()->setLabel ( k,QString::number ( ir+1 ) );
 	}
 	if ( col_first!=0 ) rw->resultTable->swapColumns ( 0,col_first,true );
+	rw->initCTI();
+	rw->adjTable();
 	rk->thetaBar->blockSignals ( false );
 	rk->thetaBar->setValue ( ic );
 	emit done ( rw );

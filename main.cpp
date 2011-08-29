@@ -39,7 +39,8 @@ static const char package[]="unknown";
 #endif
 static KCmdLineOptions options[] =
 {
-//    { "+[URL]", I18N_NOOP( "Document to open" ), 0 },
+	{ "c file", I18N_NOOP ( "specify config file" ), 0 },
+	{ "a", I18N_NOOP ( "always on top" ), 0 },
 	KCmdLineLastOption
 };
 
@@ -55,17 +56,15 @@ int main ( int argc, char **argv )
 
 	// no session.. just start up normally
 	KCmdLineArgs *args = KCmdLineArgs::parsedArgs();
+	Qt::WFlags wf=0;
+	if ( args->isSet ( "a" ) ) wf|=Qt::WStyle_StaysOnTop;
 
 	/// @todo do something with the command line args here
-
-	mainWin = new RelKinemaCls();
-	mainWin->setVer(VERSION);
+	mainWin = new RelKinemaCls ( NULL,NULL,wf,VERSION,args->getOption ( "c" ) );
 	app.setMainWidget ( mainWin );
 	mainWin->show();
-
 	args->clear();
 
 // mainWin has WDestructiveClose flag by default, so it will delete itself.
 	return app.exec();
 }
-

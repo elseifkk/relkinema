@@ -51,10 +51,8 @@ Note
 * massdata/A.dat contains particle masses in MeV, which includes
   photon(g), electron(e), proton(p), neutron(n) deuteron(d), triton(t)
   and alpha(a). 
+* For a pure decay process, i.e. no target, you can set "g" as target.
 * In plot window, hit H key to show key-bindings.
-* In result window, selected columns of the same unit can be plotted.
-  The leftmost column will be used as X axis. You can move columns 
-  with the CTRL key pressed.
 * Some configurations are saved in ~/.relkinemarc.
 
 

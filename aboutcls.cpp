@@ -47,8 +47,8 @@ int const timertick = 20; // ms
 int const titleRoleSpeed = 4; // relative to timertick
 int const fadeinDelayRatio = 5 ; // to count max
 
-aboutcls::aboutcls ( QWidget *parent, const char *name )
-		:aboutdlg ( parent, name )
+aboutcls::aboutcls ( QWidget *parent, const char *name, WFlags wf )
+		:aboutdlg ( parent, name, wf )
 {
 	QString date=__DATE__;
 	QString time=__TIME__;
@@ -91,12 +91,14 @@ aboutcls::aboutcls ( QWidget *parent, const char *name )
 	this->img = new QImage ( img0->smoothScale ( this->nx,this->ny ) );
 #ifdef ENABLE_LOGO_FADEIN
 	this->filled= ( int * ) calloc ( this->ny,sizeof ( int ) );
-	for(int i=0;i<ny;i++){
+	for ( int i=0;i<ny;i++ )
+	{
 		filled[i]=i;
 	}
-	for(int i=ny-1;i>=2;i--){
-		int j=random()%this->ny;
-		if(j==i) continue;
+	for ( int i=ny-1;i>=2;i-- )
+	{
+		int j=random() %this->ny;
+		if ( j==i ) continue;
 		filled[i]^=filled[j];
 		filled[j]^=filled[i];
 		filled[i]^=filled[j];
@@ -143,23 +145,25 @@ void aboutcls::timerEvent ( QTimerEvent *e )
 	float zz;
 	QPoint p;
 
+	tveto.lock();
+
 	count1++;
 	count2++;
 	count3++;
 	count4++;
 
 #ifdef ENABLE_LOGO_FADEIN
-		if ( !this->drawing && fillcount<this->ny )
-		{
-			this->drawing=true;
-			QPainter pp ( this );
-			int iy=filled[fillcount];
-			pp.setRasterOp ( Qt::CopyROP );
-			pp.drawImage ( this->aboutLogoRect.x(),this->aboutLogoRect.y() +iy,*this->img,0,iy,this->nx,1 );
-			this->drawing=false;
-			fillcount++;
-		}
-	
+	if ( !this->drawing && fillcount<this->ny )
+	{
+		this->drawing=true;
+		QPainter pp ( this );
+		int iy=filled[fillcount];
+		pp.setRasterOp ( Qt::CopyROP );
+		pp.drawImage ( this->aboutLogoRect.x(),this->aboutLogoRect.y() +iy,*this->img,0,iy,this->nx,1 );
+		this->drawing=false;
+		fillcount++;
+	}
+
 	else if ( !this->pmput )
 	{
 		this->pmput=true;
@@ -223,13 +227,15 @@ void aboutcls::timerEvent ( QTimerEvent *e )
 		CopyleftLbl->setPaletteForegroundColor ( setFgCol ( z ) );
 	}
 	if ( count4>countmax ) killTimer ( tid );
+	
+	tveto.unlock();
 }
 
 void aboutcls::closeSlot()
 {
 #ifdef ENABLE_FADEIN
 	killTimer ( tid );
-	free(filled);
+	free ( filled );
 	delete img;
 	delete img0;
 #endif

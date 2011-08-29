@@ -225,7 +225,7 @@ class mdmCls: public massDataManager
 {
 		Q_OBJECT
 	public:
-		mdmCls ( QWidget *parent = 0, const char *name = 0 );
+		mdmCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0 );
 		void openMassData ( int A );
 
 	public:

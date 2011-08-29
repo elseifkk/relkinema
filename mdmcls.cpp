@@ -44,8 +44,8 @@ int const MU_MEV = 2;
 int const MU_GEV = 3;
 int const MU_AMU = 4;
 
-mdmCls::mdmCls ( QWidget *parent, const char *name )
-		:massDataManager ( parent, name )
+mdmCls::mdmCls ( QWidget *parent, const char *name, WFlags wf )
+		:massDataManager ( parent, name, wf )
 {
 	appBut->setEnabled ( false );
 	discardOk=0;
@@ -663,7 +663,6 @@ int mdmCls::getZ_from_List ( QString n, const char **el )
 int mdmCls::getZ ( QString n )
 {
 	int z;
-	unsigned int lin=strlen ( n.latin1() );
 
 	z=getZ_from_List ( n, Element );
 	if ( z==-1 )
@@ -704,9 +703,12 @@ void mdmCls::closeEvent ( QCloseEvent *e )
 	if ( appBut->isEnabled() &&discardOk>=0 )
 	{
 		warnDiscard();
-		return;
+		e->ignore();
 	}
-	delete this;
+	else
+	{
+		e->accept();
+	}
 }
 
 #include "mdmcls.moc"

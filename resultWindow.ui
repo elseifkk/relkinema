@@ -536,7 +536,7 @@
         </widget>
         <widget class="QSplitter" row="1" column="0">
             <property name="name">
-                <cstring>splitter1</cstring>
+                <cstring>splitter2</cstring>
             </property>
             <property name="orientation">
                 <enum>Vertical</enum>
@@ -544,8 +544,8 @@
             <property name="opaqueResize">
                 <bool>true</bool>
             </property>
-            <property name="childrenCollapsible">
-                <bool>true</bool>
+            <property name="handleWidth">
+                <number>12</number>
             </property>
             <widget class="QTextEdit">
                 <property name="name">
@@ -574,104 +574,65 @@
                     <property name="text">
                         <string>Theata3LAB</string>
                     </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
-                    </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>Theta3CM</string>
-                    </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
                     </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>q</string>
                     </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
-                    </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>K3</string>
-                    </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
                     </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>p3</string>
                     </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
-                    </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>dO3CM/dO3Lab</string>
-                    </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
                     </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>dK3/dTheta3LAB</string>
                     </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
-                    </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>1/p3(dp3/dTheta3Lab)</string>
-                    </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
                     </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>Theta4LAB</string>
                     </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
-                    </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>Theta4CM</string>
-                    </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
                     </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>K4</string>
                     </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
-                    </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>p4</string>
                     </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
-                    </property>
                 </column>
                 <column>
                     <property name="text">
                         <string>dO4CM/dO4Lab</string>
-                    </property>
-                    <property name="pixmap">
-                        <pixmap></pixmap>
                     </property>
                 </column>
                 <property name="name">
@@ -687,7 +648,7 @@
                     <bool>true</bool>
                 </property>
                 <property name="readOnly">
-                    <bool>true</bool>
+                    <bool>false</bool>
                 </property>
                 <property name="focusStyle">
                     <enum>FollowStyle</enum>
@@ -759,6 +720,18 @@
         <receiver>resultWindow</receiver>
         <slot>hideDescSlot()</slot>
     </connection>
+    <connection>
+        <sender>resultTable</sender>
+        <signal>clicked(int,int,int,const QPoint&amp;)</signal>
+        <receiver>resultWindow</receiver>
+        <slot>rtSlot(int,int)</slot>
+    </connection>
+    <connection>
+        <sender>resultTable</sender>
+        <signal>currentChanged(int,int)</signal>
+        <receiver>resultWindow</receiver>
+        <slot>rtSlot(int,int)</slot>
+    </connection>
 </connections>
 <slots>
     <slot>saveasSlot()</slot>
@@ -766,6 +739,7 @@
     <slot>redSlot()</slot>
     <slot>magSlot()</slot>
     <slot>hideDescSlot()</slot>
+    <slot>rtSlot(int,int)</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

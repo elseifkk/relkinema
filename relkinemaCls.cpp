@@ -38,7 +38,6 @@
 #include <qradiobutton.h>
 #include <qcheckbox.h>
 #include <qpushbutton.h>
-#include <qmessagebox.h>
 #include <qlistview.h>
 #include <qpopupmenu.h>
 #include <qtabwidget.h>
@@ -47,6 +46,8 @@
 
 #include <kconfig.h>
 #include <knuminput.h>
+#include <kfiledialog.h>
+#include <kmessagebox.h>
 
 #define LEN_ELEMENT 8
 
@@ -60,7 +61,7 @@ QFont thefont;
 #define FIREFOX "firefox"
 QString webbrowser=FIREFOX;
 
-#define CONFIG "/.relkinemarc"
+#define CONFIGFILE_DEF ".relkinemarc"
 #define MASSDATA_DEF "massdata"
 
 QString HOME;
@@ -139,8 +140,9 @@ void ( RelKinemaCls::*tbEval ) ( bool );
 
 rwThreadCls *rwt;
 
-RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name )
-		:RelKinemaDlg ( parent, name )
+RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
+                             const char *v, QString conf )
+		:RelKinemaDlg ( parent, name, wf )
 		,th3 ( 0 ),th4 ( 0 )
 		,th3c ( 0 ),th4c ( 0 )
 		,K3 ( 0 ),K4 ( 0 )
@@ -148,7 +150,7 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name )
 		,J3 ( 0 ),J4 ( 0 )
 		,kinemaShift ( 0 ), factorK ( 0 )
 		,theq ( 0 )
-
+		,CONFIGFILE ( "" )
 		,theM ( 0 )
 		,K1th ( 0 ),K1cth ( 0 ),Ex ( 0 ),Exmax ( 0 )
 		,p1th ( 0 ),p1cth ( 0 )
@@ -182,11 +184,18 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name )
 
 	HOME=getenv ( "HOME" );
 	if ( HOME.isEmpty() )
-		QMessageBox::critical ( this, "relkinema: ", "We have no HOME!", tr ( "&ok" ) );
-	loadConfig ( HOME+CONFIG );
-	if ( !QFile::exists ( HOME+CONFIG ) ) saveConfig ( HOME+CONFIG );
-	if ( !QFile::exists ( MASSDATA ) )
-		QMessageBox::warning ( this, "relkinema: ", "Cannot locate massdata!", tr ( "&ok" ) );
+		KMessageBox::sorry ( this,"We have no HOME!","error" );
+	CONFIGFILE=conf;
+	if ( CONFIGFILE.isEmpty() ) CONFIGFILE=HOME+"/";
+	if ( CONFIGFILE=="." ) CONFIGFILE.append ( "/" );
+	if ( CONFIGFILE.startsWith ( "./" ) ) CONFIGFILE.replace ( 0,1,getenv ( "PWD" ) );
+	if ( CONFIGFILE.endsWith ( "/" ) ) CONFIGFILE.append ( CONFIGFILE_DEF );
+	if ( !CONFIGFILE.startsWith ( "/" ) ) CONFIGFILE.prepend ( "/" ).prepend ( getenv ( "PWD" ) );
+	loadConfig ( CONFIGFILE );
+	if ( !QFile::exists ( CONFIGFILE ) ) saveConfig ( CONFIGFILE );
+	QFileInfo fi ( MASSDATA );
+	if ( !QFile::exists ( MASSDATA ) || !fi.isReadable() )
+		KMessageBox::sorry ( this,  "Cannot locate mass data!","error" );
 
 	K1Set=false;
 	ExOk=true;
@@ -218,11 +227,9 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name )
 	for ( int i=4;i<8;i++ ) flipoff[i]=- ( i-4 ) *8;
 	flipoff[8]=-4;//<<<<<<<<<<<<
 	timerid=startTimer ( 80 );
-}
 
-void RelKinemaCls::setVer ( const char *v )
-{
-	QString ver=v;
+	QString ver="unknown";
+	if ( v!=NULL ) ver=v;
 	ver.prepend ( "Release " );
 	verLbl->setText ( ver );
 }
@@ -399,7 +406,7 @@ void RelKinemaCls::reinitRelKinema()
 
 void  RelKinemaCls::closeEvent ( QCloseEvent *e )
 {
-	saveConfig ( HOME+CONFIG );
+	saveConfig ( CONFIGFILE );
 	close();
 	exit ( 0 );
 }
@@ -1026,7 +1033,7 @@ void RelKinemaCls::compRect()
 	EB->blockSignals ( true );
 	AB->blockSignals ( true );
 
-	if ( aa>=0&&zz>=0 )
+	if ( aa>=0 )
 	{
 		switch ( aa )
 		{
@@ -2151,7 +2158,7 @@ void RelKinemaCls::stripSlot()
 
 void RelKinemaCls::showResultListSlot()
 {
-	resultWindowCls *win = new resultWindowCls();
+	resultWindowCls *win = new resultWindowCls ( NULL,NULL,Qt::WDestructiveClose );
 	win->initResultDescBox ( theReaction, K1, p1, Ex, QValue, beta,gamma,
 	                         m1/AMU, m2/AMU, m3/AMU, m4/AMU, double_format );
 	win->homedir=HOME;
@@ -2179,21 +2186,22 @@ void RelKinemaCls::showResultListSlot()
 	int irmax=thetaBar->maxValue();
 	int nr=irmax-irmin+1;
 
-	win->resultTable->setNumRows ( nr+1 );
-	win->resultTable->setText ( 0,col_th3,       al );
-	win->resultTable->setText ( 0,col_th3c,      al );
-	win->resultTable->setText ( 0,col_q,     "1/fm" );
-	win->resultTable->setText ( 0,col_K3,        el );
-	win->resultTable->setText ( 0,col_p3,        pl );
-	win->resultTable->setText ( 0,col_J3,        "" );
-	win->resultTable->setText ( 0,col_ks, el+"/"+al );
-	win->resultTable->setText ( 0,col_fk,   "1/"+al );
-	win->resultTable->setText ( 0,col_th4,       al );
-	win->resultTable->setText ( 0,col_th4c,      al );
-	win->resultTable->setText ( 0,col_K4,        el );
-	win->resultTable->setText ( 0,col_p4,        pl );
-	win->resultTable->setText ( 0,col_J4,        "" );
-	win->resultTable->verticalHeader()->setLabel ( 0,"unit" );
+	win->resultTable->setNumRows ( nr+1 +1 ); //<<<<<<<<<<<<<
+	win->resultTable->setText ( 1,col_th3,       al );
+	win->resultTable->setText ( 1,col_th3c,      al );
+	win->resultTable->setText ( 1,col_q,     "1/fm" );
+	win->resultTable->setText ( 1,col_K3,        el );
+	win->resultTable->setText ( 1,col_p3,        pl );
+	win->resultTable->setText ( 1,col_J3,        "" );
+	win->resultTable->setText ( 1,col_ks, el+"/"+al );
+	win->resultTable->setText ( 1,col_fk,   "1/"+al );
+	win->resultTable->setText ( 1,col_th4,       al );
+	win->resultTable->setText ( 1,col_th4c,      al );
+	win->resultTable->setText ( 1,col_K4,        el );
+	win->resultTable->setText ( 1,col_p4,        pl );
+	win->resultTable->setText ( 1,col_J4,        "" );
+	win->resultTable->verticalHeader()->setLabel ( 0,"plot" );
+	win->resultTable->verticalHeader()->setLabel ( 1,"unit" );
 
 	tableBut->setEnabled ( false );
 	rwt = new rwThreadCls ( this, win, eu, au, irmin, irmax, col_first, double_format );
@@ -2273,7 +2281,7 @@ void RelKinemaCls::updateThetaBar()
 
 void RelKinemaCls::mdmSlot()
 {
-	mdmCls *win = new mdmCls();
+	mdmCls *win = new mdmCls ( NULL,NULL,Qt::WDestructiveClose );
 	win->massdata=MASSDATA;
 	win->home=HOME;
 	win->AMU=AMU;
@@ -2317,7 +2325,7 @@ void RelKinemaCls::keyPressEvent ( QKeyEvent *e )
 
 void RelKinemaCls::showAbout()
 {
-	aboutcls subWin;
+	aboutcls subWin ( NULL,NULL,Qt::WDestructiveClose );
 	subWin.wb=webbrowser;
 	subWin.exec();
 }
@@ -2350,9 +2358,9 @@ void RelKinemaCls::initSettingsPage ( bool first )
 	}
 
 	configEdit->clear();
-	rcLbl->setText ( HOME+CONFIG );
+	rcLbl->setText ( CONFIGFILE );
 	int i=0;
-	QFile f ( HOME+CONFIG );
+	QFile f ( CONFIGFILE );
 	if ( f.open ( IO_ReadOnly ) )
 	{
 		QTextStream stream ( &f );
@@ -2388,7 +2396,8 @@ void RelKinemaCls::showMessL ( QString m, QString c, QLabel *L )
 
 void RelKinemaCls::confAppSlot()
 {
-	if ( QFile::exists ( confMassDataDirBox->text() ) )
+	QFileInfo fi ( confMassDataDirBox->text() );
+	if ( QFile::exists ( confMassDataDirBox->text() ) && fi.isReadable() )
 	{
 		MASSDATA=confMassDataDirBox->text();
 		showMessL ( "ok","blue",confMassDataDirLbl );
@@ -2423,7 +2432,7 @@ void RelKinemaCls::redoSlot()
 void RelKinemaCls::saveConfSlot()
 {
 // first contents of configEdit goes to .config
-	QFile f ( HOME+CONFIG );
+	QFile f ( CONFIGFILE );
 	if ( f.open ( IO_WriteOnly ) )
 	{
 		QTextStream stream ( &f );
@@ -2432,11 +2441,11 @@ void RelKinemaCls::saveConfSlot()
 	}
 	QString mdn=MASSDATA;
 	QString dfn=double_format;
-	loadConfig ( HOME+CONFIG );
+	loadConfig ( CONFIGFILE );
 	MASSDATA=mdn;
 	double_format=dfn;
 // then the changes on massdata etc on the lineedit will be saved
-	saveConfig ( HOME+CONFIG );
+	saveConfig ( CONFIGFILE );
 	initSettingsPage();
 	reinitRelKinema();
 }
@@ -2444,6 +2453,15 @@ void RelKinemaCls::saveConfSlot()
 void RelKinemaCls::returnSlot()
 {
 	setFocus();
+}
+
+void RelKinemaCls::massDataDirSlot()
+{
+	QString s=KFileDialog::getExistingDirectory ( MASSDATA,this,"Choose mass data directory" );
+	if ( !s.isEmpty() )
+	{
+		confMassDataDirBox->setText ( s );
+	}
 }
 
 void RelKinemaCls::stopSlot()

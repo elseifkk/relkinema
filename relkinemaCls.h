@@ -29,8 +29,8 @@ class RelKinemaCls: public RelKinemaDlg
 		Q_OBJECT
 
 	public:
-		RelKinemaCls ( QWidget *parent = 0, const char *name = 0 );
-		void setVer ( const char* );
+		RelKinemaCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0,
+		               const char *v=0, QString conf="" );
 
 	private:
 		double getMass ( QString a, QString n, int *A, int *Z, bool calc=false );
@@ -112,6 +112,7 @@ class RelKinemaCls: public RelKinemaDlg
 		double theq; // momentum transfer
 
 	private:
+		QString CONFIGFILE;
 		double theM;
 		double K1th,K1cth,Ex,Exmax;
 		double p1th,p1cth;
@@ -193,6 +194,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void returnSlot();
 		void stopSlot();
 		void teDone ( resultWindowCls* );
+		void massDataDirSlot();
 
 	protected:
 		void timerEvent ( QTimerEvent *e );

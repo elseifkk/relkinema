@@ -22,6 +22,7 @@
 
 #include "resultWindow.h"
 
+#include <qtable.h>
 
 int const col_th3  =0;
 int const col_th3c =1;
@@ -41,7 +42,7 @@ class resultWindowCls: public resultWindow
 {
 		Q_OBJECT
 	public:
-		resultWindowCls ( QWidget *parent = 0, const char *name = 0 );
+		resultWindowCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0 );
 
 		void initResultDescBox ( QString reaction,
 		                         double incidentEnergy, double incidentMomentum,
@@ -49,12 +50,22 @@ class resultWindowCls: public resultWindow
 		                         double beta, double gamma,
 		                         double m1, double m2, double m3, double m4,
 		                         QString double_format );
+	public:
+		void adjTable();
+		void initCTI();
+
+	public:
+		QString homedir;
+		int nplots;
+
+	private:
 		void setPlotPoints ( int ,int ,int,int );
 		void setPlotMinMax ( int,int );
 		void changeFontSize ( int );
-		void adjTable();
-		QString homedir;
-		int nplots;
+		int countCTI ( int,int *liid=NULL );
+
+	private:
+		QComboTableItem *cti[12];
 
 	private slots:
 		void saveasSlot();
@@ -63,6 +74,7 @@ class resultWindowCls: public resultWindow
 		void redSlot();
 		void hideDescSlot();
 		void plotDone();
+		void rtSlot ( int,int );
 
 	protected:
 		void keyPressEvent ( QKeyEvent* );

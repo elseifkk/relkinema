@@ -21,8 +21,8 @@
 #include <qlabel.h>
 #include <qevent.h>
 
-mboxCls::mboxCls ( QWidget *parent, const char *name, QString mess , QString title )
-		:mBox ( parent, name )
+mboxCls::mboxCls ( QWidget *parent, const char *name, WFlags wf, QString mess , QString title )
+		:mBox ( parent, name, wf )
 {
 	QLabel *mlbl=new QLabel ( this );
 	setCaption ( title );
@@ -46,7 +46,8 @@ void mboxCls::keyPressEvent ( QKeyEvent*e )
 
 void mboxCls::closeEvent ( QCloseEvent *e )
 {
-	delete this;
+	delete mlbl;
+	e->accept();
 }
 
 #include "mboxcls.moc"

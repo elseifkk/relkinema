@@ -28,7 +28,7 @@ class mboxCls: public mBox
 {
 		Q_OBJECT
 	public:
-		mboxCls ( QWidget *parent = 0, const char *name = 0, QString mess="", QString title="" );
+		mboxCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, QString mess="", QString title="" );
 
 	public:
 		QLabel *mlbl;
