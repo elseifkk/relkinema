@@ -55,7 +55,7 @@ class kinemaPlotCls: public kinemaPlot
 		void getInput ( QString , int );
 		void changeFontSize ( int );
 		void eraseCoord ( QPainter* );
-//		void getRootWindowSize ( int*,int* );
+		void getRootWindowSize ( int*,int* );
 		void toggleOnTop();
 		void setMeasureGeom ( int,int );
 		void drawDots ( QPainter*, int, int, int shape=0 );
@@ -140,6 +140,7 @@ class kinemaPlotCls: public kinemaPlot
 		int fontsz;
 		int cx, cy;
 		int linewidth;
+		QPixmap *thePlot;
 
 	signals:
 		void done();

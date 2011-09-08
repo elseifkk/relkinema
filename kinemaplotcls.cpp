@@ -34,12 +34,11 @@
 #include <qpopupmenu.h>
 #include <qprinter.h>
 #include <qwmatrix.h>
-//#include <qpaintdevicemetrics.h>
+#include <qimage.h>
 
 #include <kmessagebox.h>
 #include <kfiledialog.h>
 
-//#include <X11/Xlib.h>
 
 #define MAX2(x, y) ((x) > (y) ? (x) : (y))
 #define MIN2(x, y) ((x) > (y) ? (y) : (x))
@@ -159,7 +158,7 @@ kinemaPlotCls::kinemaPlotCls ( QWidget *parent, const char *name, WFlags wf )
 	iread=0;
 	thefont.setFamily ( "Monospace" );
 	thefont.setPointSize ( fontsz );
-	fm = new QFontMetrics ( thefont ); // <<<<<<<<<<<<<
+	fm = new QFontMetrics ( thefont );
 	fph=fm->height();
 	showlegend=true;
 	QBitmap cb ( 16, 16, cross_bits, TRUE );
@@ -167,7 +166,14 @@ kinemaPlotCls::kinemaPlotCls ( QWidget *parent, const char *name, WFlags wf )
 	setCursor ( QCursor ( cb,cm,7,7 ) );
 	setPlotColors ( PC_COLOR );
 	colorps=true;
-//	getRootWindowSize ( &rootw, &rooth );
+	setBackgroundMode ( Qt::NoBackground );
+	getRootWindowSize ( &rootw, &rooth );
+	thePlot=new QPixmap ( rootw,rooth );
+	if ( rootw<=0||rooth<=0 )
+	{
+		rootw=2560; //<<<<<<<<<<<<<<
+		rooth=1600;
+	}
 }
 
 void kinemaPlotCls::getInput ( QString caption, int ir )
@@ -858,7 +864,7 @@ void kinemaPlotCls::setMeasureGeom ( int w, int h )
 	if ( mx0!=0 )
 	{
 		mx=mx0;
-		nx=NIN( ( xmax-xmin ) /mx0);
+		nx=NIN ( ( xmax-xmin ) /mx0 );
 	}
 	else
 	{
@@ -868,7 +874,7 @@ void kinemaPlotCls::setMeasureGeom ( int w, int h )
 	if ( my0!=0 )
 	{
 		my=my0;
-		ny=NIN( ( ymax-ymin ) /my0);
+		ny=NIN ( ( ymax-ymin ) /my0 );
 	}
 	else
 	{
@@ -880,7 +886,7 @@ void kinemaPlotCls::setMeasureGeom ( int w, int h )
 // text geom
 	int ylml=ylabelMaxLen ( y_start,my );
 	vs=hs=fph/3;
-	leftmar= NIN((double)( ylml+fph+hs ) *1.2);//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	leftmar= NIN ( ( double ) ( ylml+fph+hs ) *1.2 );//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 	botmar= ( fph+fph+vs );//*1.2;//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // the origin in px
 	x0=leftmar;
@@ -912,10 +918,9 @@ void kinemaPlotCls::drawDots ( QPainter *p, int ixmin, int iymax, int shape )
 void kinemaPlotCls::paintEvent ( QPaintEvent *e )
 {
 	pveto.lock();
-	QPixmap pm ( size() );
 	QPainter p;
 
-	p.begin ( &pm, this );
+	p.begin ( thePlot, this );
 	p.setBackgroundColor ( "black" );
 	p.eraseRect ( rect() );
 
@@ -940,7 +945,8 @@ void kinemaPlotCls::paintEvent ( QPaintEvent *e )
 	drawAxis ( &p );
 
 	p.end();
-	bitBlt ( this, 0, 0, &pm );
+
+	bitBlt ( this, 0, 0, thePlot,0,0,width(),height() );
 
 	pveto.unlock();
 }
@@ -1090,9 +1096,9 @@ void kinemaPlotCls::drawPlots ( QPainter *p )
 void kinemaPlotCls::drawLegend ( QPainter *p )
 {
 	int const lengend=fph*2; // <<<<<<<<<<<<<<<
-	int const hmar=NIN((double)fph/2.);
-	int const vmar=NIN((double)fph/3.);
-	int const lmar=NIN((double)fph/4.);
+	int const hmar=NIN ( ( double ) fph/2. );
+	int const vmar=NIN ( ( double ) fph/3. );
+	int const lmar=NIN ( ( double ) fph/4. );
 	QPen pline;
 	int legendWidth=getMaxlenytitle() +lengend+hmar*2+lmar;
 	int legendHeight=nycol* ( fph+lmar )-lmar+vmar*2;
@@ -1106,7 +1112,7 @@ void kinemaPlotCls::drawLegend ( QPainter *p )
 	p->drawRect ( legendRect );
 	for ( int iy=0;iy<nycol;iy++ )
 	{
-		int yy=NIN((double)(iy* ( fph+lmar )) +(double)fph/2.+(double)vmar);
+		int yy=NIN ( ( double ) ( iy* ( fph+lmar ) ) + ( double ) fph/2.+ ( double ) vmar );
 		int xx=legendRect.left() +hmar;
 		pline.setStyle ( ps[iy] );
 		pline.setColor ( pc[iy] );
@@ -1179,6 +1185,7 @@ void kinemaPlotCls::closeEvent ( QCloseEvent *e )
 	else
 	{
 		delete fm;
+		delete thePlot;
 		emit done();
 		e->accept();
 	}
@@ -1371,8 +1378,8 @@ void kinemaPlotCls::setBB ( QString f, double sf )
 {
 	QString ff=f+".kinemaplot-tmp"; // <<<<<<<<<
 	double const ptfac=1.389;
-	int xpt=NIN ( (double)theWidth/ptfac ) /sf;
-	int ypt=NIN ( (double)theHeight/ptfac ) /sf;
+	int xpt=NIN ( ( double ) theWidth/ptfac ) /sf;
+	int ypt=NIN ( ( double ) theHeight/ptfac ) /sf;
 	QString com;
 	if ( f.endsWith ( ".eps" ) )
 	{
@@ -1457,7 +1464,7 @@ void kinemaPlotCls::eraseCross()
 	cy=-1;
 }
 
-/*
+#include <X11/Xlib.h>
 void kinemaPlotCls::getRootWindowSize ( int *w, int *h )
 {
 	*w=0;
@@ -1465,11 +1472,10 @@ void kinemaPlotCls::getRootWindowSize ( int *w, int *h )
 	Display *dpy = XOpenDisplay ( NULL );
 	if ( dpy==NULL ) return; // cannot open display
 	int screen=DefaultScreen ( dpy );
-	Window root=RootWindow ( dpy,screen );
+//	Window root=RootWindow ( dpy,screen );
 	*h=DisplayHeight ( dpy,screen );
 	*w=DisplayWidth ( dpy,screen );
 	XCloseDisplay ( dpy );
 }
-*/
 
 #include "kinemaplotcls.moc"
