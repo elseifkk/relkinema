@@ -22,7 +22,8 @@
 #include "mdmcls.h"
 #include "aboutcls.h"
 #include "rwthreadcls.h"
-#include "rkCore.h"
+#include "rkcore.h"
+#include "rkcalccls.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -143,40 +144,39 @@ rwThreadCls *rwt;
 RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
                              const char *v, QString conf )
 		:RelKinemaDlg ( parent, name, wf )
-		,th3 ( 0 ),th4 ( 0 )
-		,th3c ( 0 ),th4c ( 0 )
-		,K3 ( 0 ),K4 ( 0 )
-		,p3 ( 0 ),p4 ( 0 )
-		,J3 ( 0 ),J4 ( 0 )
-		,kinemaShift ( 0 ), factorK ( 0 )
-		,theq ( 0 )
+
+
+		,prkc ( rkc_init() )
 		,CONFIGFILE ( "" )
-		,theM ( 0 )
-		,K1th ( 0 ),K1cth ( 0 ),Ex ( 0 ),Exmax ( 0 )
-		,p1th ( 0 ),p1cth ( 0 )
-		,E1 ( 0 ),E2 ( 0 ),E3 ( 0 ),E4 ( 0 )
-		,K1 ( 0 ),K2 ( 0 )
-		,p1 ( 0 ),p2 ( 0 )
-		,E1c ( 0 ),E2c ( 0 ),E3c ( 0 ),E4c ( 0 )
-		,K1c ( 0 ),K2c ( 0 ),K3c ( 0 ),K4c ( 0 )
-		,p1c ( 0 ),p2c ( 0 ),p3c ( 0 ),p4c ( 0 )
-		,gamma ( 0 ),beta ( 0 )
-		,thetaMax ( 0 ), limThetaCM ( 0 ), limq ( 0 )
-		,m10 ( 0 ),m20 ( 0 ),m30 ( 0 ),m40 ( 0 )
-		,m1 ( 0 ),m2 ( 0 ),m3 ( 0 ),m4 ( 0 )
+		,K1th ( 0. ),K1cth ( 0. ),Ex ( 0. ),Exmax ( 0. )
+		,p1th ( 0. ),p1cth ( 0. )
+		,E1 ( 0. ),E2 ( 0. ),E3 ( 0. ),E4 ( 0. )
+		,K1 ( 0. ),K2 ( 0. ),K3 ( 0. ),K4 ( 0. )
+		,p1 ( 0. ),p2 ( 0. ),p3 ( 0. ),p4 ( 0. )
+		,E1c ( 0. ),E2c ( 0. ),E3c ( 0. ),E4c ( 0. )
+		,K1c ( 0. ),K2c ( 0. ),K3c ( 0. ),K4c ( 0. )
+		,p1c ( 0. ),p2c ( 0. ),p3c ( 0. ),p4c ( 0. )
+		,gamma ( 0. ),beta ( 0. )
+		,th3 ( 0. ),th4 ( 0. ), theq ( 0. )
+		,th3c ( 0. ),th4c ( 0. )
+		,J3 ( 0. ),J4 ( 0. )
+		,kinemaShift ( 0. ), factorK ( 0. )
+		,thetaMax ( 0. ), thetaMaxCM ( 0. )
+		,m10 ( 0. ),m20 ( 0. ),m30 ( 0. ),m40 ( 0. )
+		,m1 ( 0. ),m2 ( 0. ),m3 ( 0. ),m4 ( 0. )
 		,a1 ( 0 ),a2 ( 0 ),a3 ( 0 ),a4 ( 0 )
 		,z1 ( 0 ),z2 ( 0 ),z3 ( 0 ),z4 ( 0 )
-		,QValue ( 0 )
-		,qmin ( 0 ),qmax ( 0 )
-		,inv ( 0 ),thetaMaxNe ( 0 )
-		,K1Set ( 0 ), ExOk ( 0 )
-		, K3sign ( 1 )
+		,QValue ( 0. )
+		,qmin ( 0. ),qmax ( 0. )
+		,inv ( false ),thetaMaxNe ( false )
+		,K1Set ( false ), ExOk ( false )
+		,K3sign ( 1 )
 		,timerid ( 0 )
 {
 	bzero ( &massSet,sizeof ( massSet ) );
 	bzero ( &rectSet,sizeof ( rectSet ) );
 
-	getThetaBarValue=&RelKinemaCls::getThetaBarPosInRad;
+	getThetaBarValue=&RelKinemaCls::getThetaBarPos;
 	tbEval=&RelKinemaCls::thetaLabSlot;
 	tbMax=&thetaMax;
 	tbMin=&fZero;
@@ -449,8 +449,11 @@ void RelKinemaCls::saveConfig ( QString f )
 	historyGroup.writeEntry ( "Ejectile A",  QString::number ( a3 ) );
 	historyGroup.writeEntry ( "Residual A",  QString::number ( a4 ) );
 
-	historyGroup.writeEntry ( "Incident energy in MeV",QString::number ( K1 ) );
-	historyGroup.writeEntry ( "Excitation energy in MeV",QString::number ( Ex ) );
+	int ceu=EUnitBox->currentItem();
+	rkc_set_eunit ( prkc,2 ); // MeV
+	historyGroup.writeEntry ( "Incident energy in MeV",QString::number ( rkc_get_K1 ( prkc ) ) );
+	historyGroup.writeEntry ( "Excitation energy in MeV",QString::number ( rkc_get_Ex ( prkc ) ) );
+	rkc_set_eunit ( prkc,ceu+1 );
 
 	generalGroup.sync();
 	parameterGroup.sync();
@@ -871,11 +874,12 @@ void RelKinemaCls::setReactionLbl()
 
 void RelKinemaCls::initReactionConditionBox()
 {
+	rkc_set_mass ( prkc,m1,m2,m3,m4 );
+	rkc_set_Ex ( prkc,Ex );
 	setReactionLbl();
 	ReactionConditionBox->setEnabled ( true );
 	anotherSolutionBox->setEnabled ( false );
 	E2=m2;
-	theM=m1+m2;
 	setQValue();
 	setK1th();
 	setK1cth();
@@ -1092,53 +1096,30 @@ int RelKinemaCls::count4 ( bool *b )
 
 void RelKinemaCls::setK1cth()
 {
-	double m=sqrt ( pow ( m1+m2,2 ) +2*m2*K1th );
-	K1cth= ( m-m1+m2 ) * ( m- ( m1+m2 ) ) / ( 2*m );
-	if ( K1cth<0. )
-	{
-		fprintf ( stderr,"*** K1cth underflow detected.\n" );
-		K1cth=0.;
-	}
-	p1cth=sqrt ( K1cth* ( K1cth+2.*m1 ) );
+	K1cth=rkc_get_K1cMin ( prkc );
+	p1cth=rkc_get_p1cMin ( prkc );
 	showEnergyL ( K1cth,K1cthLbl,"> " );
 	showEnergyL ( p1cth,p1cthLbl,"> " );
 }
 
 void RelKinemaCls::setK1th()
 {
-	if ( QValue<0 )
-	{
-		K1th= ( -QValue ) * ( m1+m2+m3+ ( m4+Ex ) ) / ( 2.0*m2 );
-		p1th=sqrt ( K1th* ( K1th+2.*m1 ) );
-	}
-	else
-	{
-		K1th=0;
-		p1th=0;
-	}
+	K1th=rkc_get_K1Min ( prkc );
+	p1th=rkc_get_p1Min ( prkc );
 	showEnergyL ( K1th,K1thLbl,"> " );
 	showEnergyL ( p1th, p1thLbl,"> " );
-}
-double RelKinemaCls::K2p ( double K, double M )
-{
-	return sqrt ( K* ( K+2.*M ) );
-}
-double RelKinemaCls::p2E ( double p, double M )
-{
-	return sqrt ( p*p+M*M );
 }
 
 void RelKinemaCls::setQValue()
 {
-	QValue=m1+m2- ( m3+ ( m4+Ex ) );
+	QValue=rkc_get_QValue ( prkc );//m1+m2- ( m3+ ( m4+Ex ) );
 	showEnergyLE ( QValue,QValueBox );
 }
 
 void RelKinemaCls::showEnergyL ( double E, QLineEdit *L, QString prep )
 {
 	QString s;
-	double e=E*EU[EUnitBox->currentItem() ];
-	s.sprintf ( double_format,e ); // in MeV
+	s.sprintf ( double_format, E );
 	L->setText ( s.prepend ( prep ) );
 	L->setCursorPosition ( 0 );
 }
@@ -1146,51 +1127,27 @@ void RelKinemaCls::showEnergyL ( double E, QLineEdit *L, QString prep )
 void RelKinemaCls::showEnergyLE ( double E, QLineEdit *L )
 {
 	QString s;
-	double e=E*EU[EUnitBox->currentItem() ];
-	s.sprintf ( double_format,e ); // in MeV
+	s.sprintf ( double_format, E );
 	L->blockSignals ( true );
 	L->setText ( s );
 	L->setCursorPosition ( 0 );
 	L->blockSignals ( false );
 }
 
-void RelKinemaCls::setE3c ( double m )
+void RelKinemaCls::setE3c ( )
 {
-	E3c=m/2+ ( m3+ ( m4+Ex ) ) * ( m3- ( m4+Ex ) ) / ( 2*m );
-	K3c=E3c-m3;
-	if ( K3c<0 )
-	{
-		fprintf ( stderr,"*** K3c underflow detected: %g\n",K3c );
-		K3c=0;
-		E3c=m3;
-		p3c=0;
-	}
-	else
-	{
-		p3c=K2p ( K3c,m3 );
-	}
-
-	E4c=m-E3c;
-	K4c=E4c- ( m4+Ex );
-	if ( K4c<0 )
-	{
-		fprintf ( stderr,"*** K4c underflow detected: %g\n",K4c );
-		K4c=0;
-		E4c= ( m4+Ex );
-		p4c=0;
-	}
-	else
-	{
-		p4c=K2p ( K4c,m4+Ex );
-	}
-
-	qmax= ( p1c+p3c ) /hbarc;
-	qmin = fabs ( p1c-p3c ) /hbarc; // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	rkc_set_K34c ( prkc );
+	K3c=rkc_get_K3c ( prkc );
+	E3c=rkc_get_E3c ( prkc );
+	p3c=rkc_get_p3c ( prkc );
+	K4c=rkc_get_K4c ( prkc );
+	E4c=rkc_get_E4c ( prkc );
+	p4c=rkc_get_p4c ( prkc );
 }
 
-void RelKinemaCls::setExmax ( double m )
+void RelKinemaCls::setExmax ( )
 {
-	Exmax=m- ( m3+m4 );
+	Exmax=rkc_get_ExMax ( prkc );
 	if ( Exmax>0 )
 	{
 		showEnergyL ( Exmax,ExmaxLbl,"< " );
@@ -1215,12 +1172,13 @@ void RelKinemaCls::rectCondSlot_p1()
 	showStrLE ( "",K1cBox );
 	showStrLE ( "",p1cBox );
 	showStrLE ( "",ExmaxLbl );
-	if ( !ok ) return;
-	if ( v<=0 ) return;
-	p1=v/EU[EUnitBox->currentItem() ];
-	E1=p2E ( p1,m1 );
-	K1=E1-m1;
-	if ( K1<0 ) K1=0;
+	if ( !ok || v<=0. ) return;
+
+	rkc_set_p1 ( prkc,v );
+	p1=rkc_get_p1 ( prkc );
+	E1=rkc_get_E1 ( prkc );
+	K1=rkc_get_K1 ( prkc );
+
 	procK1();
 	procK1_common ( CL_P1 );
 	setResultBox ( checkRectCond() );
@@ -1235,12 +1193,13 @@ void RelKinemaCls::rectCondSlot_p1c()
 	showStrLE ( "",K1cBox );
 	showStrLE ( "",p1Box );
 	showStrLE ( "",ExmaxLbl );
-	if ( !ok ) return;
-	if ( v<=0 ) return;
-	p1c=v/EU[EUnitBox->currentItem() ];
-	E1c=p2E ( p1c,m1 );
-	K1c=E1c-m1;
-	if ( K1c<0 ) K1c=0;
+	if ( !ok || v<=0. ) return;
+
+	rkc_set_p1c ( prkc,v );
+	p1c=rkc_get_p1c ( prkc );
+	E1c=rkc_get_E1c ( prkc );
+	K1c=rkc_get_K1c ( prkc );
+
 	procK1c();
 	procK1_common ( CL_P1C );
 	setResultBox ( checkRectCond() );
@@ -1248,12 +1207,12 @@ void RelKinemaCls::rectCondSlot_p1c()
 
 void RelKinemaCls::procK1_common ( int caller )
 {
-	setE3c ( theM );
-	setExmax ( theM );
+	setE3c ( );
+	setExmax ( );
 
-	showValueLE ( 1./gamma,gammaLbl );
+	showValueLE ( rkc_get_invgamma ( prkc ),gammaLbl );
 	showValueLE ( beta,betaLbl );
-	showValueLE ( gamma*beta,gammabetaLbl );
+	showValueLE ( rkc_get_betagamma ( prkc ),gammabetaLbl );
 
 	if ( caller!=CL_K1C ) showEnergyLE ( K1c,K1cBox );
 	if ( caller!=CL_P1 ) showEnergyLE ( p1,p1Box );
@@ -1263,14 +1222,16 @@ void RelKinemaCls::procK1_common ( int caller )
 
 void RelKinemaCls::procK1()
 {
-	double m12=m1+m2;
-	gamma= ( K1+m12 ) /sqrt ( 2.*K1*m2+m12*m12 );
-	beta=sqrt ( K1*K1+2.*K1*m1 ) / ( K1+m12 );
-	theM=sqrt ( m12*m12+2.*m2*K1 );
+	gamma=rkc_get_gamma ( prkc );
+	beta=rkc_get_beta ( prkc );
 
-	K1c= ( theM-m1+m2 ) * ( theM-m12 ) / ( 2.*theM );
-	E1c=K1c+m1;
-	p1c=K2p ( K1c,m1 );
+	K1c=rkc_get_K1c ( prkc );
+	p1c=rkc_get_p1c ( prkc );
+	E1c=rkc_get_E1c ( prkc );
+	p2c=p1c;
+
+	E2c=rkc_get_E2c ( prkc );
+	K2c=rkc_get_K2c ( prkc );
 }
 
 void RelKinemaCls::rectCondSlot_K1()
@@ -1282,11 +1243,12 @@ void RelKinemaCls::rectCondSlot_K1()
 	showStrLE ( "",p1Box );
 	showStrLE ( "",p1cBox );
 	showStrLE ( "",ExmaxLbl );
-	if ( !ok ) return;
-	if ( v<=0 ) return;
-	K1=v/EU[EUnitBox->currentItem() ];
-	E1=K1+m1;
-	p1=K2p ( K1,m1 );
+	if ( !ok || v<= 0. ) return;
+
+	rkc_set_K1 ( prkc,v );
+	K1=rkc_get_K1 ( prkc );
+	E1=rkc_get_E1 ( prkc );
+	p1=rkc_get_p1 ( prkc );
 	procK1();
 	procK1_common ( CL_K1 );
 	setResultBox ( checkRectCond() );
@@ -1294,17 +1256,11 @@ void RelKinemaCls::rectCondSlot_K1()
 
 void RelKinemaCls::procK1c()
 {
-	double mm2=m2*m2;
-	double m12=m1+m2;
-	double mm1=m1*m1;
-	theM=K1c+m1+sqrt ( K1c*K1c+2.*m1*K1c+mm2 );
-
-	K1= ( theM-m12 ) * ( theM+m12 ) / ( 2.*m2 );
-	E1=K1+m1;
-	p1=K2p ( K1,m1 );
-
-	gamma= ( theM*theM-mm1+mm2 ) / ( 2.*m2*theM );
-	beta=sqrt ( 1.-1./ ( gamma*gamma ) );
+	K1=rkc_get_K1 ( prkc );
+	E1=rkc_get_E1 ( prkc );
+	p1=rkc_get_p1 ( prkc );
+	gamma=rkc_get_gamma ( prkc );
+	beta=rkc_get_beta ( prkc );
 }
 
 void RelKinemaCls::rectCondSlot_K1c()
@@ -1316,11 +1272,13 @@ void RelKinemaCls::rectCondSlot_K1c()
 	showStrLE ( "",p1Box );
 	showStrLE ( "",p1cBox );
 	showStrLE ( "",ExmaxLbl );
-	if ( !ok ) return;
-	if ( v<=0 ) return;
-	K1c=v/EU[EUnitBox->currentItem() ];
-	E1c=K1c+m1;
-	p1c=K2p ( K1c,m1 );
+	if ( !ok || v<= 0. ) return;
+
+	rkc_set_K1c ( prkc,v );
+	K1c=rkc_get_K1c ( prkc );
+	E1c=rkc_get_E1c ( prkc );
+	p1c=rkc_get_p1c ( prkc );
+
 	procK1c();
 	procK1_common ( CL_K1C );
 	setResultBox ( checkRectCond() );
@@ -1333,11 +1291,12 @@ void RelKinemaCls::rectCondSlot_Ex()
 	double v=ExBox->text().toDouble ( &ok );
 	if ( ok && v>=0 )
 	{
-		Ex=v/EU[EUnitBox->currentItem() ];
+		rkc_set_Ex ( prkc,v );
+		Ex=rkc_get_Ex ( prkc );
 		setQValue();
 		setK1th();
 		setK1cth();
-		setE3c ( theM );
+		setE3c ( );
 		setResultBox ( checkRectCond() );
 	}
 	else
@@ -1367,37 +1326,14 @@ bool RelKinemaCls::checkRectCond()
 
 void RelKinemaCls::setThetaMax()
 {
-	double b=p3c-E3c*beta;
-	if ( fabs ( b ) <=eps )
-	{
-		thetaMaxNe=true;
-		inv=false;
-		thetaMax=M_PI_2;
-	}
-	else if ( b<0 )
-	{
-		thetaMaxNe=false;
-		inv=true;
-		double d=p3c/ ( gamma*beta*m3 );
-		if ( d>1 )
-		{
-			fprintf ( stderr,"*** ASIN overflow detected: %g\n",d );
-			d=1;
-		}
-		thetaMax=asin ( d );
-		int K3sign_old=K3sign;
-		K3sign=0;
-		setK3 ( thetaMax );
-		K3sign=K3sign_old;
-		limThetaCM=theta3ToTheta3CM ( thetaMax );
-		limq=tcm2q ( limThetaCM );
-	}
-	else
-	{
-		thetaMaxNe=false;
-		inv=false;
-		thetaMax=M_PI;
-	}
+	rkc_set_th3Max ( prkc );
+	thetaMax=rkc_get_th3Max ( prkc );
+	thetaMaxCM=rkc_get_th3cMax ( prkc );
+	inv=rkc_get_invKin ( prkc );
+	thetaMaxNe=rkc_get_th3MaxNe ( prkc );
+
+	qmax=rkc_get_qMax ( prkc );
+	qmin=rkc_get_qMin ( prkc );
 }
 
 void RelKinemaCls::setResultBox ( bool on )
@@ -1419,6 +1355,40 @@ void RelKinemaCls::setResultBox ( bool on )
 
 void RelKinemaCls::changeEUnitSlot()
 {
+	int i=EUnitBox->currentItem();
+	rkc_set_eunit ( prkc,i+1 );
+
+	K1=rkc_get_K1 ( prkc );
+	p1=rkc_get_p1 ( prkc );
+	K1c=rkc_get_K1c ( prkc );
+	p1c=rkc_get_p1c ( prkc );
+	K1th=rkc_get_K1Min ( prkc );
+	p1th=rkc_get_p1Min ( prkc );
+	K1cth=rkc_get_K1cMin ( prkc );
+	p1cth=rkc_get_p1cMin ( prkc );
+
+	QValue=rkc_get_QValue ( prkc );
+	Ex=rkc_get_Ex ( prkc );
+	Exmax=rkc_get_ExMax ( prkc );
+
+	K3=rkc_get_K3 ( prkc );
+	K4=rkc_get_K4 ( prkc );
+	p3=rkc_get_p3 ( prkc );
+	p4=rkc_get_p4 ( prkc );
+	K3c=rkc_get_K3c ( prkc );
+	K4c=rkc_get_K4c ( prkc );
+	p3c=rkc_get_p3c ( prkc );
+	p4c=rkc_get_p4c ( prkc );
+
+	k3unitLbl->setText ( EUnitLbl[i] );
+	k3cunitLbl->setText ( EUnitLbl[i] );
+	k4unitLbl->setText ( EUnitLbl[i] );
+	k4cunitLbl->setText ( EUnitLbl[i] );
+	p3unitLbl->setText ( EUnitLbl[i]+"/c" );
+	p3cunitLbl->setText ( EUnitLbl[i]+"/c" );
+	p4unitLbl->setText ( EUnitLbl[i]+"/c" );
+	p4cunitLbl->setText ( EUnitLbl[i]+"/c" );
+
 	showEnergyLE ( K1,K1Box );
 	showEnergyLE ( K1c,K1cBox );
 	showEnergyLE ( p1,p1Box );
@@ -1430,18 +1400,7 @@ void RelKinemaCls::changeEUnitSlot()
 	if ( K1cth>0 )	showEnergyL ( K1cth,K1cthLbl,"> " );
 	if ( p1th>0 ) showEnergyL ( p1th,p1thLbl,">" );
 	if ( p1cth>0 ) showEnergyL ( p1cth,p1cthLbl,">" );
-	if ( Exmax>0 ) showEnergyL ( Exmax,ExmaxLbl,"> " );
-
-	int i=EUnitBox->currentItem();
-
-	k3unitLbl->setText ( EUnitLbl[i] );
-	k3cunitLbl->setText ( EUnitLbl[i] );
-	k4unitLbl->setText ( EUnitLbl[i] );
-	k4cunitLbl->setText ( EUnitLbl[i] );
-	p3unitLbl->setText ( EUnitLbl[i]+"/c" );
-	p3cunitLbl->setText ( EUnitLbl[i]+"/c" );
-	p4unitLbl->setText ( EUnitLbl[i]+"/c" );
-	p4cunitLbl->setText ( EUnitLbl[i]+"/c" );
+	if ( Exmax>0 ) showEnergyL ( Exmax,ExmaxLbl,"< " );
 
 	showKp3();
 	showKp4();
@@ -1458,10 +1417,33 @@ void RelKinemaCls::showThetaMax()
 
 void RelKinemaCls::changeAUnitSlot()
 {
-	showAngleLE ( th3,ThetaLabBox );
-	showThetaMax();
+	double min,max,v;
+	rkc_set_aunit ( prkc,degBut->isChecked() ?1:0 );
+	thetaMax=rkc_get_th3Max ( prkc );
+	thetaMaxCM=rkc_get_th3cMax ( prkc );
 	if ( scrTypeBox->currentItem() !=ST_Q )	stepUnitLbl->setText ( getAngleUnit() );
-	scrTypeSlot();
+	switch ( scrTypeBox->currentItem() )
+	{
+		case ST_THETALAB:
+			th3=rkc_get_th3 ( prkc );
+			min=0.;
+			max=thetaMax;
+			v=th3;
+			break;
+		case ST_THETACM:
+			th3c=rkc_get_th3c ( prkc );
+			min=0.;
+			max=thetaMaxCM;
+			v=th3c;
+			break;
+		case ST_Q:
+			min=qmin;
+			max=qmax;
+			v=theq;
+			break;
+	}
+	showThetaMax();
+	setThetaBarStep ( min,max,thetaStepBox->value(),v );
 }
 
 void RelKinemaCls::showValueLE ( double v, QLineEdit *b )
@@ -1484,10 +1466,8 @@ void RelKinemaCls::showStrLE ( QString s, QLineEdit *b )
 
 void RelKinemaCls::showAngleLE ( double v, QLineEdit *b, QString p )
 {
-	double u=1;
-	if ( degBut->isChecked() ) u=RTD;
 	QString s;
-	s.sprintf ( double_format,v*u );
+	s.sprintf ( double_format,v );
 	showStrLE ( p+s,b );
 }
 
@@ -1497,35 +1477,10 @@ void RelKinemaCls::initResultBox()
 	showKp34c();
 }
 
-double RelKinemaCls::tcm2q ( double Theta3CM )
-{
-	double q=p1c*p1c+p3c*p3c-2.*p1c*p3c*cos ( Theta3CM );
-	if ( q<0 )
-	{
-		fprintf ( stderr,"tcm2q: *** SQRT overflow detected: %g\n",q );
-		q=0;
-	}
-	return sqrt ( q ) /hbarc;
-}
-
-double RelKinemaCls::q2tcm ( double q )
-{
-	double c= ( p1c*p1c+p3c*p3c-pow ( q*hbarc,2 ) ) / ( 2.*p1c*p3c );
-	if ( c>1 )
-	{
-		fprintf ( stderr,"q2tcm: *** ACOS overflow detected: %g\n",c );
-		c=1;
-	}
-	return acos ( c );
-}
-
 double RelKinemaCls::getThetaBarPos()
 {
-	return thetaBar->value() *thetaStepBox->value();
-}
-double RelKinemaCls::getThetaBarPosInRad()
-{
-	return thetaBar->value() *thetaStepBox->value() /RTD;
+	double v=thetaBar->value() *thetaStepBox->value() +*tbMin;
+	return v>*tbMax? *tbMax: v;
 }
 
 void RelKinemaCls::thetaBarSlot()
@@ -1552,38 +1507,9 @@ void RelKinemaCls::initEmissionAngleBox()
 	scrTypeSlot();
 }
 
-double RelKinemaCls::x2Rad ( double d )
+void RelKinemaCls::setth4 ( )
 {
-	if ( degBut->isChecked() )
-	{
-		return d/RTD;
-	}
-	else
-	{
-		return d;
-	}
-}
-
-void RelKinemaCls::setth4 ( double Theta3 )
-{
-	// cos of open angle
-	th4= ( p1*p1- ( p3*p3+p4*p4 ) ) / ( 2.*p3*p4 );
-	if ( p4==0 )   // inv
-	{
-		th4=M_PI_2;
-		return;
-	}
-	if ( th4>1. )
-	{
-		fprintf ( stderr,"*** th4: ACOS overflow detected: %g\n",th4 );
-		th4=1.;
-	}
-	else if ( th4<-1. )
-	{
-		fprintf ( stderr,"*** th4: ACOS underflow detected: %g\n",th4 );
-		th4=-1.;
-	}
-	th4=acos ( th4 )-Theta3;
+	th4=rkc_get_th4 ( prkc );
 }
 
 void RelKinemaCls::setAngle ( bool on )
@@ -1621,46 +1547,42 @@ void RelKinemaCls::thetaCMSlot ( bool internal )
 		setAngle ( false );
 		bool ok;
 		double v=ThetaCMBox->text().toDouble ( &ok );
-		if ( !ok ) return;
-		if ( v<0 ) return;
-		v=x2Rad ( v );
-		if ( v>M_PI ) return;
-		th3c=v;
-		updateThetaBar();
+		if ( !ok || v<0. || rkc_set_Theta3c ( prkc,v ) < 0 ) return;
+		th3c=rkc_get_th3c ( prkc );
 	}
 	else
 	{
+		if ( rkc_set_Theta3c ( prkc,th3c ) < 0 ) return;
 		showAngleLE ( th3c,ThetaCMBox );
 	}
-	th4c=M_PI-th3c;
-	setK3vCM ( th3c );
-	setK4 ( E3 );
-	th3=theta3CMToTheta3 ( th3c );
-	setth4 ( th3 );
-	setJ34 ( th3c );
+	th4c=rkc_get_th4c ( prkc );
+	setK3vCM ();
+	setK4 ();
+	th3=rkc_get_th3 ( prkc );
+	setth4 ( );
+	setJ34 ( );
 	setSpecParam();
-	theq=tcm2q ( th3c );
+	theq=rkc_get_q ( prkc );
 	setAngle ( true );
 	showValueLE ( theq,qBox );
 	showAngleLE ( th3,ThetaLabBox );
 	showTheta4();
+	if ( !internal ) updateThetaBar();
 }
 
-void RelKinemaCls::setJ34 ( double theta3CM )
+void RelKinemaCls::setJ34 ( )
 {
-	double c;
-	c=cos ( theta3CM ); //theta4CM = pi - theta3CM;
-	J3= ( gamma*p3* ( p3c+beta*E3c*c ) ) / ( p3c*p3c );
-	J4= ( gamma*p4* ( p4c-beta*E4c*c ) ) / ( p4c*p4c );
+	J3=rkc_get_J3 ( prkc );
+	J4=rkc_get_J4 ( prkc );
 	showValueLE ( J3,J3Box );
 	showValueLE ( J4,J4Box );
 }
 
-void RelKinemaCls::setK3vCM ( double theta3cm )
+void RelKinemaCls::setK3vCM ( )
 {
-	E3=gamma* ( E3c+beta*p3c*cos ( theta3cm ) );
-	K3=E3-m3;
-	p3=K2p ( K3,m3 );
+	E3=rkc_get_E3 ( prkc );
+	K3=rkc_get_K3 ( prkc );
+	p3=rkc_get_p3 ( prkc );
 	showKp3();
 }
 
@@ -1682,77 +1604,20 @@ void RelKinemaCls::showKp4()
 	showEnergyLE ( p4,p4Box );
 }
 
-void RelKinemaCls::setK4 ( double E3_ )
+void RelKinemaCls::setK4 ( )
 {
-	E4= ( E1+E2 )-E3_;
-	K4=E4- ( m4+Ex );
-	if ( K4<0 )
-	{
-		fprintf ( stderr,"*** K4 underflow detected: %g\n",K4 );
-		K4=0;
-		E4=m4+Ex;
-		p4=0;
-	}
-	else
-	{
-		p4=K2p ( K4,m4+Ex );
-	}
+	E4=rkc_get_E4 ( prkc );
+	K4=rkc_get_K4 ( prkc );
+	p4=rkc_get_p4 ( prkc );
 	showKp4();
 }
 
-void RelKinemaCls::setK3 ( double theta3 )
+void RelKinemaCls::setK3 ( )
 {
-	double c,ss,d;
-	c= ( cos ( theta3 ) );
-	if ( inv ) c=fabs ( c ); //<<<<<<<<<<<<<<<<<<<<<<
-	ss=1-pow ( beta*c,2 );
-	d=1-pow ( m3/E3c*gamma,2 ) *ss;
-	if ( d<0 ) d=0;
-	E3=E3c/gamma* ( 1+K3sign*beta*c*sqrt ( d ) ) /ss;
-	K3=E3-m3;
-	if ( K3<0 )
-	{
-		fprintf ( stderr,"*** K3 underflow detected: %g\n",K3 );
-		K3=0;
-		E3=m3;
-		p3=0;
-	}
-	else
-	{
-		p3=K2p ( K3,m3 );
-	}
+	K3=rkc_get_K3 ( prkc );
+	p3=rkc_get_p3 ( prkc );
+	E3=rkc_get_E3 ( prkc );
 	showKp3();
-}
-
-double RelKinemaCls::theta3ToTheta3CM ( double t )
-{
-	double c=gamma* ( p3*cos ( t )-beta*E3 ) /p3c;
-	if ( c>1. )
-	{
-		fprintf ( stderr,"*** th3: ACOS overflow detected: %g\n",c );
-		return 0.;
-	}
-	else if ( c<-1. )
-	{
-		fprintf ( stderr,"*** th3: ACOS underflow detected: %g\n",c );
-		return M_PI;
-	}
-	return acos ( c );
-}
-double RelKinemaCls::theta3CMToTheta3 ( double t )
-{
-	double c=gamma* ( p3c*cos ( t ) +beta*E3c ) /p3;
-	if ( c>1. )
-	{
-		fprintf ( stderr,"*** th3c: ACOS overflow detected: %g\n",c );
-		return 0.;
-	}
-	else if ( c<-1. )
-	{
-		fprintf ( stderr,"*** th3c: ACOS underflow detected: %g\n",c );
-		return M_PI;
-	}
-	return acos ( c );
 }
 
 void RelKinemaCls::thetaLabSlot ( bool internal )
@@ -1766,28 +1631,27 @@ void RelKinemaCls::thetaLabSlot ( bool internal )
 		setAngle ( false );
 		bool ok;
 		double v=ThetaLabBox->text().toDouble ( &ok );
-		if ( !ok ) return;
-		v=x2Rad ( v );
-		if ( v>thetaMax || v<0. ) return;
-		th3=v;
-		updateThetaBar();
+		if ( !ok || v<0. || rkc_set_Theta3 ( prkc,v ) < 0 ) return;
+		th3=rkc_get_th3 ( prkc );
 	}
 	else
 	{
+		if ( rkc_set_Theta3 ( prkc,th3 ) < 0 ) return;
 		showAngleLE ( th3,ThetaLabBox );
 	}
-	setK3 ( th3 );
-	setK4 ( E3 );
-	th3c=theta3ToTheta3CM ( th3 );
-	setJ34 ( th3c );
-	th4c=M_PI-th3c;
-	setth4 ( th3 );
-	theq=tcm2q ( th3c );
+	setK3 ( );
+	setK4 ();
+	th3c=rkc_get_th3c ( prkc );
+	setJ34 ( );
+	th4c=rkc_get_th4c ( prkc );
+	setth4 ( );
+	theq=rkc_get_q ( prkc );
 	setSpecParam();
 	setAngle ( true );
 	showValueLE ( theq,qBox );
 	showAngleLE ( th3c,ThetaCMBox );
 	showTheta4();
+	if ( !internal ) updateThetaBar();
 }
 
 void RelKinemaCls::thetaLabSlot()
@@ -1809,27 +1673,28 @@ void RelKinemaCls::qSlot ( bool internal )
 		bool ok;
 		double v=qBox->text().toDouble ( &ok );
 		if ( !ok ) return;
-		if ( v<qmin || v>qmax ) return;
+		if ( v<qmin || v>qmax || rkc_set_q ( prkc, v ) < 0 ) return;
 		theq=v;
 		setAngle ( true );
-		updateThetaBar();
 	}
 	else
 	{
+		if ( rkc_set_q ( prkc,theq ) < 0 ) return;
 		showValueLE ( theq,qBox );
 	}
-	th3c=q2tcm ( theq );
-	th4c=M_PI-th3c;
-	setK3vCM ( th3c );
-	setK4 ( E3 );
-	th3=theta3CMToTheta3 ( th3c );
-	setth4 ( th3 );
-	setJ34 ( th3c );
+	th3c=rkc_get_th3c ( prkc );
+	th4c=rkc_get_th4c ( prkc );
+	setK3vCM ();
+	setK4 ( );
+	th3=rkc_get_th3 ( prkc );
+	setth4 ( );
+	setJ34 ( );
 	setSpecParam();
 
 	showAngleLE ( th3,ThetaLabBox );
 	showAngleLE ( th3c,ThetaCMBox );
 	showTheta4();
+	if ( !internal ) updateThetaBar();
 }
 
 void RelKinemaCls::setSpecParam()
@@ -1856,12 +1721,12 @@ void RelKinemaCls::setSpecParam()
 	}
 
 // dK3/dth3
-	kinemaShift=sin ( th3 ) *J3*gamma*p3c*beta; // in MeV/rad
+	kinemaShift=rkc_get_KShift ( prkc );
 	showValueLE ( kinemaShift*u1, dK3_dth3Box );
 	dK3_dth3_unitLbl->setText ( L1 );
 
 // dp3/dth3/p3
-	factorK=kinemaShift*E3/ ( p3*p3 ); // in 1/rad
+	factorK=rkc_get_KFactor ( prkc );
 	showValueLE ( factorK*u2,KparamBox );
 	KparamUnitLbl->setText ( L2 );
 
@@ -1900,25 +1765,14 @@ void RelKinemaCls::scrTypeSlot()
 		case ST_THETALAB:
 			eval=&RelKinemaCls::thetaLabSlot;
 			v=ThetaLabBox->text().toDouble ( &ok );
-			if ( degBut->isChecked() )
-			{
-				getThetaBarValue=&RelKinemaCls::getThetaBarPosInRad;
-				max=thetaMax*RTD;
-			}
-			else
-			{
-				getThetaBarValue=&RelKinemaCls::getThetaBarPos;
-				max=thetaMax;
-			}
-			min=0;
+			getThetaBarValue=&RelKinemaCls::getThetaBarPos;
+			max=thetaMax;
+			min=0.;
 			unit=getAngleUnit();
 			L=theLabLbl;
-			K3sign=1;
-			if ( inv )
-			{
-				anotherSolutionBox->setEnabled ( true );
-				anotherSolutionBox->setChecked ( false );
-			}
+			rkc_set_K3Sign ( prkc,1 );
+			anotherSolutionBox->setEnabled (  inv && !thetaMaxNe );
+			anotherSolutionBox->setChecked ( false );
 			tbMax=&thetaMax;
 			tbMin=&fZero;
 			tbTarg=&th3;
@@ -1927,22 +1781,14 @@ void RelKinemaCls::scrTypeSlot()
 		case ST_THETACM:
 			eval=&RelKinemaCls::thetaCMSlot;
 			v=ThetaCMBox->text().toDouble ( &ok );
-			if ( degBut->isChecked() )
-			{
-				getThetaBarValue=&RelKinemaCls::getThetaBarPosInRad;
-				max=180;
-			}
-			else
-			{
-				getThetaBarValue=&RelKinemaCls::getThetaBarPos;
-				max=M_PI;
-			}
-			min=0;
+			getThetaBarValue=&RelKinemaCls::getThetaBarPos;
+			max=thetaMaxCM;
+			min=0.;
 			unit=getAngleUnit();
 			L=theCMLbl;
 			anotherSolutionBox->setEnabled ( false );
 			anotherSolutionBox->setChecked ( false );
-			tbMax=&fPI;
+			tbMax=&thetaMaxCM;
 			tbMin=&fZero;
 			tbTarg=&th3c;
 			tbEval=&RelKinemaCls::thetaCMSlot;
@@ -1964,8 +1810,7 @@ void RelKinemaCls::scrTypeSlot()
 			break;
 	}
 	stepUnitLbl->setText ( unit );
-	if ( !ok ) return;
-	if ( d==0. ) return;
+	if ( !ok || d == 0. ) return;
 
 	L->setPaletteForegroundColor ( "blue" );
 	QFont f=thefont;
@@ -1985,18 +1830,29 @@ void RelKinemaCls::setThetaBarStep ( double min, double max, double d, double v 
 	{
 		v=max;
 	}
+
 	if ( d<=0. || d>max )
 	{
 		d=max/100.0;
 		if ( d<min ) d=min;
-		thetaStepBox->setValue ( getExpValue ( d ) );
+		thetaStepBox->blockSignals ( true );
+		thetaStepBox->setValue ( d=getExpValue ( d ) );
+		thetaStepBox->blockSignals ( false );
 	}
-	int imax=floor ( max/d+0.5 );
-	int imin=floor ( min/d+0.5 );
-	if ( thetaMaxNe ) imax--;
-	thetaBar->setMinValue ( imin );
-	thetaBar->setMaxValue ( imax );
-	thetaBar->setValue ( floor ( v/d+0.5 ) );
+	int n=floor ( ( max-min ) /d+0.5 );
+	if ( *tbMax>n*thetaStepBox->value() +*tbMin ) n++;
+	thetaBar->setMinValue ( 0 );
+	thetaBar->setMaxValue ( n );
+	int i=floor ( ( v-*tbMin ) /d+0.5 );
+	if ( i<0 )
+	{
+		i=0;
+	}
+	else if ( i>n )
+	{
+		i=n;
+	}
+	thetaBar->setValue ( i );
 }
 
 double RelKinemaCls::getExpValue ( double x )
@@ -2032,11 +1888,11 @@ void RelKinemaCls::anotherSolutionSlot()
 {
 	if ( anotherSolutionBox->isChecked() )
 	{
-		K3sign=-1;
+		rkc_set_K3Sign ( prkc,-1 );
 	}
 	else
 	{
-		K3sign=1;
+		rkc_set_K3Sign ( prkc,1 );
 	}
 	thetaBar->setValue ( 0 );
 }
@@ -2158,61 +2014,41 @@ void RelKinemaCls::stripSlot()
 
 void RelKinemaCls::showResultListSlot()
 {
-	resultWindowCls *win = new resultWindowCls ( NULL,NULL,Qt::WDestructiveClose );
-	win->initResultDescBox ( theReaction, K1, p1, Ex, QValue, beta,gamma,
-	                         m1/AMU, m2/AMU, m3/AMU, m4/AMU, double_format );
-	win->homedir=HOME;
-	win->setFont ( thefont );
+	tableBut->setEnabled ( false );
 
-	int col_first=scrTypeBox->currentItem();
-
-	int ie=EUnitBox->currentItem();
-	double eu=EU[ie];
-	QString el=EUnitLbl[ie];
-	QString pl=el+"/c";
-	QString al;
-	double au;
-	if ( degBut->isChecked() )
-	{
-		al="deg";
-		au=RTD;
-	}
-	else
-	{
-		au=1.;
-		al="rad";
-	}
 	int irmin=thetaBar->minValue();
 	int irmax=thetaBar->maxValue();
 	int nr=irmax-irmin+1;
 
-	win->resultTable->setNumRows ( nr+1 +1 ); //<<<<<<<<<<<<<
-	win->resultTable->setText ( 1,col_th3,       al );
-	win->resultTable->setText ( 1,col_th3c,      al );
-	win->resultTable->setText ( 1,col_q,     "1/fm" );
-	win->resultTable->setText ( 1,col_K3,        el );
-	win->resultTable->setText ( 1,col_p3,        pl );
-	win->resultTable->setText ( 1,col_J3,        "" );
-	win->resultTable->setText ( 1,col_ks, el+"/"+al );
-	win->resultTable->setText ( 1,col_fk,   "1/"+al );
-	win->resultTable->setText ( 1,col_th4,       al );
-	win->resultTable->setText ( 1,col_th4c,      al );
-	win->resultTable->setText ( 1,col_K4,        el );
-	win->resultTable->setText ( 1,col_p4,        pl );
-	win->resultTable->setText ( 1,col_J4,        "" );
-	win->resultTable->verticalHeader()->setLabel ( 0,"plot" );
-	win->resultTable->verticalHeader()->setLabel ( 1,"unit" );
+	resultWindowCls *win = new resultWindowCls ( NULL,NULL,Qt::WDestructiveClose );
+	win->homedir=&HOME;
+	win->setFont ( thefont );
+	win->col_first=scrTypeBox->currentItem();
 
-	tableBut->setEnabled ( false );
-	rwt = new rwThreadCls ( this, win, eu, au, irmin, irmax, col_first, double_format );
-	connect ( rwt,SIGNAL ( done ( resultWindowCls* ) ),this,SLOT ( teDone ( resultWindowCls* ) ) );
+	win->initResultDescBox ( theReaction, K1, p1, Ex, QValue, beta,gamma,
+	                         m1/AMU, m2/AMU, m3/AMU, m4/AMU, double_format );
+
+	QString el=EUnitLbl[EUnitBox->currentItem() ];
+	QString pl=el+"/c";
+	QString al;
+	degBut->isChecked() ? al="deg": al="rad";
+
+	win->initResultTable ( nr,el,al,pl );
+	win->show();
+
+	rwt = new rwThreadCls ( thetaStepBox->value(), *tbMin, irmax,
+	                        prkc, scrTypeBox->currentItem(), double_format );
+	connect ( win,SIGNAL ( done ( void ) ),this,SLOT ( teDone ( void ) ) );
+	win->sl=&rwt->sl;
+	win->ndone=&rwt->ndone;
 	stopBut->setEnabled ( true );
-	rwt->run();
+	rwt->start();
+	win->startPoll();
 }
 
-void RelKinemaCls::teDone ( resultWindowCls *win )
+void RelKinemaCls::teDone ( void )
 {
-	win->show();
+	delete rwt;
 	tableBut->setEnabled ( true );
 	stopBut->setEnabled ( false );
 }
@@ -2228,20 +2064,12 @@ void RelKinemaCls::thetaStepSlot()
 		case ST_THETALAB:
 			v=ThetaLabBox->text().toDouble ( &ok );
 			max=thetaMax;
-			if ( degBut->isChecked() ) max*=RTD;
-			min=0;
+			min=0.;
 			break;
 		case ST_THETACM:
 			v=ThetaCMBox->text().toDouble ( &ok );
-			if ( degBut->isChecked() )
-			{
-				max=180.0;
-			}
-			else
-			{
-				max=M_PI;
-			}
-			min=0;
+			max=thetaMaxCM;
+			min=0.;
 			break;
 		case ST_Q:
 			v=qBox->text().toDouble ( &ok );
@@ -2265,10 +2093,10 @@ void RelKinemaCls::updateThetaBar()
 	switch ( scrTypeBox->currentItem() )
 	{
 		case ST_THETALAB:
-			v=th3*RTD;
+			v=th3;
 			break;
 		case ST_THETACM:
-			v=th3c*RTD;
+			v=th3c;
 			break;
 		case ST_Q:
 			v=theq;
@@ -2464,8 +2292,72 @@ void RelKinemaCls::massDataDirSlot()
 	}
 }
 
+void RelKinemaCls::calcSlot()
+{
+	rkCalcCls *win = new rkCalcCls ( NULL,NULL,Qt::WDestructiveClose, &CONFIGFILE );
+	if ( !win->initRKC() )
+	{
+		KMessageBox::sorry ( this,"Failed to start calculator","internal error" );
+		return;
+	}
+
+	win->setParameter ( &m1,"m1" );
+	win->setParameter ( &m2,"m2" );
+	win->setParameter ( &m3,"m3" );
+	win->setParameter ( &m4,"m4" );
+
+	win->setParameter ( &E1,"E1" );
+	win->setParameter ( &E2,"E2" );
+	win->setParameter ( &E3,"E3" );
+	win->setParameter ( &E4,"E4" );
+
+	win->setParameter ( &p1,"p1" );
+	win->setParameter ( &p2,"p2" );
+	win->setParameter ( &p3,"p3" );
+	win->setParameter ( &p4,"p4" );
+
+	win->setParameter ( &K1,"K1" );
+	win->setParameter ( &K2,"K2" );
+	win->setParameter ( &K3,"K3" );
+	win->setParameter ( &K4,"K4" );
+
+	win->setParameter ( &E1c,"E1c" );
+	win->setParameter ( &E2c,"E2c" );
+	win->setParameter ( &E3c,"E3c" );
+	win->setParameter ( &E4c,"E4c" );
+
+	win->setParameter ( &p1c,"p1c" );
+	win->setParameter ( &p2c,"p2c" );
+	win->setParameter ( &p3c,"p3c" );
+	win->setParameter ( &p4c,"p4c" );
+
+	win->setParameter ( &K1c,"K1c" );
+	win->setParameter ( &K2c,"K2c" );
+	win->setParameter ( &K3c,"K3c" );
+	win->setParameter ( &K4c,"K4c" );
+
+	win->setParameter ( &beta,"beta" );
+	win->setParameter ( &gamma,"gamma" );
+	win->setParameter ( &QValue,"QValue" );
+	win->setParameter ( &theq,"q" );
+	win->setParameter ( &qmax, "qmax" );
+	win->setParameter ( &qmin, "qmin" );
+
+	win->setParameter ( &J3,"J3" );
+	win->setParameter ( &J4,"J4" );
+
+	win->setParameter ( &th3,"th3" );
+	win->setParameter ( &th4,"th4" );
+	win->setParameter ( &th3c,"th3c" );
+	win->setParameter ( &th4c,"th4c" );
+	win->setParameter ( &thetaMax, "th3max" );
+
+	win->show();
+}
+
 void RelKinemaCls::stopSlot()
 {
+	stopBut->setEnabled ( false );
 }
 
 #include "relkinemaCls.moc"

@@ -17,6 +17,8 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <stdlib.h>
+
 #include "resultwindowcls.h"
 #include "kinemaplotcls.h"
 
@@ -28,6 +30,7 @@
 #include <qmessagebox.h>
 #include <qpushbutton.h>
 #include <qtable.h>
+#include <qtimer.h>
 
 #include <kfiledialog.h>
 #include <kmessagebox.h>
@@ -42,6 +45,95 @@ resultWindowCls::resultWindowCls ( QWidget *parent, const char *name, WFlags wf 
 {
 	msgLbl->clear();
 	nplots=0;
+	timerid=0;
+}
+
+void resultWindowCls::initResultTable ( int nr, QString el, QString al, QString pl )
+{
+	resultTable->setNumRows ( nrow_hdr ); //<<<<<<<<<<<<<
+	nrow=nr+nrow_hdr;
+	resultTable->setText ( 1,col_th3,       al );
+	resultTable->setText ( 1,col_th3c,      al );
+	resultTable->setText ( 1,col_q,     "1/fm" );
+	resultTable->setText ( 1,col_K3,        el );
+	resultTable->setText ( 1,col_p3,        pl );
+	resultTable->setText ( 1,col_J3,        "" );
+	resultTable->setText ( 1,col_ks, el+"/"+al );
+	resultTable->setText ( 1,col_fk,   "1/"+al );
+	resultTable->setText ( 1,col_th4,       al );
+	resultTable->setText ( 1,col_th4c,      al );
+	resultTable->setText ( 1,col_K4,        el );
+	resultTable->setText ( 1,col_p4,        pl );
+	resultTable->setText ( 1,col_J4,        "" );
+	resultTable->verticalHeader()->setLabel ( 0,"plot" );
+	resultTable->verticalHeader()->setLabel ( 1,"unit" );
+}
+
+void resultWindowCls::startPoll ( void )
+{
+	initCTI();
+	nrmax=5000+nrow_hdr;
+	timerid=startTimer ( 200 );//<<<<<<<<<<<<
+}
+
+void resultWindowCls::setTable()
+{
+	QStringList::Iterator it=sl->begin();
+	resultTable->setNumRows ( nrow>nrmax ? nrmax: nrow );
+	int ir=nrow_hdr-1;
+	for ( ;; )
+	{
+		ir++;
+		resultTable->verticalHeader()->setLabel ( ir,QString::number ( ir-nrow_hdr+1 ) );
+		for ( int ic=0;ic<ncol;ic++ )
+		{
+			resultTable->setText ( ir,ic,* ( it++ ) );
+		}
+		if ( ir+1==nrow ) break;
+		if ( ir+1 == nrmax )
+		{
+			KGuiItem yes ( "Yes for all" );
+			KGuiItem no ( "Yes" );
+			switch ( KMessageBox::questionYesNoCancel ( this,
+			         "Too Large Table!\n"
+			         +QString::number ( ir-nrow_hdr+1 ) +" of "+QString::number ( nrow-nrow_hdr )
+			         +"("+QString::number ( float ( ir-nrow_hdr+1 ) /float ( nrow-nrow_hdr ) *100. ) +"%) read\n"
+			         +"Continue?",
+			         "kinemaTable: Warning!",yes,no ) )
+			{
+				case KMessageBox::Yes:
+					resultTable->setNumRows ( nrow );
+					break;
+				case KMessageBox::No:
+					nrmax*=2; //<<<<<<<<<<<<
+					resultTable->setNumRows ( nrow>nrmax ? nrmax: nrow );
+					break;
+				default:
+					nrow=nrmax;
+					goto done;
+			}
+		}
+	}
+done:
+	adjTable();
+	if ( col_first!=0 ) resultTable->swapColumns ( 0,col_first,true );
+	msgLbl->setPaletteForegroundColor ( "Green" );
+	msgLbl->setText ( "<b> Ready" );
+	emit done();
+}
+
+void resultWindowCls::timerEvent ( QTimerEvent *e )
+{
+	if ( *ndone>=0 )
+	{
+		msgLbl->setPaletteForegroundColor ( "blue" );
+		msgLbl->setText ( "<b>Calculating... "
+		                  +QString::number ( *ndone ) +" of "+QString::number ( nrow-nrow_hdr ) +" done." );
+		return;
+	}
+	killTimer ( timerid );
+	msgLbl->setText ( "<b> Reading table... Please wait" );
+	setTable();
 }
 
 void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnergy, double incidentMomentum, double Ex, double QValue, double beta, double gamma, double m1, double m2, double m3, double m4, QString fmt )
@@ -73,17 +165,17 @@ void resultWindowCls::initCTI()
 	s.append ( "Y" );
 	QPalette pal=resultTable->palette();
 	QPalette palorig=pal;
-	pal.setColor(QColorGroup::ButtonText,"blue");
-	resultTable->setPalette(pal);
-	resultTable->horizontalHeader()->setPalette(palorig);
-	resultTable->verticalHeader()->setPalette(palorig);
-	for ( int ic=0;ic<resultTable->numCols();ic++ )
+	pal.setColor ( QColorGroup::ButtonText,"blue" );
+	resultTable->setPalette ( pal );
+	resultTable->horizontalHeader()->setPalette ( palorig );
+	resultTable->verticalHeader()->setPalette ( palorig );
+	for ( int ic=0;ic<ncol;ic++ )
 	{
 		cti[ic] = new QComboTableItem ( resultTable,NULL );
 		cti[ic]->setStringList ( s );
 		resultTable->setItem ( 0,ic,cti[ic] );
 	}
-	for ( int ir=1;ir<resultTable->numRows();ir++ )
+	for ( int ir=1;ir<nrow;ir++ )
 	{
 		resultTable->setRowReadOnly ( ir,true );
 	}
@@ -91,10 +183,7 @@ void resultWindowCls::initCTI()
 
 void resultWindowCls::saveasSlot()
 {
-	int const ncol=resultTable->numCols();
-	int const nrow=resultTable->numRows();
-
-	QString f= KFileDialog::getSaveFileName ( homedir,
+	QString f= KFileDialog::getSaveFileName ( *homedir,
 	           "*.csv|text file(*.csv)\n*.txt|text file(*.txt)\n*.*|All(*.*)",
 	           this,
 	           tr ( "Save result as" ) );
@@ -110,6 +199,14 @@ void resultWindowCls::saveasSlot()
 		delim=" ";
 	}
 	QFile file ( f );
+	if ( file.exists() )
+	{
+		if ( KMessageBox::questionYesNo ( this,
+		                                  "File already exists:\n"+f+"\n Replace it?",
+		                                  "kinemaTable: Warning!" )
+		        !=KMessageBox::Yes ) return;
+	}
+
 	if ( file.open ( IO_WriteOnly ) )
 	{
 		QTextStream stream ( &file );
@@ -139,13 +236,13 @@ void resultWindowCls::saveasSlot()
 		}
 		file.close();
 		msgLbl->setPaletteForegroundColor ( "blue" );
-		msgLbl->setText ( "saved as "+f );
+		msgLbl->setText ( "<b> saved as "+f );
 	}
 	else
 	{
 		QMessageBox::critical ( this, "relkinema: ", "Cannot open file!\n"+f, tr ( "&ok" ) );
 		msgLbl->setPaletteForegroundColor ( "red" );
-		msgLbl->setText ( "saving "+f+" failed!" );
+		msgLbl->setText ( "<b> saving "+f+" failed!" );
 	}
 }
 
@@ -190,6 +287,7 @@ void resultWindowCls::plotSlot()
 	int k=0;
 	int xc,yc;
 	int px=-1;
+	QComboTableItem *c;
 
 	xc=countCTI ( 1,&px );
 	yc=countCTI ( 2 );
@@ -210,7 +308,6 @@ void resultWindowCls::plotSlot()
 			if ( ic==px ) continue;
 			if ( resultTable->isColumnSelected ( ic,true ) )
 			{
-				QComboTableItem *c;
 				int ci;
 				if ( k==0 )
 				{
@@ -231,7 +328,6 @@ void resultWindowCls::plotSlot()
 	{
 		for ( int ic=0;ic<resultTable->numCols();ic++ )
 		{
-			QComboTableItem *c;
 			c= ( QComboTableItem* ) resultTable->item ( 0,ic );
 			if ( c->currentItem() ==2 )
 			{
@@ -242,17 +338,23 @@ void resultWindowCls::plotSlot()
 	}
 	else
 	{
-		KMessageBox::sorry ( this, "No y-data selected","error" );
+		KMessageBox::sorry ( this, "No x-data selected","error" );
 		return;
 	}
 	switch ( k )
 	{
 		case 0:
+			c= ( QComboTableItem* ) resultTable->item ( 0,0 );
+			c->setCurrentItem ( 1 );
+			c= ( QComboTableItem* ) resultTable->item ( 0,1 );
+			c->setCurrentItem ( 2 );
 			cols[0]=0;
 			cols[1]=1;
 			k=2;
 			break;
 		case 1:
+			c= ( QComboTableItem* ) resultTable->item ( 0,0 );
+			c->setCurrentItem ( 2 );
 			cols[1]=0;
 			k=2;
 			break;
@@ -348,6 +450,10 @@ void resultWindowCls::closeEvent ( QCloseEvent *e )
 {
 	if ( nplots==0 )
 	{
+		for ( int ic=0;ic<ncol;ic++ )
+		{
+			delete cti[ic];
+		}
 		e->accept();
 	}
 	else

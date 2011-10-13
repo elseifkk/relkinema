@@ -777,7 +777,7 @@ void kinemaPlotCls::saveas ( int mode )
 	}
 	filter.append ( "*.*|All (*.*)" );
 
-	QString f= KFileDialog::getSaveFileName ( homedir,filter,this,
+	QString f= KFileDialog::getSaveFileName ( *homedir,filter,this,
 	           tr ( "Save plot as" ) );
 	if ( f.length() <=0 ) return;
 	if ( QFile::exists ( f ) )

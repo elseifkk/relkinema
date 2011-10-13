@@ -158,78 +158,6 @@ DISCLAIMER OF WARRANTIES:
             <bool>false</bool>
         </property>
     </widget>
-    <widget class="QLabel">
-        <property name="name">
-            <cstring>VersionLbl</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>220</x>
-                <y>80</y>
-                <width>220</width>
-                <height>30</height>
-            </rect>
-        </property>
-        <property name="paletteForegroundColor">
-            <color>
-                <red>240</red>
-                <green>240</green>
-                <blue>240</blue>
-            </color>
-        </property>
-        <property name="paletteBackgroundColor">
-            <color>
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-            </color>
-        </property>
-        <property name="font">
-            <font>
-                <family>Helvetica</family>
-                <pointsize>14</pointsize>
-            </font>
-        </property>
-        <property name="text">
-            <string>Version: 0.1.4</string>
-        </property>
-    </widget>
-    <widget class="QLabel">
-        <property name="name">
-            <cstring>BuildLbl</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>220</x>
-                <y>110</y>
-                <width>450</width>
-                <height>45</height>
-            </rect>
-        </property>
-        <property name="paletteForegroundColor">
-            <color>
-                <red>240</red>
-                <green>240</green>
-                <blue>240</blue>
-            </color>
-        </property>
-        <property name="paletteBackgroundColor">
-            <color>
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-            </color>
-        </property>
-        <property name="font">
-            <font>
-                <pointsize>11</pointsize>
-            </font>
-        </property>
-        <property name="text">
-            <string>Build: June 1 2010 17:57 
-  @ pleiades.pet.cyric.tohoku.ac.jp</string>
-        </property>
-    </widget>
     <widget class="KURLLabel">
         <property name="name">
             <cstring>urlLbl</cstring>
@@ -383,7 +311,7 @@ DISCLAIMER OF WARRANTIES:
         <property name="geometry">
             <rect>
                 <x>220</x>
-                <y>150</y>
+                <y>160</y>
                 <width>450</width>
                 <height>51</height>
             </rect>
@@ -411,6 +339,78 @@ DISCLAIMER OF WARRANTIES:
         <property name="text">
             <string>Copyleft: (!c) 2011 Elseif Laboratory.
                All rights reversed.</string>
+        </property>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>BuildLbl</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>220</x>
+                <y>110</y>
+                <width>450</width>
+                <height>45</height>
+            </rect>
+        </property>
+        <property name="paletteForegroundColor">
+            <color>
+                <red>240</red>
+                <green>240</green>
+                <blue>240</blue>
+            </color>
+        </property>
+        <property name="paletteBackgroundColor">
+            <color>
+                <red>0</red>
+                <green>0</green>
+                <blue>0</blue>
+            </color>
+        </property>
+        <property name="font">
+            <font>
+                <pointsize>11</pointsize>
+            </font>
+        </property>
+        <property name="text">
+            <string>Build: June 1 2010 17:57 
+  @ regulus.elseifkk.com</string>
+        </property>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>VersionLbl</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>220</x>
+                <y>80</y>
+                <width>220</width>
+                <height>30</height>
+            </rect>
+        </property>
+        <property name="paletteForegroundColor">
+            <color>
+                <red>240</red>
+                <green>240</green>
+                <blue>240</blue>
+            </color>
+        </property>
+        <property name="paletteBackgroundColor">
+            <color>
+                <red>0</red>
+                <green>0</green>
+                <blue>0</blue>
+            </color>
+        </property>
+        <property name="font">
+            <font>
+                <family>Helvetica</family>
+                <pointsize>14</pointsize>
+            </font>
+        </property>
+        <property name="text">
+            <string>Version: 0.4.0</string>
         </property>
     </widget>
 </widget>

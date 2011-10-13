@@ -84,7 +84,7 @@ static const char *Particle[]=
 	0
 };
 
-int const Zmax=118;
+int const Zmax=117;
 static const char *Element[]=
 {
 	"H",
@@ -210,14 +210,14 @@ int const Zmin_new=110; // of Ea, should be Ds
 static const char *newElement[]=
 {
 	"Ea",
-	"Ea",
-	"Ea",
-	"Ea",
-	"Ea",
-	"Ea",
-	"Ea",
-	"Ea",
-	"Ea",
+	"Eb",
+	"Ec",
+	"Ed",
+	"Ee",
+	"Ef",
+	"Eg",
+	"Eh",
+	"Ei",
 	0
 };
 

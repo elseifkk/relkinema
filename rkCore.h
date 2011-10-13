@@ -47,7 +47,7 @@ class rkCore
 		// (2) mandatory
 		void set_Ex ( double Ex_ );
 		// (3) getter
-		double ge_tQValue() {return QValue;};
+		double get_QValue() {return QValue;};
 		double get_K1Min() {return K1Min;};
 		double get_p1Min() {return p1Min;};
 		double get_K1cMin() {return K1cMin;};
@@ -102,7 +102,7 @@ class rkCore
 		static double K2p ( double K, double m ) {return sqrt ( K* ( K+2.*m ) );};
 		static double E2p ( double E, double m )
 		{
-			double p=E*E+m*m;
+			double p=E*E-m*m;
 			if ( p<0 )
 			{
 				warn ( "E2p", "SQRT underflow detected",&p );

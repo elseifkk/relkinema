@@ -17,33 +17,44 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef RWTHREADCLS_H
-#define RWTHREADCLS_H
+#ifndef RKCALCCLS_H
+#define RKCALCCLS_H
 
-#include <qthread.h>
-#include <qstringlist.h>
+#include "rkCalcDlg.h"
 
-class rwThreadCls: public QThread
+#include <qwidget.h>
+
+#include <fzc.h>
+
+class rkCalcCls: public rkCalcDlg
 {
+		Q_OBJECT
 	public:
-		rwThreadCls ( double step, double rmin, int irmax, size_t prkc, int sid, QString fmt )
-				:step ( step ), rmin ( rmin ), irmax ( irmax ),
-				prkc ( prkc ), sid ( sid ), fmt ( fmt ) {ndone=0;}
-	public:
-		QStringList sl;
-		int ndone;
+		rkCalcCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, const QString *configfile = 0 )
+		:rkCalcDlg ( parent, name, wf ), configfile (configfile){};
+		void setParameter ( const double *v, QString name );
+		bool initRKC();
 
 	private:
-		double step;
-		double rmin;
-		int irmax;
-		size_t prkc;
-		int sid;
-		QString fmt;
+		void saveConfig(QString);
+		void loadConfig(QString);
+		void mess ( QString,QColor c="black" , bool nl=true);
+
+	public:
+		const QString *configfile;
 
 	private:
-		void setRKCValue();
-		virtual void run();
+		size_t prpnc;
+		char cstr[LEN_FZCSTR_MAX];
+		size_t pcstr;
+
+	private slots:
+		void enterSlot ( void );
+		void clearSlot ( void );
+
+	protected:
+		void closeEvent ( QCloseEvent* );
+		void keyPressEvent ( QKeyEvent* );
+
 };
-
 #endif

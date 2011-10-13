@@ -261,7 +261,7 @@ void mdmCls::showMass ( QString m )
 
 void mdmCls::EBoxSlot()
 {
-	if ( EBox->count() <=0 ) return;
+	if ( EBox->count() <=0 || EBox->currentItem()<0) return;
 	QStringList::Iterator it = MList.at ( EBox->currentItem() );
 	if ( it!=NULL )
 	{
@@ -547,8 +547,13 @@ void mdmCls::extMassDataSlot()
 				if ( opened ) ostream.setDevice ( &ofile );
 			}
 			if ( opened )
-				if ( useFormalBox->isChecked() &&Z>=Zmin_new ) EL=Element[Z-1];
-			ostream << EL.leftJustify ( 9,' ' ) << m.simplifyWhiteSpace() << endl;
+			{
+				if ( useFormalBox->isChecked() &&Z>=Zmin_new && Z<=Zmax )
+				{
+					EL=Element[Z-1];
+				}
+				ostream << EL.leftJustify ( 9,' ' ) << m.simplifyWhiteSpace() << endl;
+			}
 		}
 		if ( opened ) ofile.close();
 		file.close();

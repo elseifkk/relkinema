@@ -23,10 +23,13 @@
 #include "resultWindow.h"
 
 #include <qtable.h>
+#include <qmutex.h>
 
-int const col_th3  =0;
-int const col_th3c =1;
-int const col_q    =2;
+int const nrow_hdr = 2;
+
+int const col_th3  = 0;
+int const col_th3c = 1;
+int const col_q    = 2;
 int const col_K3   = 3;
 int const col_p3   = 4;
 int const col_J3   = 5;
@@ -37,6 +40,7 @@ int const col_th4c = 9;
 int const col_K4   = 10;
 int const col_p4   = 11;
 int const col_J4   = 12;
+int const ncol     = 13;
 
 class resultWindowCls: public resultWindow
 {
@@ -50,22 +54,29 @@ class resultWindowCls: public resultWindow
 		                         double beta, double gamma,
 		                         double m1, double m2, double m3, double m4,
 		                         QString double_format );
-	public:
-		void adjTable();
-		void initCTI();
+		void startPoll();
+		void initResultTable ( int,QString,QString,QString );
 
 	public:
-		QString homedir;
-		int nplots;
+		QString *homedir;
+		QStringList *sl;
+		int *ndone;
+		int col_first;
 
 	private:
 		void setPlotPoints ( int ,int ,int,int );
 		void setPlotMinMax ( int,int );
 		void changeFontSize ( int );
 		int countCTI ( int,int *liid=NULL );
+		void adjTable();
+		void initCTI();
 
 	private:
-		QComboTableItem *cti[12];
+		QComboTableItem *cti[ncol];
+		int timerid;
+		int nrow;
+		int nrmax;
+		int nplots;
 
 	private slots:
 		void saveasSlot();
@@ -75,10 +86,16 @@ class resultWindowCls: public resultWindow
 		void hideDescSlot();
 		void plotDone();
 		void rtSlot ( int,int );
+		void setTable();
 
 	protected:
 		void keyPressEvent ( QKeyEvent* );
 		void closeEvent ( QCloseEvent* );
+		void timerEvent ( QTimerEvent * );
+
+	signals:
+		void done ( void );
+
 };
 
 #endif

@@ -17,45 +17,53 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-
 #include "rwthreadcls.h"
+#include "rkcore.h"
 
-#include <qscrollbar.h>
-#include <qtable.h>
+void rwThreadCls::setRKCValue()
+{
+	QString s;
+	sl.append ( s.sprintf ( fmt, rkc_get_th3 ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_th3c ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_q ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_K3 ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_p3 ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_J3 ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_KShift ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_KFactor ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_th4 ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_th4c ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_K4 ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_p4 ( prkc ) ) );
+	sl.append ( s.sprintf ( fmt, rkc_get_J4 ( prkc ) ) );
+}
 
 void rwThreadCls::run()
 {
-	rk->thetaBar->blockSignals ( true );
-	int ic=rk->thetaBar->value();
-	QString s;
-	int k=1; //<<<<<<<<<<<<
-	for ( int ir=irmin;ir<=irmax;ir++ )
+	prkc=rkc_cp ( prkc );
+	double x;
+	int ( *rkc_setter ) ( const size_t, const double );
+	switch ( sid )
 	{
-		k++;
-		rk->thetaBar->setValue ( ir );
-		rk->thetaBarSlot();
-		rw->resultTable->setText ( k,col_th3,  s.sprintf ( fmt, rk->th3*au ) );
-		rw->resultTable->setText ( k,col_th3c, s.sprintf ( fmt, rk->th3c*au ) );
-		rw->resultTable->setText ( k,col_q,    s.sprintf ( fmt, rk->theq ) );
-		rw->resultTable->setText ( k,col_K3,   s.sprintf ( fmt, rk->K3*eu ) );
-		rw->resultTable->setText ( k,col_p3,   s.sprintf ( fmt, rk->p3*eu ) );
-		rw->resultTable->setText ( k,col_J3,   s.sprintf ( fmt, rk->J3 ) );
-		rw->resultTable->setText ( k,col_ks,   s.sprintf ( fmt, rk->kinemaShift ) );
-		rw->resultTable->setText ( k,col_th4,  s.sprintf ( fmt, rk->th4*au ) );
-		rw->resultTable->setText ( k,col_th4c, s.sprintf ( fmt, rk->th4c*au ) );
-		rw->resultTable->setText ( k,col_K4,   s.sprintf ( fmt, rk->K4*eu ) );
-		rw->resultTable->setText ( k,col_p4,   s.sprintf ( fmt, rk->p4*eu ) );
-		rw->resultTable->setText ( k,col_J4,   s.sprintf ( fmt, rk->J4 ) );
-		rw->resultTable->setText ( k,col_fk,   s.sprintf ( fmt, rk->factorK ) );
-		rw->resultTable->verticalHeader()->setLabel ( k,QString::number ( ir+1 ) );
+		case 0:
+			rkc_setter=rkc_set_Theta3;
+			break;
+		case 1:
+			rkc_setter=rkc_set_Theta3c;
+			break;
+		case 2:
+			rkc_setter=rkc_set_q;
+			break;
 	}
-	if ( col_first!=0 ) rw->resultTable->swapColumns ( 0,col_first,true );
-	rw->initCTI();
-	rw->adjTable();
-	rk->thetaBar->blockSignals ( false );
-	rk->thetaBar->setValue ( ic );
-	emit done ( rw );
+	( *rkc_setter ) ( prkc,-1.0 );
+	setRKCValue();
+	for ( int ir=1;ir<=irmax;ir++ )
+	{
+		x=ir*step+rmin;
+		( *rkc_setter ) ( prkc,x );
+		setRKCValue();
+		ndone=ir;
+	}
+	ndone=-1;
+	rkc_uinit ( prkc );
 }
-
-
-#include "rwthreadcls.moc"

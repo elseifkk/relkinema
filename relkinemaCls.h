@@ -45,8 +45,6 @@ class RelKinemaCls: public RelKinemaDlg
 		void showEnergyLE ( double, QLineEdit * );
 		void showEnergyL ( double, QLineEdit *, QString prep="" );
 		void initReactionConditionBox();
-		double K2p ( double, double );
-		double p2E ( double, double );
 		void procK1_common ( int );
 		void procK1();
 		void procK1c();
@@ -55,22 +53,18 @@ class RelKinemaCls: public RelKinemaDlg
 		void setReactionLbl();
 		void setResultBox ( bool );
 		bool checkRectCond();
-		void setE3c ( double );
+		void setE3c ( );
 		void initResultBox();
 		void initEmissionAngleBox();
 		void showAngleLE ( double, QLineEdit*, QString prep="" );
 		void setThetaMax();
-		void setExmax ( double );
-		double x2Rad ( double d );
-		double getTheta3CM ( double );
-		void setK3 ( double );
+		void setExmax ( );
+		void setK3 ( );
 		void showValueLE ( double, QLineEdit* );
-		void setJ34 ( double );
+		void setJ34 ( );
 		void initThetaBar();
-		double tcm2q ( double );
-		double q2tcm ( double );
-		void setth3 ( double );
-		void setth4 ( double );
+		void setth3 ( );
+		void setth4 ( );
 		void setAngle ( bool );
 		double calcMass ( int, int );
 		void massTypeProc ( int id, QComboBox*,QLineEdit* );
@@ -90,40 +84,32 @@ class RelKinemaCls: public RelKinemaDlg
 		void showThetaMax();
 		void showStrLE ( QString s, QLineEdit *b );
 		QString getAngleUnit();
-		double theta3ToTheta3CM ( double );
-		double theta3CMToTheta3 ( double );
 		void setThetaBarStep ( double min, double max, double d, double v );
 		void showKp3();
 		void showKp4();
 		void showKp34c();
 		void showTheta4();
-		void setK3vCM ( double );
-		void setK4 ( double );
-		double getThetaBarPosInRad();
+		void setK3vCM ( );
+		void setK4 ( );
 		double getThetaBarPos();
 
-	public:
-		double th3,th4;
-		double th3c,th4c;
-		double K3,K4;
-		double p3,p4;
-		double J3,J4;
-		double kinemaShift, factorK;
-		double theq; // momentum transfer
-
 	private:
+		size_t prkc;
 		QString CONFIGFILE;
-		double theM;
 		double K1th,K1cth,Ex,Exmax;
 		double p1th,p1cth;
 		double E1,E2,E3,E4;
-		double K1,K2;
-		double p1,p2;
+		double K1,K2,K3,K4;
+		double p1,p2,p3,p4;
 		double E1c,E2c,E3c,E4c;
 		double K1c,K2c,K3c,K4c;
 		double p1c,p2c,p3c,p4c;
 		double gamma,beta;
-		double thetaMax, limThetaCM, limq;
+		double th3,th4,theq;
+		double th3c,th4c;
+		double J3,J4;
+		double kinemaShift, factorK;
+		double thetaMax, thetaMaxCM;
 		double m10,m20,m30,m40; // original mass
 		double m1,m2,m3,m4; // Projectile, Target, Ejectile, Residual
 		int a1,a2,a3,a4;
@@ -144,9 +130,6 @@ class RelKinemaCls: public RelKinemaDlg
 		QString nc1,nc2,nc3,nc4;
 		QString theReaction;
 
-	public slots:
-		void thetaBarSlot();
-
 	private slots:
 		void setMassSlot_0();
 		void setMassSlot_1();
@@ -166,6 +149,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void rectCondSlot_p1c();
 		void changeEUnitSlot();
 		void changeAUnitSlot();
+		void thetaBarSlot();
 		void thetaCMSlot();
 		void thetaLabSlot();
 		void qSlot();
@@ -193,8 +177,9 @@ class RelKinemaCls: public RelKinemaDlg
 		void redoSlot();
 		void returnSlot();
 		void stopSlot();
-		void teDone ( resultWindowCls* );
+		void teDone ();
 		void massDataDirSlot();
+		void calcSlot();
 
 	protected:
 		void timerEvent ( QTimerEvent *e );

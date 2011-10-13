@@ -41,7 +41,7 @@ class kinemaPlotCls: public kinemaPlot
 		int xcol,ycol;
 		int ycols[12];
 		int nycol;
-		QString homedir;
+		QString *homedir;
 
 	private:
 		int getMaxlenytitle();
