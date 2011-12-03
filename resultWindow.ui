@@ -570,79 +570,19 @@
                 </property>
             </widget>
             <widget class="QTable">
-                <column>
-                    <property name="text">
-                        <string>Theata3LAB</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>Theta3CM</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>q</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>K3</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>p3</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>dO3CM/dO3Lab</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>dK3/dTheta3LAB</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>1/p3(dp3/dTheta3Lab)</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>Theta4LAB</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>Theta4CM</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>K4</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>p4</string>
-                    </property>
-                </column>
-                <column>
-                    <property name="text">
-                        <string>dO4CM/dO4Lab</string>
-                    </property>
-                </column>
                 <property name="name">
                     <cstring>resultTable</cstring>
+                </property>
+                <property name="font">
+                    <font>
+                        <pointsize>11</pointsize>
+                    </font>
                 </property>
                 <property name="numRows">
                     <number>0</number>
                 </property>
                 <property name="numCols">
-                    <number>13</number>
+                    <number>0</number>
                 </property>
                 <property name="columnMovingEnabled">
                     <bool>true</bool>

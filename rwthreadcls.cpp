@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmai.com                                                     *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -20,27 +20,59 @@
 #include "rwthreadcls.h"
 #include "rkcore.h"
 
+#include <fzc.h>
+
 void rwThreadCls::setRKCValue()
 {
 	QString s;
-	sl.append ( s.sprintf ( fmt, rkc_get_th3 ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_th3c ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_q ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_K3 ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_p3 ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_J3 ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_KShift ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_KFactor ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_th4 ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_th4c ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_K4 ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_p4 ( prkc ) ) );
-	sl.append ( s.sprintf ( fmt, rkc_get_J4 ( prkc ) ) );
+	switch ( col_first )
+	{
+		case 0:
+			if ( BT ( plotmask, rkp_th3 ) ) sl.append ( s.sprintf ( fmt, rkc_get_th3 ( prkc ) ) );
+			if ( BT ( plotmask, rkp_th3c ) ) sl.append ( s.sprintf ( fmt, rkc_get_th3c ( prkc ) ) );
+			if ( BT ( plotmask, rkp_q ) ) sl.append ( s.sprintf ( fmt, rkc_get_q ( prkc ) ) );
+			break;
+		case 1:
+			if ( BT ( plotmask, rkp_th3c ) ) sl.append ( s.sprintf ( fmt, rkc_get_th3c ( prkc ) ) );
+			if ( BT ( plotmask, rkp_th3 ) ) sl.append ( s.sprintf ( fmt, rkc_get_th3 ( prkc ) ) );
+			if ( BT ( plotmask, rkp_q ) ) sl.append ( s.sprintf ( fmt, rkc_get_q ( prkc ) ) );
+			break;
+		case 2:
+			if ( BT ( plotmask, rkp_q ) ) sl.append ( s.sprintf ( fmt, rkc_get_q ( prkc ) ) );
+			if ( BT ( plotmask, rkp_th3 ) ) sl.append ( s.sprintf ( fmt, rkc_get_th3 ( prkc ) ) );
+			if ( BT ( plotmask, rkp_th3c ) ) sl.append ( s.sprintf ( fmt, rkc_get_th3c ( prkc ) ) );
+			break;
+	}
+	if ( BT ( plotmask, rkp_K3 ) ) sl.append ( s.sprintf ( fmt, rkc_get_K3 ( prkc ) ) );
+	if ( BT ( plotmask, rkp_p3 ) ) sl.append ( s.sprintf ( fmt, rkc_get_p3 ( prkc ) ) );
+	if ( BT ( plotmask, rkp_J3 ) ) sl.append ( s.sprintf ( fmt, rkc_get_J3 ( prkc ) ) );
+	if ( BT ( plotmask, rkp_ks ) ) sl.append ( s.sprintf ( fmt, rkc_get_KShift ( prkc ) ) );
+	if ( BT ( plotmask, rkp_kf ) ) sl.append ( s.sprintf ( fmt, rkc_get_KFactor ( prkc ) ) );
+	if ( BT ( plotmask, rkp_th4 ) ) sl.append ( s.sprintf ( fmt, rkc_get_th4 ( prkc ) ) );
+	if ( BT ( plotmask, rkp_th4c ) ) sl.append ( s.sprintf ( fmt, rkc_get_th4c ( prkc ) ) );
+	if ( BT ( plotmask, rkp_K4 ) ) sl.append ( s.sprintf ( fmt, rkc_get_K4 ( prkc ) ) );
+	if ( BT ( plotmask, rkp_p4 ) ) sl.append ( s.sprintf ( fmt, rkc_get_p4 ( prkc ) ) );
+	if ( BT ( plotmask, rkp_J4 ) ) sl.append ( s.sprintf ( fmt, rkc_get_J4 ( prkc ) ) );
+	for ( int i=0;i<nexpmax;i++ )
+	{
+		if ( !ext[i] ) continue;
+		char cstr[LEN_FZCSTR_MAX];
+		strcpy ( cstr,expr[i].latin1() );
+		if ( fzc_set_formula ( pfzc, ( size_t ) &cstr ) == 0 &&
+		        fzc_eval ( pfzc ) == 0 )
+		{
+			fzc_get_strans ( pfzc, ( size_t ) &cstr );
+			sl.append ( cstr );
+		}
+		else
+		{
+			sl.append ( "" );
+		}
+	}
 }
 
 void rwThreadCls::run()
 {
-	prkc=rkc_cp ( prkc );
 	double x;
 	int ( *rkc_setter ) ( const size_t, const double );
 	switch ( sid )
@@ -65,5 +97,4 @@ void rwThreadCls::run()
 		ndone=ir;
 	}
 	ndone=-1;
-	rkc_uinit ( prkc );
 }

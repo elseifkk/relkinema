@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmai.com                                                     *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -30,14 +30,11 @@
 
 bool rkCalcCls::initRKC()
 {
-prpnc=fzc_init();
-if(prpnc==0) return false;
-pcstr= ( size_t ) &cstr[0];
-loadConfig(*configfile);
-return true;
+	loadConfig ( *configfile );
+	return true;
 }
 
-void rkCalcCls::saveConfig(QString f)
+void rkCalcCls::saveConfig ( QString f )
 {
 	KConfig *conf = new KConfig ( f );
 	if ( conf==NULL ) return;
@@ -48,7 +45,7 @@ void rkCalcCls::saveConfig(QString f)
 	delete conf;
 }
 
-void rkCalcCls::loadConfig(QString f)
+void rkCalcCls::loadConfig ( QString f )
 {
 	KConfig *conf = new KConfig ( f );
 	if ( conf==NULL ) return;
@@ -58,33 +55,35 @@ void rkCalcCls::loadConfig(QString f)
 	delete conf;
 }
 
-void rkCalcCls::mess ( QString m, QColor c, bool nl )
+void rkCalcCls::mess ( QString m, QColor c, bool ap )
 {
 	ansBox->setColor ( c );
-	ansBox->append ( m );
-	if(nl) ansBox->append("\n");
-}
-
-void rkCalcCls::setParameter ( const double *v, QString s )
-{
-	strcpy ( cstr,s.latin1() );
-	int rc=fzc_regpar ( prpnc, ( size_t ) v,pcstr );
+	if ( ap )
+	{
+		ansBox->insertAt ( m+"\n",nextpara,0 );
+		nextpara++;
+	}
+	else
+	{
+		ansBox->insertAt ( m+"\n",0,0 );
+		nextpara=1;
+	}
 }
 
 void rkCalcCls::enterSlot ( void )
 {
 	int rc;
 	QString str;
-
-	if(prpnc==0) return; // <<<<
+	char cstr[LEN_FZCSTR_MAX];
+	size_t pcstr= ( size_t ) &cstr[0];
 
 	if ( formulaBox->currentText().isEmpty() ) return;
 
 	if ( autoClearBox->isChecked() ) clearSlot();
-	mess ( formulaBox->currentText() +" =","black",false );
+	mess ( formulaBox->currentText() +" =","black", false );
 
 	strcpy ( cstr,formulaBox->currentText().latin1() );
-	rc=fzc_set_formula ( pcstr,prpnc );
+	rc=fzc_set_formula ( pfzc, pcstr );
 	if ( rc>0 )
 	{
 		mess ( "Syntacs Error","red" );
@@ -95,17 +94,18 @@ void rkCalcCls::enterSlot ( void )
 	}
 	else
 	{
-		rc=fzc_eval ( prpnc );
+		rc=fzc_eval ( pfzc );
 		if ( rc!=0 )
 		{
 			mess ( "Eval Error","red" );
 			return;
 		}
-		formulaBox->addToHistory(formulaBox->currentText());
-		fzc_get_strans ( prpnc,pcstr );
+		formulaBox->addToHistory ( formulaBox->currentText() );
+		fzc_get_strans ( pfzc, pcstr );
 		str=cstr;
 		mess ( str );
 	}
+	mess ( "" );
 }
 
 void rkCalcCls::clearSlot()
@@ -131,5 +131,5 @@ void rkCalcCls::keyPressEvent ( QKeyEvent *e )
 void rkCalcCls::closeEvent ( QCloseEvent *e )
 {
 	e->accept();
-	saveConfig(*configfile);
+	saveConfig ( *configfile );
 }

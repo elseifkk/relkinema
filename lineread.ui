@@ -1,0 +1,96 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>lineread</class>
+<widget class="QDialog">
+    <property name="name">
+        <cstring>lineread</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>611</width>
+            <height>85</height>
+        </rect>
+    </property>
+    <property name="font">
+        <font>
+            <pointsize>11</pointsize>
+        </font>
+    </property>
+    <property name="caption">
+        <string>lineread</string>
+    </property>
+    <grid>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <widget class="QLineEdit" row="1" column="0" rowspan="1" colspan="2">
+            <property name="name">
+                <cstring>lineBox</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>7</hsizetype>
+                    <vsizetype>5</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+        </widget>
+        <widget class="QLabel" row="0" column="0">
+            <property name="name">
+                <cstring>lineLbl</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>7</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="text">
+                <string></string>
+            </property>
+        </widget>
+        <widget class="QPushButton" row="0" column="1">
+            <property name="name">
+                <cstring>cancelBut</cstring>
+            </property>
+            <property name="text">
+                <string>cancel</string>
+            </property>
+            <property name="default">
+                <bool>true</bool>
+            </property>
+            <property name="iconSet">
+                <iconset>image0</iconset>
+            </property>
+        </widget>
+    </grid>
+</widget>
+<images>
+    <image name="image0">
+        <data format="PNG" length="2115">89504e470d0a1a0a0000000d4948445200000020000000200806000000737a7af40000080a4944415458859d975b685cd71586bfbdcf9973e6cc6834d278ec582329a2b6e5bab142682aa2a01a973ca486129ab62fa229981451434a0d7a4a21b8f42155c1041b0c69c9532124a2b829a49040da1070e53e242934b8b65b9cc8ba7a188fee739f73df7d90cea964bbb69b0d8bb9add9ffbfd7bfd6daeb08bedc1277bc02a86dfb521b3dcc92fdfdfd4f0921be2b84781af89a10220f48a5540b58524afd13f8300cc3f78ac5e2c6c3107a2081542aa5edd9b3e787c0cf8510434208a494005896856118d4eb75c230442915595b2935a594fa55b1585cba1f91fb11107d7d7d47a494bf039e9652625916c78e1d6378789823478e60591600611872fbf66dae5ebdcaf4f434f3f3f311a1b652ea979b9b9be71b8d46f0ff10907d7d7dcf4929df164264745de7f8f1e33cfffcf37474743c28685cbf7e9da9a9295657572322eff9beffa3dbb76fd71f8680ecebebfb8194f2f7524add344d5e78e1058686861e08bc73d9b6cdd4d414376edc200802c230fc9be779df2997cb8dfb11108542e1295dd72f49292dc330181b1be3c08103b1eed1524addf3357a2f84c0f77dde79e71d66676723127fbc75ebd6181046beda4ef05c2e97354df32f9aa6edd3348dd1d151060707f17d1fd775f13c0fdff70982802008e2ef1dc7c1755ddaed368d4603dbb669b7db0441407f7f3f376fdec4755d94528f757676966bb5da3fe270ef0c7d2a957a594a79504a492e976370709076bbcdc6c606c3c3c39c3871824aa542a3d188413dcfc3755d1a8d06ababab747575313e3e8eeffb2c2f2f63db364f3ef9249aa64551fc754f4fcfde3b2320f2f9fc238661bcad699aa1eb3a8f3ffe389d9d9d54ab559e7df6598e1d3b462e9763efdebd7cf2c92728a59052a294c2b66d36363628140a9c3a758a743acdd0d010d3d3d3acafaf93c9642897cb51142c21845fabd52e012a22a0e572b95352cae7344d23914870f4e851945264b3594e9e3c89105be992cfe7d9bf7f3fd3d3d3000441c0eaea2a854281d3a74f93482400482693e472393ef8e083381faad52a6118027cd5f7fdd73dcff32309124288ef0b211042601846e4c8ecec2c6fbcf1c6ae243b7af428e3e3e3148b45e6e7e7c9e7f34c4c4cc4e0d1ff26272709c39046a381e779444d4c08b1afbbbbfb5b80d000914aa5ba3a3a3ace6b9aa64929314d13d334b12c8b743acdf5ebd729954a8c8c8cc491d8bf7f3f854281e5e5655e79e5955de03333334c4c4c6c8556d32897cbacadadedaa12a5d4ad5aadf6570d90f97c7e58d7f57121049aa691cd66c966b328a5d0348d4c26c3b56bd7585c5c6474743426d1dbdbcb33cf3c83a6fdb798bef8e28b588a442241bd5ec775ddb872a2760dd4abd5ea451d9042881e20de389148a0695a6cc964928181012e5fbe8ce3389c397326f6ddb93efffc735e7ae9a5f800aeeb6259164aa9b86c2369814780adba90527644fa4b29e3ec8e40a49474757571e8d021de7df75dde7aebadbbc01dc7e1c5175fc4344d1e7df45132990c9665914aa5482693589615efb78d958e0808a594bbf344d1cdb6832db66d532e97191919616c6cec2e02a66972f6ec595cd7c5b66d0cc320994c924c26e39c8a0eb96d0e2024a08220588f7e504ae1384edcf17cdfa7d56a313737474f4f0f172e5cc034cdbb08001c3f7e9c575f7d9552a944b3d944d7750cc3c034cd5dad7cfbb06b809200b55a6d0608809880ebbab8ae4bb3d9a4582cd2dfdfcfd9b367310c23de6861618137df7c7357898e8e8e72e6cc19d6d6d668b55a4829492412846188effbb19f52ea06106a009ee7c9eeeeeee7a4947b8510846118b3aed7eb1c3e7c98c9c9c95de04b4b4b9c3b778ec5c545d6d7d779e28927628dfbfafa3870e000972e5d424a491886acacacd06c3663b29ee7fda656ab5d8d3b612693f98aaeeb23910c91e3c0c000e7ce9dbb0bfcfcf9f364b3590a85028b8b8bacaeae323434149328140af4f6f672f9f2657cdfa7542a1104f14cd258595979d9f3bcaa646b5c72aad5ea1f003f92a1d96cd26ab5989999e1d34f3fdd05feda6bafa1eb3aa9548ae8e2ba72e50a172f5e8c893b8ec3471f7d143722c77162fdc330fc53abd5da64c75d80e3384e369b3da869da63910c4110a0eb3a1f7ffc31070f1e4429c5e4e4244110904c26635da386b5b0b040a552617070900b172e303333c3e6e626a55289300ca3e8b89b9b9b3f6db7db4520d8395e5b994ce6eb3d3d3def0b21ba22190cc3209bcd92c964e8eeee260c432ccbc2b2acb8db699a8610822008f03c0fcbb2585f5f67797999b9b9395cd78dcbcf75ddd7e7e7e77f01d4e224dc5ea1ebba2dd3343793c9e4b7d9ea0ff8be8fe33828a5705d77cb71fbe491453341f4b952a9b0b0b0c0e2e222beefc70d4e297565696969220cc3f5a8ea761200f0eaf57a319d4eeb86618c4409150401b66de3384edc1bee04b76d9b7abd4ea954626e6e8eb5b5b57866d8be2b96cae5f28f5badd62ce0468077cd844012e81d1818389d4ea77fa6949261181259746199a689aeeb71d647918a6a3d6ae9db6578b35c2effa452a97c0634f81f33612c05d0ae56abffd6346d31954a7d43d3b454a4612441340bdab68d6ddb789e471886f189a311ccf3bcf79796964e371a8d7f01cd9de0f78a40b42460007b92c9e4e142a1306e59d6f780f41d4f405b9beceef151425eab542abf2d97cb1f022b40eb4ef0fb11887ed3813490370c6360dfbe7d272ccbfaa6a669478410b93bfcbd300c173ccffbac56abfd796d6dedefc02a5bd9eedd0bfc410476464307524006e804328661745996b55708a1f9be5f6f369b65a554631bb0c656b823e02ff56c782f5f6d9b4c64510e856c75d1c8021ef271fd3f123a50877764d7810000000049454e44ae426082</data>
+    </image>
+</images>
+<connections>
+    <connection>
+        <sender>lineBox</sender>
+        <signal>returnPressed()</signal>
+        <receiver>lineread</receiver>
+        <slot>enterSlot()</slot>
+    </connection>
+    <connection>
+        <sender>cancelBut</sender>
+        <signal>pressed()</signal>
+        <receiver>lineread</receiver>
+        <slot>cancelSlot()</slot>
+    </connection>
+</connections>
+<slots>
+    <slot>enterSlot()</slot>
+    <slot>cancelSlot()</slot>
+</slots>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

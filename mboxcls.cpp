@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2010 by kazuaki kumagai                                 *
- *   elseifkk@gmail.com                                                    *
+ *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -21,14 +21,16 @@
 #include <qlabel.h>
 #include <qevent.h>
 
-mboxCls::mboxCls ( QWidget *parent, const char *name, WFlags wf, QString mess , QString title )
+mboxCls::mboxCls ( QWidget *parent, const char *name, WFlags wf, QString mess , QString title, QFont font )
 		:mBox ( parent, name, wf )
 {
+	setFont ( font );
 	QLabel *mlbl=new QLabel ( this );
 	setCaption ( title );
+	mlbl->setFont ( font );
 	mlbl->setText ( mess );
 	mlbl->adjustSize();
-	resize ( mlbl->size().width() *1.2,mlbl->size().height() *1.2 );
+	resize ( mlbl->size().width(),mlbl->size().height() );
 	mlbl->move ( ( width()-mlbl->width() ) /2., ( height()-mlbl->height() ) /2. );
 }
 
@@ -46,7 +48,7 @@ void mboxCls::keyPressEvent ( QKeyEvent*e )
 
 void mboxCls::closeEvent ( QCloseEvent *e )
 {
-	delete mlbl;
+//	delete mlbl; cause SIGINV
 	e->accept();
 }
 

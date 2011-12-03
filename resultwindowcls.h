@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmail.com                                                    *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -21,32 +21,36 @@
 #define RESULTWINDOWCLS_H
 
 #include "resultWindow.h"
+#include "rwthreadcls.h"
 
 #include <qtable.h>
 #include <qmutex.h>
+#include <qlineedit.h>
+
+#include <kcombobox.h>
 
 int const nrow_hdr = 2;
 
-int const col_th3  = 0;
-int const col_th3c = 1;
-int const col_q    = 2;
-int const col_K3   = 3;
-int const col_p3   = 4;
-int const col_J3   = 5;
-int const col_ks   = 6;
-int const col_fk   = 7;
-int const col_th4  = 8;
-int const col_th4c = 9;
+int const col_th3  =  0;
+int const col_th3c =  1;
+int const col_q    =  2;
+int const col_K3   =  3;
+int const col_p3   =  4;
+int const col_J3   =  5;
+int const col_KS   =  6;
+int const col_KF   =  7;
+int const col_th4  =  8;
+int const col_th4c =  9;
 int const col_K4   = 10;
 int const col_p4   = 11;
 int const col_J4   = 12;
-int const ncol     = 13;
+int const ncolmax  = 13;
 
 class resultWindowCls: public resultWindow
 {
 		Q_OBJECT
 	public:
-		resultWindowCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0 );
+		resultWindowCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, int plotmask = -1, bool *ext_in = 0, KHistoryCombo **exprBox = 0, int col_first = 0, int nr = 0, QString el = "", QString al = "", QString pl = "" );
 
 		void initResultDescBox ( QString reaction,
 		                         double incidentEnergy, double incidentMomentum,
@@ -55,13 +59,11 @@ class resultWindowCls: public resultWindow
 		                         double m1, double m2, double m3, double m4,
 		                         QString double_format );
 		void startPoll();
-		void initResultTable ( int,QString,QString,QString );
 
 	public:
 		QString *homedir;
 		QStringList *sl;
 		int *ndone;
-		int col_first;
 
 	private:
 		void setPlotPoints ( int ,int ,int,int );
@@ -70,13 +72,19 @@ class resultWindowCls: public resultWindow
 		int countCTI ( int,int *liid=NULL );
 		void adjTable();
 		void initCTI();
+		void swapLabel();
+		QString plotLbl;
+		int plotmask;
+		int ncol;
 
 	private:
-		QComboTableItem *cti[ncol];
+		QComboTableItem *cti[ncolmax+nexpmax];
 		int timerid;
 		int nrow;
 		int nrmax;
 		int nplots;
+		bool ext[nexpmax];
+		int ncolext;
 
 	private slots:
 		void saveasSlot();
@@ -87,6 +95,7 @@ class resultWindowCls: public resultWindow
 		void plotDone();
 		void rtSlot ( int,int );
 		void setTable();
+		void clearPlotSelect(int);
 
 	protected:
 		void keyPressEvent ( QKeyEvent* );

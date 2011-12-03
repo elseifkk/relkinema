@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmail.com                                                    *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -22,6 +22,8 @@
 
 #include "relkinemaDlg.h"
 #include "resultwindowcls.h"
+#include "rwthreadcls.h"
+
 #include <qmutex.h>
 
 class RelKinemaCls: public RelKinemaDlg
@@ -92,9 +94,20 @@ class RelKinemaCls: public RelKinemaDlg
 		void setK3vCM ( );
 		void setK4 ( );
 		double getThetaBarPos();
+		void resetThetaLab();
+		void showMenu();
+		void setReaction ( QString );
+		void nameToAE ( QString, QString*, QString* );
+		void registParams ( size_t, size_t );
+		void registParam ( size_t, size_t, QString );
+		void exprWarn ( int,QString );
+		void setPlottables();
 
 	private:
 		size_t prkc;
+		size_t pfzc;
+		size_t prkc_dmy;
+		size_t pfzc_dmy;
 		QString CONFIGFILE;
 		double K1th,K1cth,Ex,Exmax;
 		double p1th,p1cth;
@@ -129,6 +142,12 @@ class RelKinemaCls: public RelKinemaDlg
 		bool whitedone[9];
 		QString nc1,nc2,nc3,nc4;
 		QString theReaction;
+		bool exprSet[4];
+		KHistoryCombo *exprBox[4];
+		QLineEdit *valBox[4];
+		QCheckBox *plotBox[4];
+		QCheckBox *plotXBox[nrkpmax];
+		int plotmask;
 
 	private slots:
 		void setMassSlot_0();
@@ -173,6 +192,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void showAbout();
 		void saveConfSlot();
 		void settingsSlot();
+		void toggleSettingsSlot();
 		void confAppSlot();
 		void redoSlot();
 		void returnSlot();
@@ -180,11 +200,40 @@ class RelKinemaCls: public RelKinemaDlg
 		void teDone ();
 		void massDataDirSlot();
 		void calcSlot();
+		void reverseSlot();
+		void inverseSlot();
+		void swapIniSlot();
+		void swapFinSlot();
+		void saveRectCondSlot();
+		void loadRectCondSlot();
+		void fontSlot ( const QFont & );
+		void checkConfSlot();
+		void checkAppSlot();
+		void setDispFont();
+		void loadDefConfSlot();
+		void incStepSlot();
+		void decStepSlot();
+		void exprSlot ( int );
+		void expr1Slot();
+		void expr2Slot();
+		void expr3Slot();
+		void expr4Slot();
+		void exprSetSlot ( int, bool setHist=true );
+		void expr1SetSlot();
+		void expr2SetSlot();
+		void expr3SetSlot();
+		void expr4SetSlot();
+		void expr1SelectSlot();
+		void expr2SelectSlot();
+		void expr3SelectSlot();
+		void expr4SelectSlot();
+		void updateExprSlot();
 
 	protected:
 		void timerEvent ( QTimerEvent *e );
 		void closeEvent ( QCloseEvent *e );
 		void keyPressEvent ( QKeyEvent *e );
+		void mousePressEvent ( QMouseEvent * );
 };
 
 #endif

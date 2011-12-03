@@ -1,4 +1,4 @@
-RelKinema
+eRelKinema
 ==========
 
 Relativistic two body kinematics calculator for nuclear reaction,
@@ -10,8 +10,10 @@ including mass data manager, result list browser and plotter.
 Requirements
 ============
 
-RelKinema mainly depends on the following packages:
+Reline mainly depends on the following packages:
 
+fzcal-0.0.1
+gfortran-4.6.1
 kdelibs-3.5.10
 qt-3.3.8
 
@@ -23,19 +25,32 @@ Build
 
 RelKinema uses "libkio" to handle file open dialog. You need to 
 locate the library on your system and let it know to the compiler. 
+  fzcal is available at 
+
+http://sourceforge.net/projects/fzcal/
+
+For some reason use of shared library of fzcal is not recommended.
+Since libfzcal.a depends on libgfortran, -lgfortran flag is necessary
+for LDFLAGS.
+The source code contains fortran code and the configure script has
+no idea what to use as a fortran compiler as well as compilation
+flags.
 
 Here's an example of build steps:
 
+setenv FC /usr/local/bin/gfortran46
+setenv FCFLAGS "-cpp -fcray-pointer -O2 -g0 -fdefault-integer-8"
 setenv CXXFLAGS "-O2 -g0"
-setenv LDFLAGS "-L/usr/local/lib -lkio"
+setenv LD_RUN_PATH /usr/local/lib/gcc46
+setenv LDFLAGS "-L/usr/local/lib -L/usr/local/lib/gcc46 -lkio -lgfortran /usr/local/lib/libfzcal.a"
 ./configure --prefix=/usr/local --without-arts
 gmake install
 
 
 
 
-Atmic mass data
-===============
+Atomic mass data
+================
 
 RelKinema depends on atomic mass data files located in a local directory.
 The current version uses mass data files extracted from a source data

@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmail.com                                                    *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -63,7 +63,7 @@ aboutcls::aboutcls ( QWidget *parent, const char *name, WFlags wf )
 #else
 	QString host="unknown";
 #endif
-	BuildLbl->setText ( "Build "+date+" "+time+"\n  @"+host );
+	BuildLbl->setText ( "Build: "+date+" "+time+"\n  @"+host );
 	VersionLbl->setText ( version );
 #ifdef ENABLE_FADEIN
 	this->aboutLogoRect=this->aboutLogo->geometry();

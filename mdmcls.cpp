@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmail.com                                                    *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -531,8 +531,11 @@ void mdmCls::extMassDataSlot()
 			N    = line.mid ( 4,5 ).toInt();
 			Z    = line.mid ( 9,5 ).toInt();
 			A    = line.mid ( 14,5 ).toInt();
-			if ( NsubZ==1&&N==1&&Z==0&&A==1 ) start=true;
-			if ( !start ) continue;
+			if ( !start && (NsubZ==1&&N==1&&Z==0&&A==1 )){
+				 start=true;
+			}else{
+				continue;
+			}
 			EL   = line.mid ( 20,3 );
 			Decay = line.mid ( 23,4 );
 			m=line.mid ( 29,13 ).replace ( "#","." );
@@ -575,7 +578,7 @@ void mdmCls::extMassDataSlot()
 		}
 		else
 		{
-			warn ( "Failed to create mass data" );
+			warn ( "Failed to create mass data: invalid file" );
 		}
 	}
 	else
@@ -588,7 +591,7 @@ void mdmCls::warn ( QString mess )
 {
 	warnmess=mess;
 	msgLbl->setPaletteForegroundColor ( "red" );
-	msgLbl->setText ( warnmess );
+	msgLbl->setText ( "<b>"+warnmess+"</b>" );
 	timer=startTimer ( 600 );
 }
 
@@ -601,7 +604,7 @@ void mdmCls::timerEvent ( QTimerEvent *e )
 	else
 	{
 		msgLbl->setPaletteForegroundColor ( "red" );
-		msgLbl->setText ( warnmess );
+		msgLbl->setText ( "<b>"+warnmess+"</b>" );
 	}
 	blink=!blink;
 }

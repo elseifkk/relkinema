@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmai.com                                                     *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -30,23 +30,21 @@ class rkCalcCls: public rkCalcDlg
 {
 		Q_OBJECT
 	public:
-		rkCalcCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, const QString *configfile = 0 )
-		:rkCalcDlg ( parent, name, wf ), configfile (configfile){};
-		void setParameter ( const double *v, QString name );
+		rkCalcCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, const QString *configfile = 0, size_t pfzc = 0 )
+				:rkCalcDlg ( parent, name, wf ), configfile ( configfile ), pfzc ( pfzc ) {nextpara=0;};
 		bool initRKC();
 
 	private:
-		void saveConfig(QString);
-		void loadConfig(QString);
-		void mess ( QString,QColor c="black" , bool nl=true);
+		void saveConfig ( QString );
+		void loadConfig ( QString );
+		void mess ( QString,QColor c="black", bool ap=true );
 
 	public:
 		const QString *configfile;
 
 	private:
-		size_t prpnc;
-		char cstr[LEN_FZCSTR_MAX];
-		size_t pcstr;
+		size_t pfzc;
+		int nextpara;
 
 	private slots:
 		void enterSlot ( void );

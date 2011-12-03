@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmail.com                                                    *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -21,6 +21,8 @@
 #define KINEMAPLOTCLS_H
 
 #include "kinemaPlot.h"
+#include "rwthreadcls.h"
+
 #include <qlistview.h>
 #include <qpointarray.h>
 #include <qpainter.h>
@@ -29,21 +31,22 @@
 #include <qmutex.h>
 #include <qfontmetrics.h>
 
+int const plot_width_def  = 600;
+int const plot_height_def = 400;
+
+int const nlinemax = nrkpmax+nexpmax-1;
+
 class kinemaPlotCls: public kinemaPlot
 {
 		Q_OBJECT
 	public:
-		kinemaPlotCls ( QWidget *parent = 0, const char *name = 0, WFlags=0 );
-		void setPlotMinMax();
-
-	public:
-		QTable *table;
-		int xcol,ycol;
-		int ycols[12];
-		int nycol;
-		QString *homedir;
+		kinemaPlotCls ( QWidget *parent = 0, const char *name = 0, WFlags=0, QTable *table = 0,
+				QString *homedir=0, QString *plotLbl=0,
+		                int xcol = 0, int nycol = 0, int *ycols = 0,
+		                int nrow_hdr = 0, QFont font = QFont ( "Sans Serif", 11 ) );
 
 	private:
+		void setPlotMinMax();
 		int getMaxlenytitle();
 		void setPlotPoints ( int );
 		int getX ( double );
@@ -81,8 +84,15 @@ class kinemaPlotCls: public kinemaPlot
 		void putCross ( int,int );
 		void updateA();
 		void procLB ( QPoint );
+		void setYLabel();
 
 	private:
+		QString *homedir;
+		QString *plotLbl;
+		int xcol;
+		int nycol;
+		int ycols[nrkpmax+nexpmax];
+		QFont theuifont;
 		int theWidth, theHeight;
 		double scale;
 		bool msrOn;
@@ -94,6 +104,7 @@ class kinemaPlotCls: public kinemaPlot
 		double xmin0,xmax0;
 		double ymin0,ymax0;
 		QPointArray *pa;
+		double **pas;
 		int botmar;
 		int leftmar;
 		double ymaxmar;
@@ -104,8 +115,6 @@ class kinemaPlotCls: public kinemaPlot
 		unsigned int lendigitmax;
 		bool rep;
 		int timerid;
-		QString xunit;
-		QString yunit;
 		double mx,my;
 		double mx0,my0;
 		int nplots;
@@ -141,6 +150,25 @@ class kinemaPlotCls: public kinemaPlot
 		int cx, cy;
 		int linewidth;
 		QPixmap *thePlot;
+		QRect titleRect;
+		bool showlabel;
+		QString xt,yt;
+		QString yts[nlinemax];
+		QString yus[nlinemax];
+		int lenxt,lenyt;
+		QColor pc[nlinemax];
+
+		template<typename T>T**AllocMatrix ( int u,int v )
+		{
+			int i; T**a,*b;
+			try { a= ( T** ) new char[ ( sizeof*a+sizeof*b*v ) *u]; }
+			catch ( ... ) { a=0; }
+			if ( a ) b= ( T* ) ( a+u ); else return 0;
+			for ( i=0;i<u;i++,b+=v ) a[i]=b;
+			return a;
+		}
+#define ALLOC_MATRIX(T,U,V) AllocMatrix<T>(U,V)
+#define FREE(X) delete[]X
 
 	signals:
 		void done();
@@ -166,6 +194,7 @@ class kinemaPlotCls: public kinemaPlot
 		void closeEvent ( QCloseEvent* );
 		void mousePressEvent ( QMouseEvent * );
 		void mouseReleaseEvent ( QMouseEvent * );
+		void mouseDoubleClickEvent ( QMouseEvent * );
 };
 
 #endif

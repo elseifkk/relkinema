@@ -17,58 +17,46 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef RWTHREADCLS_H
-#define RWTHREADCLS_H
+#ifndef RCLISTCLS_H
+#define RCLISTCLS_H
 
-#include <qthread.h>
-#include <qstringlist.h>
+#include "rclist.h"
 
-#define BT(var,pos) ((var) & (1<<(pos)))
+#include <qlistview.h>
 
-int const rkp_th3  =  0;
-int const rkp_th3c =  1;
-int const rkp_q    =  2;
-int const rkp_K3   =  3;
-int const rkp_p3   =  4;
-int const rkp_J3   =  5;
-int const rkp_ks   =  6;
-int const rkp_kf   =  7;
-int const rkp_th4  =  8;
-int const rkp_th4c =  9;
-int const rkp_K4   = 10;
-int const rkp_p4   = 11;
-int const rkp_J4   = 12;
-int const nrkpmax  = 13;
-int const nexpmax  = 4;
-QString const expr[nexpmax]={"expr1", "expr2", "expr3", "expr4"};
+#include <kconfig.h>
 
-class rwThreadCls: public QThread
+class rclistCls: public rclist
 {
+		Q_OBJECT
+
 	public:
-		rwThreadCls ( double step, double rmin, int irmax, size_t prkc, int sid, QString fmt,
-		              int col_first, size_t pfzc, int plotmask, bool *ext_in )
-				:step ( step ), rmin ( rmin ), irmax ( irmax ),
-				prkc ( prkc ), sid ( sid ), fmt ( fmt ),
-				col_first ( col_first ), pfzc ( pfzc ), plotmask ( plotmask ) {ndone=0; memcpy ( &ext, ext_in, sizeof ( bool ) *nexpmax );}
+		rclistCls ( QWidget *parent = 0, const char *name = 0, WFlags wf = 0,
+		            KConfig *conf = 0, QFont font=QFont ( "Sans Serif", 11 ) );
+
 	public:
+		QString rc;
+
+	private:
+		void setTable();
+		QString getRc()
+		{
+			QString rc=listBox->currentItem()->text ( 0 )
+			           +";"+listBox->currentItem()->text ( 1 ).remove (
+			               listBox->currentItem()->text ( 1 ).length()-4,4 )
+			           +";"+listBox->currentItem()->text ( 2 ).remove (
+			               listBox->currentItem()->text ( 2 ).length()-4,4 )
+			           +";"+listBox->currentItem()->text ( 1 ).right ( 3 );
+			return rc;
+		};
+
+	private:
+		KConfig *conf;
 		QStringList sl;
-		int ndone;
 
-	private:
-		double step;
-		double rmin;
-		int irmax;
-		size_t prkc;
-		int sid;
-		QString fmt;
-		int col_first;
-		size_t pfzc;
-		bool ext[nexpmax];
-		int plotmask;
-
-	private:
-		void setRKCValue();
-		virtual void run();
+	private slots:
+		void delSlot();
+		void loadSlot();
 };
 
 #endif

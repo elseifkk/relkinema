@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2010 by kazuaki kumagai                                 *
- *   elseifkk@gmail.com                                                    *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -28,7 +28,8 @@ class mboxCls: public mBox
 {
 		Q_OBJECT
 	public:
-		mboxCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, QString mess="", QString title="" );
+		mboxCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, QString mess="", QString title="",
+		          QFont font = QFont ( "Sans Serif", 11) );
 
 	public:
 		QLabel *mlbl;

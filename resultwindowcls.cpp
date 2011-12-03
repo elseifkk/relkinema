@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmail.com                                                    *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -35,38 +35,88 @@
 #include <kfiledialog.h>
 #include <kmessagebox.h>
 
-int const plot_width_def  = 600;
-int const plot_height_def = 400;
-int const min_pointsize=4;
-int const max_pointsize=32;
-
-resultWindowCls::resultWindowCls ( QWidget *parent, const char *name, WFlags wf )
+resultWindowCls::resultWindowCls ( QWidget *parent, const char *name, WFlags wf, int plotmask, bool *ext_in, KHistoryCombo **exprBox, int col_first, int nr, QString el, QString al, QString pl )
 		:resultWindow ( parent, name, wf )
 {
+	this->plotmask=plotmask;
 	msgLbl->clear();
 	nplots=0;
 	timerid=0;
-}
+	ncolext=0;
+	ncol=0;
+	QString plotLbl[ncolmax]=
+	{
+		"Theta3LAB","Theta3CM","q","K3","p3","do3CM/do3LAB","dK3/dTheta3LAB","1/p3/(dp3/dTheta3LAB)",
+		"Theta4LAB","Theta4CM","K4","p4","do4CM/do4LAB"
+	};
+	QString uLbl[ncolmax]={al,al,"1/fm",el,pl,"",el+"/"+al,"1/"+al,al,al,el,pl,""};
 
-void resultWindowCls::initResultTable ( int nr, QString el, QString al, QString pl )
-{
+	switch ( col_first )
+	{
+		case 1:
+			plotLbl[0]="Theta3CM";
+			plotLbl[1]="Theta3LAB";
+			plotLbl[2]="q";
+			break;
+		case 2:
+			plotLbl[0]="q";
+			plotLbl[1]="Theta3LAB";
+			plotLbl[2]="Theta3CM";
+			uLbl[0]="1/fm";
+			uLbl[2]=al;
+			break;
+	}
+
+	for ( int ic=0;ic<ncolmax;ic++ )
+	{
+		if ( BT ( plotmask, ic ) )
+		{
+			resultTable->insertColumns ( ncol );
+			resultTable->horizontalHeader()->setLabel ( ncol,plotLbl[ic] );
+			ncol++;
+		}
+	}
+	if ( ext!=0 )
+	{
+		memcpy ( &ext,ext_in,sizeof ( bool ) *4 );
+		int i;
+		for ( i=0;i<nexpmax;i++ )
+		{
+			if ( !ext[i] ) continue;
+			ncolext++;
+		}
+		if ( ncolext!=0 )
+		{
+			resultTable->setNumCols ( ncol+ncolext );
+			for ( i=0;i<nexpmax;i++ )
+			{
+				if ( !ext[i] ) continue;
+				resultTable->horizontalHeader()->setLabel ( ncol+i,exprBox[i]->currentText() );
+			}
+		}
+	}
+
 	resultTable->setNumRows ( nrow_hdr ); //<<<<<<<<<<<<<
 	nrow=nr+nrow_hdr;
-	resultTable->setText ( 1,col_th3,       al );
-	resultTable->setText ( 1,col_th3c,      al );
-	resultTable->setText ( 1,col_q,     "1/fm" );
-	resultTable->setText ( 1,col_K3,        el );
-	resultTable->setText ( 1,col_p3,        pl );
-	resultTable->setText ( 1,col_J3,        "" );
-	resultTable->setText ( 1,col_ks, el+"/"+al );
-	resultTable->setText ( 1,col_fk,   "1/"+al );
-	resultTable->setText ( 1,col_th4,       al );
-	resultTable->setText ( 1,col_th4c,      al );
-	resultTable->setText ( 1,col_K4,        el );
-	resultTable->setText ( 1,col_p4,        pl );
-	resultTable->setText ( 1,col_J4,        "" );
+
+	int k=0;
+	for ( int ic=0;ic<ncolmax;ic++ )
+	{
+		if ( BT ( plotmask, ic ) )
+		{
+			resultTable->setText ( 1,k,uLbl[ic] );
+			k++;
+		}
+	}
+	for ( int ic=0;ic<nexpmax;ic++ )
+	{
+		if ( !ext[ic] ) continue;
+		resultTable->setText ( 1,ncol+ic,"N/A" );
+	}
 	resultTable->verticalHeader()->setLabel ( 0,"plot" );
 	resultTable->verticalHeader()->setLabel ( 1,"unit" );
+
+	connect ( resultTable->verticalHeader(), SIGNAL ( sectionClicked ( int ) ), this, SLOT ( clearPlotSelect ( int ) ) );
 }
 
 void resultWindowCls::startPoll ( void )
@@ -85,11 +135,11 @@ void resultWindowCls::setTable()
 	{
 		ir++;
 		resultTable->verticalHeader()->setLabel ( ir,QString::number ( ir-nrow_hdr+1 ) );
-		for ( int ic=0;ic<ncol;ic++ )
+		for ( int ic=0;ic<ncol+ncolext;ic++ )
 		{
 			resultTable->setText ( ir,ic,* ( it++ ) );
 		}
-		if ( ir+1==nrow ) break;
+		if ( ir+1 == nrow ) break;
 		if ( ir+1 == nrmax )
 		{
 			KGuiItem yes ( "Yes for all" );
@@ -116,7 +166,6 @@ void resultWindowCls::setTable()
 	}
 done:
 	adjTable();
-	if ( col_first!=0 ) resultTable->swapColumns ( 0,col_first,true );
 	msgLbl->setPaletteForegroundColor ( "Green" );
 	msgLbl->setText ( "<b> Ready" );
 	emit done();
@@ -132,7 +181,7 @@ void resultWindowCls::timerEvent ( QTimerEvent *e )
 		return;
 	}
 	killTimer ( timerid );
-	msgLbl->setText ( "<b> Reading table... Please wait" );
+	msgLbl->setText ( "<b> Loading table... Please wait" );
 	setTable();
 }
 
@@ -141,6 +190,8 @@ void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnerg
 	QString s,t;
 	resultDescBox->clear();
 	setCaption ( "Results: "+reaction+", incident "+QString::number ( incidentEnergy ) +" MeV" );
+	plotLbl=reaction+" K1="+s.sprintf ( fmt, incidentEnergy );
+	plotLbl+=" MeV Ex="+s.sprintf ( fmt, Ex ) +" MeV";
 	resultDescBox->append ( "Reaction: "+reaction );
 	resultDescBox->append ( "Mass: M2(M1, M3)M4" );
 	t=s.sprintf ( fmt,m2 ) +" ( ";
@@ -169,7 +220,7 @@ void resultWindowCls::initCTI()
 	resultTable->setPalette ( pal );
 	resultTable->horizontalHeader()->setPalette ( palorig );
 	resultTable->verticalHeader()->setPalette ( palorig );
-	for ( int ic=0;ic<ncol;ic++ )
+	for ( int ic=0;ic<resultTable->numCols();ic++ )
 	{
 		cti[ic] = new QComboTableItem ( resultTable,NULL );
 		cti[ic]->setStringList ( s );
@@ -215,13 +266,11 @@ void resultWindowCls::saveasSlot()
 		stream << "\n#\n#";
 
 		int ic;  // section no
-		int iic; // column
 
 		for ( ic=0;ic<ncol;ic++ )
 		{
 			if ( ic!=0 ) stream << delim;
-			iic=resultTable->horizontalHeader()->mapToSection ( ic );
-			stream << resultTable->horizontalHeader()->label ( iic );
+			stream << resultTable->horizontalHeader()->label ( ic );
 		}
 		stream << "\n#";
 		for ( int ir=1;ir<nrow;ir++ ) //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -229,7 +278,6 @@ void resultWindowCls::saveasSlot()
 			for ( ic=0;ic<ncol;ic++ )
 			{
 				if ( ic!=0 ) stream << delim;
-				iic=resultTable->horizontalHeader()->mapToSection ( ic );
 				stream << resultTable->text ( ir,ic );
 			}
 			stream << "\n";
@@ -359,19 +407,10 @@ void resultWindowCls::plotSlot()
 			k=2;
 			break;
 	}
-	kinemaPlotCls *win = new kinemaPlotCls ( NULL,NULL, Qt::WDestructiveClose );
+	kinemaPlotCls *win = new kinemaPlotCls ( NULL,NULL, Qt::WDestructiveClose, resultTable,
+	        homedir, &plotLbl, cols[0], k-1, &cols[1], nrow_hdr, font() );
 	win->resize ( plot_width_def, plot_height_def );
 	win->setCaption ( this->caption().replace ( "Results:","Plots: " ) );
-	win->table=resultTable;
-	win->xcol=resultTable->horizontalHeader()->mapToSection ( cols[0] );
-	win->ycol=resultTable->horizontalHeader()->mapToSection ( cols[1] );
-	win->nycol=k-1;
-	for ( int iy=1;iy<=k-1;iy++ )
-	{
-		win->ycols[iy-1]=cols[iy];
-	}
-	win->setPlotMinMax();
-	win->homedir=homedir;
 	connect ( win,SIGNAL ( done() ),this,SLOT ( plotDone() ) );
 	nplots++;
 	exitBut->setEnabled ( false );
@@ -380,6 +419,8 @@ void resultWindowCls::plotSlot()
 
 void resultWindowCls::changeFontSize ( int d )
 {
+	int const min_pointsize=4;
+	int const max_pointsize=32;
 	QFont f=font();
 	int p=f.pointSize();
 	p+=d;
@@ -450,7 +491,7 @@ void resultWindowCls::closeEvent ( QCloseEvent *e )
 {
 	if ( nplots==0 )
 	{
-		for ( int ic=0;ic<ncol;ic++ )
+		for ( int ic=0;ic<resultTable->numCols();ic++ )
 		{
 			delete cti[ic];
 		}
@@ -464,10 +505,12 @@ void resultWindowCls::closeEvent ( QCloseEvent *e )
 
 int resultWindowCls::countCTI ( int i, int *liid )
 {
+	QComboTableItem *c;
 	int s=0;
 	for ( int ic=0;ic<resultTable->numCols();ic++ )
 	{
-		if ( cti[ic]->currentItem() ==i )
+		c= ( QComboTableItem* ) resultTable->item ( 0,ic );
+		if ( c->currentItem() ==i )
 		{
 			s++;
 			if ( liid!=NULL ) *liid=ic;
@@ -475,6 +518,18 @@ int resultWindowCls::countCTI ( int i, int *liid )
 	}
 	return s;
 }
+
+void resultWindowCls::clearPlotSelect ( int s )
+{
+/*	if ( s/=0 ) return;
+	for ( int ic=0;ic<resultTable->numCols();ic++ )
+	{
+		QComboTableItem *c;
+		c= ( QComboTableItem* ) resultTable->item ( 0,ic );
+ 		c->setCurrentItem ( 0 );
+	}*/
+}
+
 
 void resultWindowCls::rtSlot ( int r, int c )
 {

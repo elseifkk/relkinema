@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011 by kazuaki kumagai                                 *
- *   elseifkk@gmail.com                                                    *
+ *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -17,6 +17,7 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include "pix.h"
 #include "relkinemaCls.h"
 #include "resultwindowcls.h"
 #include "mdmcls.h"
@@ -24,6 +25,10 @@
 #include "rwthreadcls.h"
 #include "rkcore.h"
 #include "rkcalccls.h"
+#include "rclistcls.h"
+#include "linereadcls.h"
+
+#include <fzc.h>
 
 #include <math.h>
 #include <stdlib.h>
@@ -44,19 +49,19 @@
 #include <qtabwidget.h>
 #include <qwidgetstack.h>
 #include <qtable.h>
+#include <qcursor.h>
+#include <qdialog.h>
 
 #include <kconfig.h>
 #include <knuminput.h>
 #include <kfiledialog.h>
 #include <kmessagebox.h>
+#include <kfontrequester.h>
+#include <kcombobox.h>
 
 #define LEN_ELEMENT 8
 
-#define fontname_def "Sans Serif"
-#define fontsize_def "11"
-
-QString fontname="Helvetica";
-int fontsize=11;
+QFont const font_def ( "Helvetica",11 );
 QFont thefont;
 
 #define FIREFOX "firefox"
@@ -72,22 +77,21 @@ QString double_format;
 QString const double_format_def="%.6g";
 
 // NIST (2005)
-#define hbarc_DEF "197.326968"
-#define AMU_DEF "931.494043"
+#define hbarc_DEF 197.326968
+#define AMU_DEF 931.494043
 double hbarc; // MeV fm
-double AMU; // in MeV
-double const RTD=180./M_PI;
+double AMU;   // in MeV
 double Me,Mn,Mp,Mt,Md,Ma;
 
 // Reference Unknown
-#define r0_DEF   "1.2"
-#define e2_DEF   "1.4406466"
-#define Bv_DEF   "15.56"
-#define Bs_DEF   "17.23"
-#define Bsym_DEF "23.29"
-#define Bp_DEF   "12.00"
-#define Bc_DEF   "0.697"
-#define hcRinf_DEF   "13.6056981"
+#define r0_DEF     1.2
+#define e2_DEF     1.4406466
+#define Bv_DEF     15.56
+#define Bs_DEF     17.23
+#define Bsym_DEF   23.29
+#define Bp_DEF     12.00
+#define Bc_DEF     0.697
+#define hcRinf_DEF 13.6056981
 
 double r0;
 double e2;
@@ -106,21 +110,7 @@ int const MT_EXP = 0;
 int const MT_CALC= 1;
 int const MT_MAN = 2;
 
-QString const EUnitLbl[4]=
-{
-	"keV",
-	"MeV",
-	"GeV",
-	"TeV"
-};
-
-double const MU[4]=
-{
-	1.0e3,
-	1.0,
-	1.0e-3,
-	1.0/AMU
-};
+double MU[4];
 
 double const EU[4]=
 {
@@ -141,12 +131,14 @@ void ( RelKinemaCls::*tbEval ) ( bool );
 
 rwThreadCls *rwt;
 
+double const thetaStepMin=0.0001;
+int const thetaStepPrec = 4;
+double const thetaStepMax = 1.0e4;
+
 RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
                              const char *v, QString conf )
 		:RelKinemaDlg ( parent, name, wf )
-
-
-		,prkc ( rkc_init() )
+		,prkc ( rkc_init() ), pfzc ( fzc_init() )
 		,CONFIGFILE ( "" )
 		,K1th ( 0. ),K1cth ( 0. ),Ex ( 0. ),Exmax ( 0. )
 		,p1th ( 0. ),p1cth ( 0. )
@@ -175,6 +167,50 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 {
 	bzero ( &massSet,sizeof ( massSet ) );
 	bzero ( &rectSet,sizeof ( rectSet ) );
+	bzero ( &exprSet,sizeof ( exprSet ) );
+
+	exprBox[0]=expr1Box;
+	exprBox[1]=expr2Box;
+	exprBox[2]=expr3Box;
+	exprBox[3]=expr4Box;
+	valBox[0]=val1Box;
+	valBox[1]=val2Box;
+	valBox[2]=val3Box;
+	valBox[3]=val4Box;
+	plotBox[0]=plot1Box;
+	plotBox[1]=plot2Box;
+	plotBox[2]=plot3Box;
+	plotBox[3]=plot4Box;
+
+	plotXBox[0]=plotThetaLabBox;
+	plotXBox[1]=plotThetaCMBox;
+	plotXBox[2]=plotqBox;
+	plotXBox[3]=plotK3Box;
+	plotXBox[4]=plotp3Box;
+	plotXBox[5]=plotJ3Box;
+	plotXBox[6]=plotKSBox;
+	plotXBox[7]=plotKFBox;
+	plotXBox[8]=plotTheta4LabBox;
+	plotXBox[9]=plotTheta4CMBox;
+	plotXBox[10]=plotK4Box;
+	plotXBox[11]=plotp4Box;
+	plotXBox[12]=plotJ4Box;
+	plotmask=-1;
+
+	for ( int i=0;i<13;i++ ) plotXBox[i]->setChecked ( true );
+	if ( pfzc==0 )
+	{
+		calcBut->setEnabled ( false );
+	}
+	else
+	{
+		registParams ( prkc,pfzc );
+	}
+
+	MU[0]=1.0e3;
+	MU[1]=1.0;
+	MU[2]=1.0e-3;
+	MU[3]=1.0/AMU_DEF;
 
 	getThetaBarValue=&RelKinemaCls::getThetaBarPos;
 	tbEval=&RelKinemaCls::thetaLabSlot;
@@ -192,6 +228,7 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	if ( CONFIGFILE.endsWith ( "/" ) ) CONFIGFILE.append ( CONFIGFILE_DEF );
 	if ( !CONFIGFILE.startsWith ( "/" ) ) CONFIGFILE.prepend ( "/" ).prepend ( getenv ( "PWD" ) );
 	loadConfig ( CONFIGFILE );
+	setPlottables();
 	if ( !QFile::exists ( CONFIGFILE ) ) saveConfig ( CONFIGFILE );
 	QFileInfo fi ( MASSDATA );
 	if ( !QFile::exists ( MASSDATA ) || !fi.isReadable() )
@@ -199,14 +236,16 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 
 	K1Set=false;
 	ExOk=true;
+
 	reinitRelKinema();
 	ReactionConditionBox->setEnabled ( false );
 	EmissionAngleBox->setEnabled ( false );
 	tableBut->setEnabled ( false );
+	calcBut->setEnabled ( false );
 	EmissionBox->setEnabled ( false );
 
-	thetaStepBox->setPrecision ( 4 );
-	thetaStepBox->setMaxValue ( 1.0e4 );
+	thetaStepBox->setPrecision ( thetaStepPrec );
+	thetaStepBox->setMaxValue ( thetaStepMax );
 	thetaStepBox->blockSignals ( true );
 	thetaStepBox->setValue ( 1.0 );
 	thetaStepBox->blockSignals ( false );
@@ -386,12 +425,15 @@ void RelKinemaCls::reinitRelKinema()
 	v=readMass ( "A.dat","a" );
 	if ( v>0 ) Ma=v;
 
-	thefont.setFamily ( fontname );
-	thefont.setPointSize ( fontsize );
+	setDispFont();
+}
+
+void RelKinemaCls::setDispFont()
+{
 	setFont ( thefont );
 	mainStack->setFont ( thefont );
 	QFont f=thefont;
-	f.setPointSize ( fontsize-1 );
+	f.setPointSize ( thefont.pointSize()-1 );
 	k3unitLbl->setFont ( f );
 	k4unitLbl->setFont ( f );
 	k3cunitLbl->setFont ( f );
@@ -421,39 +463,42 @@ void RelKinemaCls::saveConfig ( QString f )
 	KConfigGroup externalGroup ( conf,"Externals" );
 	KConfigGroup historyGroup ( conf,"History" );
 
-	generalGroup.writeEntry ( "Font name",fontname );
-	generalGroup.writeEntry ( "Font size",QString::number ( fontsize ) );
+	generalGroup.writeEntry ( "Display font",thefont );
 	generalGroup.writeEntry ( "Mass data directory",MASSDATA );
 	generalGroup.writeEntry ( "Double number format",double_format );
 
 	externalGroup.writeEntry ( "Web browser",webbrowser );
 
-	parameterGroup.writeEntry ( "AMU in MeV", AMU_DEF );
-	parameterGroup.writeEntry ( "hbarc in MeV*fm", QString::number ( hbarc ) );
-	parameterGroup.writeEntry ( "r0 in fm", QString::number ( r0 ) );
-	parameterGroup.writeEntry ( "e2 in MeV", QString::number ( e2 ) );
-	parameterGroup.writeEntry ( "Bv", QString::number ( Bv ) );
-	parameterGroup.writeEntry ( "Bs", QString::number ( Bs ) );
-	parameterGroup.writeEntry ( "Bsym", QString::number ( Bsym ) );
-	parameterGroup.writeEntry ( "Bc", QString::number ( Bc ) );
-	parameterGroup.writeEntry ( "Bp", QString::number ( Bp ) );
-	parameterGroup.writeEntry ( "Rydberg energy in eV", QString::number ( hcRinf ) );
+	parameterGroup.writeEntry ( "AMU in MeV",      AMU,   true, false, 'g', 16 );
+	parameterGroup.writeEntry ( "hbarc in MeV*fm", hbarc, true, false, 'g', 16 );
+	parameterGroup.writeEntry ( "r0 in fm",        r0,    true, false, 'g', 16 );
+	parameterGroup.writeEntry ( "e2 in MeV",       e2,    true, false, 'g', 16 );
+	parameterGroup.writeEntry ( "Bv",              Bv,    true, false, 'g', 16 );
+	parameterGroup.writeEntry ( "Bs",              Bs,    true, false, 'g', 16 );
+	parameterGroup.writeEntry ( "Bsym",            Bsym,  true, false, 'g', 16 );
+	parameterGroup.writeEntry ( "Bc",              Bc,    true, false, 'g', 16 );
+	parameterGroup.writeEntry ( "Bp",              Bp,    true, false, 'g', 16 );
+	parameterGroup.writeEntry ( "Rydberg energy in eV", hcRinf, true, false, 'g', 16 );
 
 	historyGroup.writeEntry ( "Target name",    nc2 );
 	historyGroup.writeEntry ( "Projectile name",nc1 );
 	historyGroup.writeEntry ( "Ejectile name",  nc3 );
 	historyGroup.writeEntry ( "Residual name",  nc4 );
 
-	historyGroup.writeEntry ( "Target A",    QString::number ( a2 ) );
-	historyGroup.writeEntry ( "Projectile A",QString::number ( a1 ) );
-	historyGroup.writeEntry ( "Ejectile A",  QString::number ( a3 ) );
-	historyGroup.writeEntry ( "Residual A",  QString::number ( a4 ) );
+	historyGroup.writeEntry ( "Target A",    a2 );
+	historyGroup.writeEntry ( "Projectile A",a1 );
+	historyGroup.writeEntry ( "Ejectile A",  a3 );
+	historyGroup.writeEntry ( "Residual A",  a4 );
 
-	int ceu=EUnitBox->currentItem();
-	rkc_set_eunit ( prkc,2 ); // MeV
-	historyGroup.writeEntry ( "Incident energy in MeV",QString::number ( rkc_get_K1 ( prkc ) ) );
-	historyGroup.writeEntry ( "Excitation energy in MeV",QString::number ( rkc_get_Ex ( prkc ) ) );
-	rkc_set_eunit ( prkc,ceu+1 );
+	historyGroup.writeEntry ( "Incident energy", rkc_get_K1 ( prkc ), true, false, 'g', 16 );
+	historyGroup.writeEntry ( "Excitation energy",rkc_get_Ex ( prkc ), true, false, 'g', 16 );
+	historyGroup.writeEntry ( "Energy unit", EUnitBox->currentItem() );
+	historyGroup.writeEntry ( "Mass unit",MUnitBox->currentItem() );
+
+	historyGroup.writeEntry ( "Macro history",expr1Box->historyItems() );
+	historyGroup.writeEntry ( "Macro completion",expr1Box->completionObject()->items() );
+
+	historyGroup.writeEntry ( "Plot mask",plotmask );
 
 	generalGroup.sync();
 	parameterGroup.sync();
@@ -465,9 +510,6 @@ void RelKinemaCls::saveConfig ( QString f )
 
 void RelKinemaCls::loadConfig ( QString f )
 {
-	bool ok;
-	double v;
-	int i;
 	KConfig *conf = new KConfig ( f );
 	if ( conf==NULL ) return;
 
@@ -476,61 +518,54 @@ void RelKinemaCls::loadConfig ( QString f )
 	KConfigGroup externalGroup ( conf,"Externals" );
 	KConfigGroup historyGroup ( conf, "History" );
 
-	fontname=generalGroup.readEntry ( "Font name",fontname_def );
-	i=generalGroup.readEntry ( "Font size",fontsize_def ).toInt ( &ok );
-	if ( ok&&i>0 ) fontsize=i;
+	thefont=generalGroup.readFontEntry ( "Display font",&font_def );
 	MASSDATA = generalGroup.readEntry ( "Mass data directory",MASSDATA_DEF );
 	double_format = generalGroup.readEntry ( "Double number format",double_format_def );
 	if ( !checkDoubleNumberFormat ( double_format ) ) double_format=double_format_def;
 
 	webbrowser = externalGroup.readEntry ( "Web browser",FIREFOX );
 
-	v=parameterGroup.readEntry ( "AMU in MeV", AMU_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) AMU=v;
+	AMU=parameterGroup.readDoubleNumEntry ( "AMU in MeV", AMU_DEF );
+	MU[0]=1.0e3;
+	MU[1]=1.0;
+	MU[2]=1.0e-3;
+	MU[3]=1.0/AMU;
 
-	v=parameterGroup.readEntry ( "hbarc in MeV*fm", hbarc_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) hbarc=v;
+	hbarc=parameterGroup.readDoubleNumEntry ( "hbarc in MeV*fm", hbarc_DEF );
+	r0=parameterGroup.readDoubleNumEntry ( "r0 in fm", r0_DEF );
+	e2=parameterGroup.readDoubleNumEntry ( "e2 in MeV", e2_DEF );
+	Bv=parameterGroup.readDoubleNumEntry ( "Bv", Bv_DEF );
+	Bs=parameterGroup.readDoubleNumEntry ( "Bs", Bs_DEF );
+	Bsym=parameterGroup.readDoubleNumEntry ( "Bsym", Bsym_DEF );
+	Bp=parameterGroup.readDoubleNumEntry ( "Bp", Bp_DEF );
+	Bc=parameterGroup.readDoubleNumEntry ( "Bc", Bc_DEF );
+	hcRinf=parameterGroup.readDoubleNumEntry ( "Rydberg energy in eV", hcRinf_DEF );
 
-	v=parameterGroup.readEntry ( "r0 in fm", r0_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) r0=v;
+	plotmask = historyGroup.readNumEntry ( "Plot mask",-1 );
 
-	v=parameterGroup.readEntry ( "e2 in MeV", e2_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) e2=v;
-
-	v=parameterGroup.readEntry ( "Bv", Bv_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) Bv=v;
-
-	v=parameterGroup.readEntry ( "Bs", Bs_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) Bs=v;
-
-	v=parameterGroup.readEntry ( "Bsym", Bsym_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) Bsym=v;
-
-	v=parameterGroup.readEntry ( "Bp", Bp_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) Bp=v;
-
-	v=parameterGroup.readEntry ( "Bc", Bc_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) Bc=v;
-
-	v=parameterGroup.readEntry ( "Rydberg energy in eV", hcRinf_DEF ).toDouble ( &ok );
-	if ( ok&&v>0 ) hcRinf=v;
-
+	for ( int i=0;i<nexpmax;i++ )
+	{
+		exprBox[i]->setHistoryItems ( historyGroup.readListEntry ( "Macro history" ) );
+		exprBox[i]->completionObject()->setItems ( historyGroup.readListEntry ( "Macro completion" ) );
+	}
 	nc2=historyGroup.readEntry ( "Target name","" );
 	nc1=historyGroup.readEntry ( "Projectile name","" );
 	nc3=historyGroup.readEntry ( "Ejectile name","" );
 	nc4=historyGroup.readEntry ( "Residual name","" );
 
-	a2=historyGroup.readEntry ( "Target A","" ).toInt();
-	a1=historyGroup.readEntry ( "Projectile A","" ).toInt();
-	a3=historyGroup.readEntry ( "Ejectile A","" ).toInt();
-	a4=historyGroup.readEntry ( "Residual A","" ).toInt();
+	a2=historyGroup.readNumEntry ( "Target A",     0 );
+	a1=historyGroup.readNumEntry ( "Projectile A", 0 );
+	a3=historyGroup.readNumEntry ( "Ejectile A",   0 );
+	a4=historyGroup.readNumEntry ( "Residual A",   0 );
 
-	K1=historyGroup.readEntry ( "Incident energy in MeV","" ).toDouble();
-	Ex=historyGroup.readEntry ( "Excitation energy in MeV","" ).toDouble();
-
+	K1=historyGroup.readDoubleNumEntry ( "Incident energy",   0.0 );
+	Ex=historyGroup.readDoubleNumEntry ( "Excitation energy", 0.0 );
+	EUnitBox->setCurrentItem ( historyGroup.readNumEntry ( "Energy unit", 1 ) );
+	MUnitBox->setCurrentItem ( historyGroup.readNumEntry ( "Mass unit", 1 ) );
+	rkc_set_eunit ( prkc, EUnitBox->currentItem() +1 );
+	changeMassUnitSlot();
 	delete conf;
 }
-
 
 double RelKinemaCls::readMass ( QString f, QString n, bool *ok )
 {
@@ -642,6 +677,10 @@ double RelKinemaCls::getMass ( QString a, QString n, int *A, int *Z, bool calc )
 		{
 			m=ParticleM[pid];
 		}
+		else if ( !ok )
+		{
+			return -1;
+		}
 		return m;
 	}
 	else
@@ -712,6 +751,71 @@ void RelKinemaCls::unsetMassSlot_all()
 double RelKinemaCls::stripMass ( double m, int z )
 {
 	return m-z*Me;
+}
+void RelKinemaCls::inverseSlot()
+{
+	swapIniSlot();
+	swapFinSlot();
+}
+void RelKinemaCls::reverseSlot()
+{
+	QString a,e;
+	for ( int i=0;i<4;i++ ) unsetMass ( i,false );
+	a=ATargBox->text();
+	e=ETargBox->text();
+	ATargBox->blockSignals ( true );
+	AResiBox->blockSignals ( true );
+	ATargBox->setText ( AResiBox->text() );
+	ETargBox->setText ( EResiBox->text() );
+	AResiBox->setText ( a );
+	EResiBox->setText ( e );
+	ATargBox->blockSignals ( false );
+	AResiBox->blockSignals ( false );
+	a=AProjBox->text();
+	e=EProjBox->text();
+	AProjBox->blockSignals ( true );
+	AEjecBox->blockSignals ( true );
+	AProjBox->setText ( AEjecBox->text() );
+	EProjBox->setText ( EEjecBox->text() );
+	AEjecBox->setText ( a );
+	EEjecBox->setText ( e );
+	AProjBox->blockSignals ( false );
+	AEjecBox->blockSignals ( false );
+	setMassSlot_all();
+}
+void RelKinemaCls::swapFinSlot()
+{
+	QString a,e;
+	a=AEjecBox->text();
+	e=EEjecBox->text();
+	unsetMass ( 2,false );
+	unsetMass ( 3,false );
+	AResiBox->blockSignals ( true );
+	AEjecBox->blockSignals ( true );
+	AEjecBox->setText ( AResiBox->text() );
+	EEjecBox->setText ( EResiBox->text() );
+	AResiBox->setText ( a );
+	EResiBox->setText ( e );
+	AResiBox->blockSignals ( false );
+	AEjecBox->blockSignals ( false );
+	setMassSlot_all();
+}
+void RelKinemaCls::swapIniSlot()
+{
+	QString a,e;
+	unsetMass ( 0,false );
+	unsetMass ( 1,false );
+	ATargBox->blockSignals ( true );
+	AProjBox->blockSignals ( true );
+	a=AProjBox->text();
+	e=EProjBox->text();
+	AProjBox->setText ( ATargBox->text() );
+	EProjBox->setText ( ETargBox->text() );
+	ATargBox->setText ( a );
+	ETargBox->setText ( e );
+	ATargBox->blockSignals ( false );
+	AProjBox->blockSignals ( false );
+	setMassSlot_all();
 }
 
 void RelKinemaCls::setMass ( int id, bool comp )
@@ -848,6 +952,7 @@ void RelKinemaCls::seeIfMassSet()
 		theReaction="";
 		ReactionConditionBox->setEnabled ( false );
 		SetBut->setEnabled ( true );
+		msgLbl->clear();
 	}
 }
 
@@ -904,6 +1009,7 @@ void RelKinemaCls::unsetMass ( int id, bool clear )
 	QLineEdit *L1=NULL,*EB=NULL, *AB=NULL;
 	int *a=NULL, *z=NULL;
 	QString *el=NULL;
+	bool ok;
 	switch ( id )
 	{
 		case 0:
@@ -948,6 +1054,20 @@ void RelKinemaCls::unsetMass ( int id, bool clear )
 		EB->blockSignals ( false );
 		AB->blockSignals ( false );
 	}
+	if(!AB->text().isEmpty()){
+		AB->text().toInt(&ok);
+		if(!ok){
+			AB->blockSignals(true);
+			if(*a>0){
+				AB->setText(QString::number(*a));
+			}else{
+				AB->clear();
+			}
+			AB->blockSignals(false);
+			if(massSet[id]) return;
+		}
+	}
+
 	massSet[id]=false;
 	rectSet[id]=!EB->text().isEmpty();
 	if ( rectSet[id] )
@@ -964,8 +1084,10 @@ void RelKinemaCls::unsetMass ( int id, bool clear )
 	ReactionConditionBox->setEnabled ( false );
 	EmissionAngleBox->setEnabled ( false );
 	tableBut->setEnabled ( false );
+	calcBut->setEnabled ( false );
 	EmissionBox->setEnabled ( false );
 	SetBut->setEnabled ( true );
+	msgLbl->clear();
 	setCaption ( "Relkinema" );
 	theReaction="";
 	ReactionBox->setTitle ( "Reaction" );
@@ -1237,8 +1359,24 @@ void RelKinemaCls::procK1()
 void RelKinemaCls::rectCondSlot_K1()
 {
 	setResultBox ( false );
-	bool ok;
-	double v=K1Box->text().toDouble ( &ok );
+	bool ok=false;
+	double v;
+	if ( K1Box->text().length() ==1 )
+	{
+		ok=true;
+		char c=K1Box->text().at ( 0 ).latin1();
+		switch ( c )
+		{
+			case 'e':
+				v=Me*EU[EUnitBox->currentItem() ];
+				break;
+			default:
+				ok=false;
+				break;
+		}
+		if ( ok ) showValueLE ( v,K1Box );
+	}
+	if ( !ok ) v=K1Box->text().toDouble ( &ok );
 	showStrLE ( "",K1cBox );
 	showStrLE ( "",p1Box );
 	showStrLE ( "",p1cBox );
@@ -1314,10 +1452,12 @@ bool RelKinemaCls::checkRectCond()
 	{
 		if ( Ex==0. )
 		{
+			residualLbl->setPaletteForegroundColor ( "black" );
 			ExLbl->clear();
 		}
 		else
 		{
+			residualLbl->setPaletteForegroundColor ( "red" );
 			ExLbl->setText ( "*" );
 		}
 	}
@@ -1341,6 +1481,7 @@ void RelKinemaCls::setResultBox ( bool on )
 	EmissionBox->setEnabled ( on );
 	EmissionAngleBox->setEnabled ( on );
 	tableBut->setEnabled ( on );
+	if ( pfzc!=0 ) calcBut->setEnabled ( on );
 	if ( on )
 	{
 		initResultBox();
@@ -1355,8 +1496,7 @@ void RelKinemaCls::setResultBox ( bool on )
 
 void RelKinemaCls::changeEUnitSlot()
 {
-	int i=EUnitBox->currentItem();
-	rkc_set_eunit ( prkc,i+1 );
+	rkc_set_eunit ( prkc,EUnitBox->currentItem() +1 );
 
 	K1=rkc_get_K1 ( prkc );
 	p1=rkc_get_p1 ( prkc );
@@ -1380,14 +1520,16 @@ void RelKinemaCls::changeEUnitSlot()
 	p3c=rkc_get_p3c ( prkc );
 	p4c=rkc_get_p4c ( prkc );
 
-	k3unitLbl->setText ( EUnitLbl[i] );
-	k3cunitLbl->setText ( EUnitLbl[i] );
-	k4unitLbl->setText ( EUnitLbl[i] );
-	k4cunitLbl->setText ( EUnitLbl[i] );
-	p3unitLbl->setText ( EUnitLbl[i]+"/c" );
-	p3cunitLbl->setText ( EUnitLbl[i]+"/c" );
-	p4unitLbl->setText ( EUnitLbl[i]+"/c" );
-	p4cunitLbl->setText ( EUnitLbl[i]+"/c" );
+	QString s=EUnitBox->currentText();
+	k3unitLbl->setText ( s );
+	k3cunitLbl->setText ( s );
+	k4unitLbl->setText ( s );
+	k4cunitLbl->setText ( s );
+	s.append ( "/c" );
+	p3unitLbl->setText ( s );
+	p3cunitLbl->setText ( s );
+	p4unitLbl->setText ( s );
+	p4cunitLbl->setText ( s );
 
 	showEnergyLE ( K1,K1Box );
 	showEnergyLE ( K1c,K1cBox );
@@ -1444,6 +1586,7 @@ void RelKinemaCls::changeAUnitSlot()
 	}
 	showThetaMax();
 	setThetaBarStep ( min,max,thetaStepBox->value(),v );
+	if ( ThetaLabBox->text().toDouble() ==0. ) resetThetaLab();
 }
 
 void RelKinemaCls::showValueLE ( double v, QLineEdit *b )
@@ -1568,6 +1711,7 @@ void RelKinemaCls::thetaCMSlot ( bool internal )
 	showAngleLE ( th3,ThetaLabBox );
 	showTheta4();
 	if ( !internal ) updateThetaBar();
+	updateExprSlot();
 }
 
 void RelKinemaCls::setJ34 ( )
@@ -1639,7 +1783,7 @@ void RelKinemaCls::thetaLabSlot ( bool internal )
 		if ( rkc_set_Theta3 ( prkc,th3 ) < 0 ) return;
 		showAngleLE ( th3,ThetaLabBox );
 	}
-	setK3 ( );
+	setK3 ();
 	setK4 ();
 	th3c=rkc_get_th3c ( prkc );
 	setJ34 ( );
@@ -1652,6 +1796,7 @@ void RelKinemaCls::thetaLabSlot ( bool internal )
 	showAngleLE ( th3c,ThetaCMBox );
 	showTheta4();
 	if ( !internal ) updateThetaBar();
+	updateExprSlot();
 }
 
 void RelKinemaCls::thetaLabSlot()
@@ -1690,26 +1835,19 @@ void RelKinemaCls::qSlot ( bool internal )
 	setth4 ( );
 	setJ34 ( );
 	setSpecParam();
-
 	showAngleLE ( th3,ThetaLabBox );
 	showAngleLE ( th3c,ThetaCMBox );
 	showTheta4();
 	if ( !internal ) updateThetaBar();
+	updateExprSlot();
 }
 
 void RelKinemaCls::setSpecParam()
 {
-	int ie;
-	double u1,u2;
 	QString L1,L2;
-
-	ie=EUnitBox->currentItem();
-	u1=EU[ie];
-	L1=EUnitLbl[ie];
+	L1=EUnitBox->currentText();
 	if ( degBut->isChecked() )
 	{
-		u1/=RTD;
-		u2=1./RTD;
 		L1+="/deg";
 		L2="1/deg";
 	}
@@ -1717,19 +1855,17 @@ void RelKinemaCls::setSpecParam()
 	{
 		L1+="/rad";
 		L2="1/rad";
-		u2=1.;
 	}
 
 // dK3/dth3
 	kinemaShift=rkc_get_KShift ( prkc );
-	showValueLE ( kinemaShift*u1, dK3_dth3Box );
+	showValueLE ( kinemaShift, dK3_dth3Box );
 	dK3_dth3_unitLbl->setText ( L1 );
 
 // dp3/dth3/p3
 	factorK=rkc_get_KFactor ( prkc );
-	showValueLE ( factorK*u2,KparamBox );
+	showValueLE ( factorK,KparamBox );
 	KparamUnitLbl->setText ( L2 );
-
 }
 
 QString RelKinemaCls::getAngleUnit()
@@ -1771,7 +1907,7 @@ void RelKinemaCls::scrTypeSlot()
 			unit=getAngleUnit();
 			L=theLabLbl;
 			rkc_set_K3Sign ( prkc,1 );
-			anotherSolutionBox->setEnabled (  inv && !thetaMaxNe );
+			anotherSolutionBox->setEnabled ( inv && !thetaMaxNe );
 			anotherSolutionBox->setChecked ( false );
 			tbMax=&thetaMax;
 			tbMin=&fZero;
@@ -1894,7 +2030,15 @@ void RelKinemaCls::anotherSolutionSlot()
 	{
 		rkc_set_K3Sign ( prkc,1 );
 	}
-	thetaBar->setValue ( 0 );
+	resetThetaLab();
+}
+
+void RelKinemaCls::resetThetaLab()
+{
+	ThetaLabBox->blockSignals ( true );
+	ThetaLabBox->clear();
+	ThetaLabBox->blockSignals ( false );
+	ThetaLabBox->setText ( "0" );
 }
 
 void RelKinemaCls::massTypeProc ( int id, QComboBox *c, QLineEdit *e )
@@ -1953,8 +2097,10 @@ void RelKinemaCls::massEditProc ( int id, QLineEdit *e, double *m )
 		ReactionConditionBox->setEnabled ( false );
 		EmissionAngleBox->setEnabled ( false );
 		tableBut->setEnabled ( false );
+		calcBut->setEnabled ( false );
 		EmissionBox->setEnabled ( false );
 		SetBut->setEnabled ( true );
+		msgLbl->clear();
 		massSet[id]=false;
 	}
 	else
@@ -2016,32 +2162,73 @@ void RelKinemaCls::showResultListSlot()
 {
 	tableBut->setEnabled ( false );
 
+	bool exprPlot[4]={plot1Box->isChecked(),
+	                  plot2Box->isChecked(),
+	                  plot3Box->isChecked(),
+	                  plot4Box->isChecked()
+	                 };
+	plotmask=0;
+	int col_first=scrTypeBox->currentItem();
+	for ( int i=3;i<13;i++ )
+	{
+		if ( plotXBox[i]->isChecked() ) plotmask|=1<<i;
+	}
+	switch ( col_first )
+	{
+		case 0:
+			if ( plotXBox[0]->isChecked() ) plotmask|=1<<0;
+			if ( plotXBox[1]->isChecked() ) plotmask|=1<<1;
+			if ( plotXBox[2]->isChecked() ) plotmask|=1<<2;
+			break;
+		case 1:
+			if ( plotXBox[1]->isChecked() ) plotmask|=1<<0;
+			if ( plotXBox[0]->isChecked() ) plotmask|=1<<1;
+			if ( plotXBox[2]->isChecked() ) plotmask|=1<<2;
+			break;
+		case 2:
+			if ( plotXBox[2]->isChecked() ) plotmask|=1<<0;
+			if ( plotXBox[0]->isChecked() ) plotmask|=1<<1;
+			if ( plotXBox[1]->isChecked() ) plotmask|=1<<2;
+			break;
+	}
 	int irmin=thetaBar->minValue();
 	int irmax=thetaBar->maxValue();
 	int nr=irmax-irmin+1;
-
-	resultWindowCls *win = new resultWindowCls ( NULL,NULL,Qt::WDestructiveClose );
-	win->homedir=&HOME;
-	win->setFont ( thefont );
-	win->col_first=scrTypeBox->currentItem();
-
-	win->initResultDescBox ( theReaction, K1, p1, Ex, QValue, beta,gamma,
-	                         m1/AMU, m2/AMU, m3/AMU, m4/AMU, double_format );
-
-	QString el=EUnitLbl[EUnitBox->currentItem() ];
+	QString el=EUnitBox->currentText();
 	QString pl=el+"/c";
 	QString al;
 	degBut->isChecked() ? al="deg": al="rad";
 
-	win->initResultTable ( nr,el,al,pl );
-	win->show();
+	resultWindowCls *win = new resultWindowCls (
+	    NULL,NULL,Qt::WDestructiveClose, plotmask, exprPlot, exprBox, col_first,nr,el,al,pl );
 
+	win->homedir=&HOME;
+	win->setFont ( thefont );
+
+	win->initResultDescBox ( theReaction, K1, p1, Ex, QValue, beta,gamma,
+	                         m1/AMU, m2/AMU, m3/AMU, m4/AMU, double_format );
+
+	/*	win->initResultTable (  );*/
+	prkc_dmy=rkc_cp ( prkc );
+	int n=0;
+	for ( int i=0;i<4;i++ ) if ( exprPlot[i] ) n++;
+	if ( n!=0 )
+	{
+		pfzc_dmy=fzc_cp ( pfzc );
+		registParams ( prkc_dmy, pfzc_dmy );
+	}
+	else
+	{
+		pfzc_dmy=0;
+	}
 	rwt = new rwThreadCls ( thetaStepBox->value(), *tbMin, irmax,
-	                        prkc, scrTypeBox->currentItem(), double_format );
+	                        prkc_dmy, scrTypeBox->currentItem(), double_format,
+	                        col_first, pfzc_dmy, plotmask, exprPlot );
 	connect ( win,SIGNAL ( done ( void ) ),this,SLOT ( teDone ( void ) ) );
 	win->sl=&rwt->sl;
 	win->ndone=&rwt->ndone;
 	stopBut->setEnabled ( true );
+	win->show();
 	rwt->start();
 	win->startPoll();
 }
@@ -2049,6 +2236,8 @@ void RelKinemaCls::showResultListSlot()
 void RelKinemaCls::teDone ( void )
 {
 	delete rwt;
+	rkc_uinit ( prkc_dmy );
+	if ( pfzc_dmy!=0 ) fzc_uinit ( pfzc_dmy );
 	tableBut->setEnabled ( true );
 	stopBut->setEnabled ( false );
 }
@@ -2127,28 +2316,61 @@ void RelKinemaCls::mdmSlot()
 
 void RelKinemaCls::keyPressEvent ( QKeyEvent *e )
 {
-	switch ( e->key() )
+	if ( e->state() ==Qt::ControlButton )
 	{
-		case Qt::Key_Q:
-		case Qt::Key_Escape:
-			close();
-			break;
-		case Qt::Key_T:
-			if ( tableBut->isEnabled() ) showResultListSlot();
-			break;
-		case Qt::Key_M:
-			mdmSlot();
-			break;
-		case Qt::Key_H:
-			showAbout();
-			break;
-		case Qt::Key_C:
-			unsetMassSlot_all();
-			break;
-		case Qt::Key_S:
-			settingsSlot();
-			break;
+		switch ( e->key() )
+		{
+			case Qt::Key_S:
+				saveRectCondSlot();
+				break;
+			case Qt::Key_O:
+				loadRectCondSlot();
+				break;
+			default:
+				e->ignore();
+				return;
+		}
 	}
+	else
+	{
+		switch ( e->key() )
+		{
+			case Qt::Key_Q:
+				close();
+				break;
+			case Qt::Key_Escape:
+				setFocus(); // escape from edit focus
+				break;
+			case Qt::Key_T:
+				if ( tableBut->isEnabled() ) showResultListSlot();
+				break;
+			case Qt::Key_M:
+				mdmSlot();
+				break;
+			case Qt::Key_K:
+				if ( calcBut->isEnabled() ) calcSlot();
+				break;
+			case Qt::Key_R:
+				if ( redoBut->isEnabled() ) redoSlot();
+				break;
+			case Qt::Key_V:
+				showAbout();
+				break;
+			case Qt::Key_C:
+				unsetMassSlot_all();
+				break;
+			case Qt::Key_S:
+				toggleSettingsSlot();
+				break;
+			case Qt::Key_A:
+				showMenu();
+				break;
+			default:
+				e->ignore();
+				return;
+		}
+	}
+	e->accept();
 }
 
 void RelKinemaCls::showAbout()
@@ -2156,6 +2378,12 @@ void RelKinemaCls::showAbout()
 	aboutcls subWin ( NULL,NULL,Qt::WDestructiveClose );
 	subWin.wb=webbrowser;
 	subWin.exec();
+}
+
+void RelKinemaCls::toggleSettingsSlot()
+{
+	settingsBut->toggle();
+	settingsSlot();
 }
 
 void RelKinemaCls::settingsSlot()
@@ -2177,6 +2405,9 @@ void RelKinemaCls::settingsSlot()
 
 void RelKinemaCls::initSettingsPage ( bool first )
 {
+	confDoubleNumberFormatBox->blockSignals ( true );
+	confMassDataDirBox->blockSignals ( true );
+	configEdit->blockSignals ( true );
 	if ( first )
 	{
 		confDoubleNumberFormatLbl->clear();
@@ -2203,6 +2434,14 @@ void RelKinemaCls::initSettingsPage ( bool first )
 		f.close();
 	}
 	configEdit->setCursorPosition ( 0,0 );
+
+	fontBut->blockSignals ( true );
+	fontBut->setFont ( thefont );
+	fontBut->blockSignals ( false );
+
+	confDoubleNumberFormatBox->blockSignals ( false );
+	confMassDataDirBox->blockSignals ( false );
+	configEdit->blockSignals ( false );
 }
 
 bool RelKinemaCls::checkDoubleNumberFormat ( QString fmt )
@@ -2224,11 +2463,13 @@ void RelKinemaCls::showMessL ( QString m, QString c, QLabel *L )
 
 void RelKinemaCls::confAppSlot()
 {
+	int rc=0;
 	QFileInfo fi ( confMassDataDirBox->text() );
 	if ( QFile::exists ( confMassDataDirBox->text() ) && fi.isReadable() )
 	{
 		MASSDATA=confMassDataDirBox->text();
 		showMessL ( "ok","blue",confMassDataDirLbl );
+		rc=1;
 	}
 	else
 	{
@@ -2239,11 +2480,19 @@ void RelKinemaCls::confAppSlot()
 	{
 		double_format=confDoubleNumberFormatBox->text();
 		showMessL ( "ok","blue",confDoubleNumberFormatLbl );
+		rc|=2;
 	}
 	else
 	{
 		showMessL ( "Invalid Format!","red",confDoubleNumberFormatLbl );
 	}
+	if ( rc==3 )
+	{
+		confAppBut->setEnabled ( false );
+		saveConfBut->setEnabled ( true );
+	}
+	thefont=fontBut->font();
+	setDispFont();
 }
 
 void RelKinemaCls::redoSlot()
@@ -2269,13 +2518,18 @@ void RelKinemaCls::saveConfSlot()
 	}
 	QString mdn=MASSDATA;
 	QString dfn=double_format;
+	QFont font=thefont;
 	loadConfig ( CONFIGFILE );
-	MASSDATA=mdn;
-	double_format=dfn;
+	if ( confMassDataDirLbl->text() =="ok" )
+	{
+		MASSDATA=mdn;
+		double_format=dfn;
+		thefont=font;
+	}
 // then the changes on massdata etc on the lineedit will be saved
 	saveConfig ( CONFIGFILE );
-	initSettingsPage();
 	reinitRelKinema();
+	initSettingsPage();
 }
 
 void RelKinemaCls::returnSlot()
@@ -2292,72 +2546,494 @@ void RelKinemaCls::massDataDirSlot()
 	}
 }
 
+void RelKinemaCls::registParam ( size_t pfzc_, size_t ref, QString str )
+{
+	char cstr[LEN_FZCSTR_MAX];
+	size_t pcstr= ( size_t ) &cstr[0];
+	strcpy ( cstr,str.latin1() );
+	fzc_regpar ( pfzc_, ref, pcstr, PK_REAL );
+}
+
+void RelKinemaCls::registParams ( size_t prkc_, size_t pfzc_ )
+{
+	registParam ( pfzc_, rkc_getp_m1 ( prkc_ ), "m1" );
+	registParam ( pfzc_, rkc_getp_m2 ( prkc_ ), "m2" );
+	registParam ( pfzc_, rkc_getp_m3 ( prkc_ ), "m3" );
+	registParam ( pfzc_, rkc_getp_m4 ( prkc_ ), "m4" );
+
+	registParam ( pfzc_, rkc_getp_E1 ( prkc_ ), "E1" );
+	registParam ( pfzc_, rkc_getp_E2 ( prkc_ ), "E2" );
+	registParam ( pfzc_, rkc_getp_E3 ( prkc_ ), "E3" );
+	registParam ( pfzc_, rkc_getp_E4 ( prkc_ ), "E4" );
+
+	registParam ( pfzc_, rkc_getp_p1 ( prkc_ ), "p1" );
+	registParam ( pfzc_, rkc_getp_p2 ( prkc_ ), "p2" );
+	registParam ( pfzc_, rkc_getp_p3 ( prkc_ ), "p3" );
+	registParam ( pfzc_, rkc_getp_p4 ( prkc_ ), "p4" );
+
+	registParam ( pfzc_, rkc_getp_K1 ( prkc_ ), "K1" );
+	registParam ( pfzc_, rkc_getp_K3 ( prkc_ ), "K3" );
+	registParam ( pfzc_, rkc_getp_K4 ( prkc_ ), "K4" );
+
+	registParam ( pfzc_, rkc_getp_E1c ( prkc_ ), "E1c" );
+	registParam ( pfzc_, rkc_getp_E2c ( prkc_ ), "E2c" );
+	registParam ( pfzc_, rkc_getp_E3c ( prkc_ ), "E3c" );
+	registParam ( pfzc_, rkc_getp_E4c ( prkc_ ), "E4c" );
+
+	registParam ( pfzc_, rkc_getp_p1c ( prkc_ ), "p1c" );
+	registParam ( pfzc_, rkc_getp_p2c ( prkc_ ), "p2c" );
+	registParam ( pfzc_, rkc_getp_p3c ( prkc_ ), "p3c" );
+	registParam ( pfzc_, rkc_getp_p4c ( prkc_ ), "p4c" );
+
+	registParam ( pfzc_, rkc_getp_K1c ( prkc_ ), "K1c" );
+	registParam ( pfzc_, rkc_getp_K2c ( prkc_ ), "K2c" );
+	registParam ( pfzc_, rkc_getp_K3c ( prkc_ ), "K3c" );
+	registParam ( pfzc_, rkc_getp_K4c ( prkc_ ), "K4c" );
+
+	registParam ( pfzc_, rkc_getp_QValue ( prkc_ ), "QValue" );
+	registParam ( pfzc_, rkc_getp_Ex ( prkc_ ), "Ex" );
+	registParam ( pfzc_, rkc_getp_ExMax ( prkc_ ), "ExMax" );
+	registParam ( pfzc_, rkc_getp_K1Min ( prkc_ ), "K1Min" );
+	registParam ( pfzc_, rkc_getp_p1Min ( prkc_ ), "p1Min" );
+	registParam ( pfzc_, rkc_getp_K1cMin ( prkc_ ), "K1cMin" );
+	registParam ( pfzc_, rkc_getp_p1cMin ( prkc_ ), "p1cMin" );
+
+	registParam ( pfzc_, rkc_getp_theM ( prkc_ ), "theM" );
+	registParam ( pfzc_, rkc_getp_gamma ( prkc_ ), "gamma" );
+	registParam ( pfzc_, rkc_getp_beta ( prkc_ ), "beta" );
+
+	registParam ( pfzc_, rkc_getp_th3Max ( prkc_ ), "th3Max" );
+	registParam ( pfzc_, rkc_getp_th3 ( prkc_ ), "th3" );
+	registParam ( pfzc_, rkc_getp_th4 ( prkc_ ), "th4" );
+	registParam ( pfzc_, rkc_getp_th3c ( prkc_ ), "th3c" );
+	registParam ( pfzc_, rkc_getp_th4c ( prkc_ ), "th4c" );
+
+	registParam ( pfzc_, rkc_getp_theq ( prkc_ ), "theq" );
+	registParam ( pfzc_, rkc_getp_qMin ( prkc_ ), "qMin" );
+	registParam ( pfzc_, rkc_getp_qMax ( prkc_ ), "qMax" );
+
+	registParam ( pfzc_, rkc_getp_J3 ( prkc_ ), "J3" );
+	registParam ( pfzc_, rkc_getp_J4 ( prkc_ ), "J4" );
+
+	registParam ( pfzc_, rkc_getp_KShift ( prkc_ ), "KS" );
+	registParam ( pfzc_, rkc_getp_KFactor ( prkc_ ), "KF" );
+}
+
 void RelKinemaCls::calcSlot()
 {
-	rkCalcCls *win = new rkCalcCls ( NULL,NULL,Qt::WDestructiveClose, &CONFIGFILE );
+	rkCalcCls *win = new rkCalcCls ( NULL,NULL,Qt::WDestructiveClose,
+	                                 &CONFIGFILE, pfzc );
 	if ( !win->initRKC() )
 	{
 		KMessageBox::sorry ( this,"Failed to start calculator","internal error" );
 		return;
 	}
-
-	win->setParameter ( &m1,"m1" );
-	win->setParameter ( &m2,"m2" );
-	win->setParameter ( &m3,"m3" );
-	win->setParameter ( &m4,"m4" );
-
-	win->setParameter ( &E1,"E1" );
-	win->setParameter ( &E2,"E2" );
-	win->setParameter ( &E3,"E3" );
-	win->setParameter ( &E4,"E4" );
-
-	win->setParameter ( &p1,"p1" );
-	win->setParameter ( &p2,"p2" );
-	win->setParameter ( &p3,"p3" );
-	win->setParameter ( &p4,"p4" );
-
-	win->setParameter ( &K1,"K1" );
-	win->setParameter ( &K2,"K2" );
-	win->setParameter ( &K3,"K3" );
-	win->setParameter ( &K4,"K4" );
-
-	win->setParameter ( &E1c,"E1c" );
-	win->setParameter ( &E2c,"E2c" );
-	win->setParameter ( &E3c,"E3c" );
-	win->setParameter ( &E4c,"E4c" );
-
-	win->setParameter ( &p1c,"p1c" );
-	win->setParameter ( &p2c,"p2c" );
-	win->setParameter ( &p3c,"p3c" );
-	win->setParameter ( &p4c,"p4c" );
-
-	win->setParameter ( &K1c,"K1c" );
-	win->setParameter ( &K2c,"K2c" );
-	win->setParameter ( &K3c,"K3c" );
-	win->setParameter ( &K4c,"K4c" );
-
-	win->setParameter ( &beta,"beta" );
-	win->setParameter ( &gamma,"gamma" );
-	win->setParameter ( &QValue,"QValue" );
-	win->setParameter ( &theq,"q" );
-	win->setParameter ( &qmax, "qmax" );
-	win->setParameter ( &qmin, "qmin" );
-
-	win->setParameter ( &J3,"J3" );
-	win->setParameter ( &J4,"J4" );
-
-	win->setParameter ( &th3,"th3" );
-	win->setParameter ( &th4,"th4" );
-	win->setParameter ( &th3c,"th3c" );
-	win->setParameter ( &th4c,"th4c" );
-	win->setParameter ( &thetaMax, "th3max" );
-
 	win->show();
 }
 
 void RelKinemaCls::stopSlot()
 {
 	stopBut->setEnabled ( false );
+}
+
+void RelKinemaCls::mousePressEvent ( QMouseEvent *e )
+{
+	switch ( e->button() )
+	{
+		case RightButton:
+			e->accept();
+			showMenu();
+			break;
+		default:
+			e->ignore();
+			break;
+	}
+}
+
+void RelKinemaCls::showMenu()
+{
+	QPixmap pmassdata ( pix_massdata );
+	QPixmap pcalc ( pix_calc );
+	QPixmap ptable ( pix_table );
+	QPixmap psettings ( pix_settings );
+	QPixmap pexit ( pix_exit );
+	QPixmap pabout ( pix_about );
+	QPixmap predo ( pix_redo );
+	QPixmap psave ( pix_save );
+	QPixmap pload ( pix_load );
+
+	QPopupMenu pm ( this );
+	pm.setFont ( thefont );
+	QPalette p=pm.palette();
+	p.setColor ( QColorGroup::Highlight, qRgb ( 205,234,255 ) );
+	p.setColor ( QColorGroup::HighlightedText, qRgb ( 0,71,171 ) );
+	pm.setPalette ( p );
+
+	if ( ReactionBox->rect().contains ( QCursor::pos() ) )
+	{
+		pm.insertItem ( "inverse reaction",this,SLOT ( inverseSlot() ) );
+		pm.insertItem ( "reverse reaction",this,SLOT ( reverseSlot() ) );
+		pm.insertItem ( "swap initial",this,SLOT ( swapIniSlot() ) );
+		pm.insertItem ( "swap final",this,SLOT ( swapFinSlot() ) );
+		pm.insertSeparator();
+	}
+
+	if ( !settingsBut->isOn() )
+	{
+		pm.insertItem ( pmassdata,"Manage Mass Data",this,SLOT ( mdmSlot() ),Key_M );
+		int idt=pm.insertItem ( ptable,"Show Table",this,SLOT ( showResultListSlot() ),Key_T );
+		int idc=pm.insertItem ( pcalc, "Online Calculator",  this, SLOT ( calcSlot() ), Key_K );
+		pm.insertSeparator();
+		int idr=pm.insertItem ( predo,"Reload && Recalc",this,SLOT ( redoSlot() ), Key_R );
+		pm.insertItem ( psettings,"Settings",this,SLOT ( toggleSettingsSlot() ),Key_S );
+		pm.setItemEnabled ( idt,tableBut->isEnabled() );
+		pm.setItemEnabled ( idc,calcBut->isEnabled() );
+		pm.setItemEnabled ( idr,redoBut->isEnabled() );
+	}
+	else
+	{
+		pm.insertItem ( "Return to Main",this,SLOT ( toggleSettingsSlot() ), Key_S );
+	}
+	pm.insertSeparator();
+	pm.insertItem ( pload, "Load Reaction",this,SLOT ( loadRectCondSlot() ),CTRL+Key_O );
+	int ids=pm.insertItem ( psave, "Save Reaction",this,SLOT ( saveRectCondSlot() ),CTRL+Key_S );
+	pm.setItemEnabled ( ids, ReactionConditionBox->isEnabled() );
+	pm.insertSeparator();
+	pm.insertSeparator();
+	pm.insertItem ( pabout,"About",this,SLOT ( showAbout() ) );
+	pm.insertItem ( pexit,"Exit",this,SLOT ( close() ),Key_Q );
+	pm.exec ( QCursor::pos() );
+}
+
+void RelKinemaCls::setReaction ( QString rc )
+{
+	QString p,t,e,r;
+	int k;
+	for ( unsigned int i=0;i<rc.length();i++ )
+	{
+		if ( rc[i]=='(' )
+		{
+			k=i;
+			break;
+		}
+		else
+		{
+			t.append ( rc[i] );
+		}
+	}
+	for ( unsigned int i=k+1;i<rc.length();i++ )
+	{
+		if ( rc[i]==',' )
+		{
+			k=i;
+			break;
+		}
+		else
+		{
+			p.append ( rc[i] );
+		}
+	}
+	for ( unsigned int i=k+1;i<rc.length();i++ )
+	{
+		if ( rc[i]==')' )
+		{
+			k=i;
+			break;
+		}
+		else
+		{
+			e.append ( rc[i] );
+		}
+	}
+	for ( unsigned int i=k+1;i<rc.length();i++ ) r.append ( rc[i] );
+
+	QString A,E;
+	nameToAE ( t,&A,&E );
+	ATargBox->setText ( A );
+	ETargBox->setText ( E );
+	nameToAE ( p,&A,&E );
+	AProjBox->setText ( A );
+	EProjBox->setText ( E );
+	nameToAE ( e,&A,&E );
+	AEjecBox->setText ( A );
+	EEjecBox->setText ( E );
+	nameToAE ( r,&A,&E );
+	AResiBox->setText ( A );
+	EResiBox->setText ( E );
+	setMassSlot_all();
+}
+
+void RelKinemaCls::nameToAE ( QString name, QString *A, QString *E )
+{
+	int k;
+	*A="";
+	*E="";
+	for ( unsigned int i=0;i<name.length();i++ )
+	{
+		if ( name[i].isNumber() )
+		{
+			A->append ( name[i] );
+		}
+		else
+		{
+			k=i;
+			break;
+		}
+	}
+	for ( unsigned int i=k;i<name.length();i++ ) E->append ( name[i] );
+
+}
+
+void RelKinemaCls::loadRectCondSlot()
+{
+	KConfig *conf = new KConfig ( CONFIGFILE );
+	if ( conf==NULL ) return;
+
+	rclistCls win ( NULL,NULL,Qt::WDestructiveClose,conf, thefont );
+	int i=win.exec();
+	delete conf;
+	if ( i!=QDialog::Accepted ) return;
+
+	QString rc=win.rc;
+	if ( rc.isEmpty() ) return;
+
+	setReaction ( rc.section ( ";",0,0 ) );
+	int ie;
+	QString eu=rc.section ( ";",3,3 );
+	if ( eu=="keV" )
+	{
+		ie=0;
+	}
+	else if ( eu=="MeV" )
+	{
+		ie=1;
+	}
+	else if ( eu=="GeV" )
+	{
+		ie=2;
+	}
+	else if ( eu=="TeV" )
+	{
+		ie=3;
+	}
+	EUnitBox->setCurrentItem ( ie );
+	changeEUnitSlot();
+	K1Box->setText ( rc.section ( ";",1,1 ) );
+	ExBox->setText ( rc.section ( ";",2,2 ) );
+}
+
+void RelKinemaCls::saveRectCondSlot()
+{
+	if ( theReaction.isEmpty() ) return;
+	KConfig *conf = new KConfig ( CONFIGFILE );
+	if ( conf==NULL ) return;
+
+	linereadCls *dlg = new linereadCls ( NULL,NULL,Qt::WDestructiveClose,"Save Reaction Condition:"
+	                                     +theReaction,"Any Comments?", thefont );
+
+	if ( dlg->exec() !=QDialog::Accepted ) return;
+
+	QString rem=dlg->input;
+	delete dlg;
+
+	QString s=theReaction+";"+QString::number ( K1,'g',16 ) +";"+QString::number ( Ex,'g',16 )
+	          +";"+EUnitBox->currentText();
+
+	KConfigGroup saveGroup ( conf, "Save" );
+	QStringList sl0;
+	QStringList sl=saveGroup.readListEntry ( "list",sl0 );
+	if ( !sl.isEmpty() )
+	{
+		for ( QStringList::Iterator it=sl.begin();it!=sl.end();it++ )
+		{
+			if ( ( *it ) !=s ) sl0.append ( *it );
+		}
+	}
+	KConfigGroup remGroup ( conf,"Rem" );
+	remGroup.writeEntry ( s,rem );
+	sl0.append ( s );
+	saveGroup.writeEntry ( "list",sl0 );
+	remGroup.sync();
+	saveGroup.sync();
+
+	delete conf;
+	return;
+}
+
+void RelKinemaCls::checkAppSlot()
+{
+	confAppBut->setEnabled ( true );
+}
+
+void RelKinemaCls::checkConfSlot()
+{
+	saveConfBut->setEnabled ( true );
+}
+
+void RelKinemaCls::fontSlot ( const QFont &f )
+{
+	confAppBut->setEnabled ( true );
+}
+
+void RelKinemaCls::loadDefConfSlot()
+{
+	KConfig *conf = new KConfig ( CONFIGFILE );
+	conf->deleteGroup ( "General" );
+	conf->deleteGroup ( "Parameters" );
+	conf->deleteGroup ( "Externals" );
+	conf->sync();
+	delete conf;
+	loadConfig ( CONFIGFILE );
+	saveConfig ( CONFIGFILE );
+	reinitRelKinema();
+	initSettingsPage ( true );
+}
+
+void RelKinemaCls::decStepSlot()
+{
+	double v=thetaStepBox->value() /10.0;
+	v=thetaStepMin>v?thetaStepMin:v;
+	thetaStepBox->setValue ( v );
+}
+
+void RelKinemaCls::incStepSlot()
+{
+	double v=thetaStepBox->value() *10.0;
+	v=thetaStepMax<v?thetaStepMax:v;
+	thetaStepBox->setValue ( v );
+}
+
+void RelKinemaCls::expr1Slot()
+{
+	exprSlot ( 0 );
+}
+void RelKinemaCls::expr2Slot()
+{
+	exprSlot ( 1 );
+}
+void RelKinemaCls::expr3Slot()
+{
+	exprSlot ( 2 );
+}
+void RelKinemaCls::expr4Slot()
+{
+	exprSlot ( 3 );
+}
+
+void RelKinemaCls::exprSlot ( int id )
+{
+	exprSet[id]=false;
+	valBox[id]->setText("Undefined");
+	plotBox[id]->setEnabled ( false );
+	valBox[id]->setPaletteForegroundColor ( "black" );
+}
+
+void RelKinemaCls::exprWarn ( int id, QString mess )
+{
+	valBox[id]->setPaletteForegroundColor ( "red" );
+	valBox[id]->setText ( mess );
+}
+
+void RelKinemaCls::expr1SetSlot()
+{
+	exprSetSlot ( 0 );
+}
+void RelKinemaCls::expr2SetSlot()
+{
+	exprSetSlot ( 1 );
+}
+void RelKinemaCls::expr3SetSlot()
+{
+	exprSetSlot ( 2 );
+}
+void RelKinemaCls::expr4SetSlot()
+{
+	exprSetSlot ( 3 );
+}
+void RelKinemaCls::expr1SelectSlot()
+{
+	exprSetSlot ( 0, false );
+}
+void RelKinemaCls::expr2SelectSlot()
+{
+	exprSetSlot ( 1, false );
+}
+void RelKinemaCls::expr3SelectSlot()
+{
+	exprSetSlot ( 2, false );
+}
+void RelKinemaCls::expr4SelectSlot()
+{
+	exprSetSlot ( 3, false );
+}
+
+void RelKinemaCls::exprSetSlot ( int id, bool setHist )
+{
+	QString str=expr[id]+"=\""+exprBox[id]->currentText() +"\"";
+	char cstr[LEN_FZCSTR_MAX];
+	strcpy ( cstr,str.latin1() );
+	fzc_set_opt ( pfzc,FZCOPT_NOAUTO_ADDPAR );
+	int rc=fzc_set_formula ( pfzc, ( size_t ) &cstr );
+	if ( rc==0 )
+	{
+		exprSet[id]=true;
+		updateExprSlot();
+		plotBox[id]->setEnabled ( true );
+		if(setHist){
+			exprBox[id]->addToHistory ( exprBox[id]->currentText() );
+			for ( int i=0;i<nexpmax;i++ )
+			{
+				if ( i==id ) continue;
+				exprBox[i]->blockSignals ( true );
+				QString str=exprBox[i]->currentText();
+				exprBox[i]->setHistoryItems ( exprBox[id]->historyItems() );
+				exprBox[i]->completionObject()->setItems ( exprBox[id]->completionObject()->items() );
+				exprBox[i]->setCurrentText ( str );
+				exprBox[i]->blockSignals ( false );
+			}
+		}
+	}
+	else
+	{
+		exprWarn ( id, "Syntax error" );
+		plotBox[id]->setEnabled ( false );
+	}
+	fzc_cle_opt ( pfzc,FZCOPT_NOAUTO_ADDPAR );
+}
+
+void RelKinemaCls::updateExprSlot()
+{
+	char cstr[LEN_FZCSTR_MAX];
+	for ( int i=0;i<nexpmax;i++ )
+	{
+		if ( !exprSet[i] ) continue;
+		strcpy ( cstr,expr[i].latin1() );
+		int rc=fzc_set_formula ( pfzc, ( size_t ) &cstr );
+		if ( rc==0 )
+		{
+			rc=fzc_eval ( pfzc );
+			if ( rc!=0 )
+			{
+				exprWarn ( i, "Eval error" );
+				continue;
+			}
+		}
+		else
+		{
+			exprWarn ( i, "Syntax error" );
+			continue;
+		}
+		fzc_get_strans ( pfzc, ( size_t ) &cstr );
+		valBox[i]->setText ( cstr );
+	}
+}
+
+void RelKinemaCls::setPlottables()
+{
+	for ( int i=0;i<nrkpmax;i++ )
+	{
+		plotXBox[i]->setChecked ( BT ( plotmask,i ) );
+	}
 }
 
 #include "relkinemaCls.moc"
