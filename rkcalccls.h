@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -30,7 +30,7 @@ class rkCalcCls: public rkCalcDlg
 {
 		Q_OBJECT
 	public:
-		rkCalcCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, const QString *configfile = 0, size_t pfzc = 0 )
+		rkCalcCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, const QString *configfile = 0, size_t pfzc = 0)
 				:rkCalcDlg ( parent, name, wf ), configfile ( configfile ), pfzc ( pfzc ) {nextpara=0;};
 		bool initRKC();
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -61,8 +61,9 @@ void rwThreadCls::setRKCValue()
 		if ( fzc_set_formula ( pfzc, ( size_t ) &cstr ) == 0 &&
 		        fzc_eval ( pfzc ) == 0 )
 		{
-			fzc_get_strans ( pfzc, ( size_t ) &cstr );
-			sl.append ( cstr );
+			sl.append(s.sprintf(fmt,fzc_get_ans(pfzc)));
+/*			fzc_get_strans ( pfzc, ( size_t ) &cstr );
+			sl.append ( cstr );*/
 		}
 		else
 		{

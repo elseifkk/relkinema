@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                                 *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,12 +18,14 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 #include "rkcalccls.h"
 
 #include <qtextedit.h>
 #include <qcheckbox.h>
+#include <qtextstream.h>
 
 #include <kcombobox.h>
 #include <kconfig.h>
@@ -78,11 +80,21 @@ void rkCalcCls::enterSlot ( void )
 	size_t pcstr= ( size_t ) &cstr[0];
 
 	if ( formulaBox->currentText().isEmpty() ) return;
+	strcpy ( cstr,formulaBox->currentText().latin1() );
 
 	if ( autoClearBox->isChecked() ) clearSlot();
-	mess ( formulaBox->currentText() +" =","black", false );
 
-	strcpy ( cstr,formulaBox->currentText().latin1() );
+	switch ( fzc_proc_com ( pfzc, pcstr ) )
+	{
+		case FZCCID_INV:
+			mess ( "Invalid command\n","red", false );
+			return;
+		case FZCCID_DONE:
+			mess ( "ok\n","blue", false );
+			return;
+	}
+
+	mess ( formulaBox->currentText() +" =","black", false );
 	rc=fzc_set_formula ( pfzc, pcstr );
 	if ( rc>0 )
 	{
@@ -98,12 +110,14 @@ void rkCalcCls::enterSlot ( void )
 		if ( rc!=0 )
 		{
 			mess ( "Eval Error","red" );
-			return;
 		}
-		formulaBox->addToHistory ( formulaBox->currentText() );
-		fzc_get_strans ( pfzc, pcstr );
-		str=cstr;
-		mess ( str );
+		else
+		{
+			formulaBox->addToHistory ( formulaBox->currentText() );
+			fzc_get_strans ( pfzc, pcstr );
+			str=cstr;
+			mess ( str );
+		}
 	}
 	mess ( "" );
 }

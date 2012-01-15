@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                                 *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -57,7 +57,7 @@ class resultWindowCls: public resultWindow
 		                         double Ex, double QValue,
 		                         double beta, double gamma,
 		                         double m1, double m2, double m3, double m4,
-		                         QString double_format );
+		                         QString double_format, QString eure );
 		void startPoll();
 
 	public:
@@ -95,7 +95,10 @@ class resultWindowCls: public resultWindow
 		void plotDone();
 		void rtSlot ( int,int );
 		void setTable();
-		void clearPlotSelect(int);
+		void clearPlotSelect(int s=0);
+		void showTableMenu();
+		void copyTableItems();
+		void selectAllTableItems();
 
 	protected:
 		void keyPressEvent ( QKeyEvent* );

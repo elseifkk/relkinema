@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -17,6 +17,8 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <stdlib.h>
+
 #include "config.h"
 #include "relkinemaCls.h"
 
@@ -47,8 +49,8 @@ static KCmdLineOptions options[] =
 int main ( int argc, char **argv )
 {
 	KAboutData about ( "relkinema", I18N_NOOP ( "relkinema" ), version, description,
-	                   KAboutData::License_GPL, "(C) 2011 kazuaki kumagai", 0, 0, "elseifkk@users.sf.net" );
-	about.addAuthor ( "kazuaki kumagai", 0, "elseifkk@users.sf.net" );
+	                   KAboutData::License_GPL, "(C) 2012 Kazuaki Kumagai", 0, 0, "elseifkk@users.sf.net" );
+	about.addAuthor ( "Kazuaki Kumagai", 0, "elseifkk@users.sf.net" );
 	KCmdLineArgs::init ( argc, argv, &about );
 	KCmdLineArgs::addCmdLineOptions ( options );
 	KApplication app;

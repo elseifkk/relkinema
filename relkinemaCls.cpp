@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                                 *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -228,7 +228,7 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	if ( CONFIGFILE.endsWith ( "/" ) ) CONFIGFILE.append ( CONFIGFILE_DEF );
 	if ( !CONFIGFILE.startsWith ( "/" ) ) CONFIGFILE.prepend ( "/" ).prepend ( getenv ( "PWD" ) );
 	loadConfig ( CONFIGFILE );
-	setPlottables();
+	setPlottables ( plotmask );
 	if ( !QFile::exists ( CONFIGFILE ) ) saveConfig ( CONFIGFILE );
 	QFileInfo fi ( MASSDATA );
 	if ( !QFile::exists ( MASSDATA ) || !fi.isReadable() )
@@ -901,7 +901,7 @@ void RelKinemaCls::setMass ( int id, bool comp )
 	*m0=getMass ( sa,sn,a,z, calc );
 	if ( *m0>=0 )
 	{
-		if ( stripBox->isChecked() &&*a>0 )
+		if ( stripBox->isChecked() && *a>0 && MT->currentItem()==MT_EXP)
 		{
 			*m=stripMass ( *m0,*z );
 		}
@@ -924,10 +924,9 @@ void RelKinemaCls::setMass ( int id, bool comp )
 		}
 		else
 		{
-			L1->setText ( "Cant calc" );
+			L1->setText ( "Can't calc" );
 		}
 	}
-
 	seeIfMassSet();
 }
 
@@ -1054,17 +1053,22 @@ void RelKinemaCls::unsetMass ( int id, bool clear )
 		EB->blockSignals ( false );
 		AB->blockSignals ( false );
 	}
-	if(!AB->text().isEmpty()){
-		AB->text().toInt(&ok);
-		if(!ok){
-			AB->blockSignals(true);
-			if(*a>0){
-				AB->setText(QString::number(*a));
-			}else{
+	if ( !AB->text().isEmpty() )
+	{
+		AB->text().toInt ( &ok );
+		if ( !ok )
+		{
+			AB->blockSignals ( true );
+			if ( *a>0 )
+			{
+				AB->setText ( QString::number ( *a ) );
+			}
+			else
+			{
 				AB->clear();
 			}
-			AB->blockSignals(false);
-			if(massSet[id]) return;
+			AB->blockSignals ( false );
+			if ( massSet[id] ) return;
 		}
 	}
 
@@ -2139,10 +2143,10 @@ void RelKinemaCls::stripSlot()
 {
 	if ( stripBox->isChecked() )
 	{
-		if ( a1>0&&massSet[1] ) m1=stripMass ( m10,z1 );
-		if ( a2>0&&massSet[0] ) m2=stripMass ( m20,z2 );
-		if ( a3>0&&massSet[3] ) m3=stripMass ( m30,z3 );
-		if ( a4>0&&massSet[4] ) m4=stripMass ( m40,z4 );
+		if ( a1>0&&massSet[1] && mass1TypeBox->currentItem()==MT_EXP ) m1=stripMass ( m10,z1 );
+		if ( a2>0&&massSet[0] && mass2TypeBox->currentItem()==MT_EXP ) m2=stripMass ( m20,z2 );
+		if ( a3>0&&massSet[3] && mass3TypeBox->currentItem()==MT_EXP ) m3=stripMass ( m30,z3 );
+		if ( a4>0&&massSet[4] && mass4TypeBox->currentItem()==MT_EXP ) m4=stripMass ( m40,z4 );
 	}
 	else
 	{
@@ -2160,13 +2164,14 @@ void RelKinemaCls::stripSlot()
 
 void RelKinemaCls::showResultListSlot()
 {
-	tableBut->setEnabled ( false );
-
 	bool exprPlot[4]={plot1Box->isChecked(),
 	                  plot2Box->isChecked(),
 	                  plot3Box->isChecked(),
 	                  plot4Box->isChecked()
 	                 };
+	int np=0;
+	for ( int i=0;i<4;i++ ) if ( exprPlot[i] ) np++;
+
 	plotmask=0;
 	int col_first=scrTypeBox->currentItem();
 	for ( int i=3;i<13;i++ )
@@ -2191,6 +2196,13 @@ void RelKinemaCls::showResultListSlot()
 			if ( plotXBox[1]->isChecked() ) plotmask|=1<<2;
 			break;
 	}
+	if ( np==0&&plotmask==0 )
+	{
+		KMessageBox::sorry ( this,"No item specified for plot.","" );
+		return;
+	}
+
+	tableBut->setEnabled ( false );
 	int irmin=thetaBar->minValue();
 	int irmax=thetaBar->maxValue();
 	int nr=irmax-irmin+1;
@@ -2206,7 +2218,8 @@ void RelKinemaCls::showResultListSlot()
 	win->setFont ( thefont );
 
 	win->initResultDescBox ( theReaction, K1, p1, Ex, QValue, beta,gamma,
-	                         m1/AMU, m2/AMU, m3/AMU, m4/AMU, double_format );
+	                         m1/AMU, m2/AMU, m3/AMU, m4/AMU, double_format,
+				 EUnitBox->currentText() );
 
 	/*	win->initResultTable (  );*/
 	prkc_dmy=rkc_cp ( prkc );
@@ -2551,7 +2564,7 @@ void RelKinemaCls::registParam ( size_t pfzc_, size_t ref, QString str )
 	char cstr[LEN_FZCSTR_MAX];
 	size_t pcstr= ( size_t ) &cstr[0];
 	strcpy ( cstr,str.latin1() );
-	fzc_regpar ( pfzc_, ref, pcstr, PK_REAL );
+	fzc_regpar ( pfzc_, ref, pcstr, FZCPK_REAL );
 }
 
 void RelKinemaCls::registParams ( size_t prkc_, size_t pfzc_ )
@@ -2623,6 +2636,8 @@ void RelKinemaCls::calcSlot()
 {
 	rkCalcCls *win = new rkCalcCls ( NULL,NULL,Qt::WDestructiveClose,
 	                                 &CONFIGFILE, pfzc );
+	win->setFont(thefont);
+
 	if ( !win->initRKC() )
 	{
 		KMessageBox::sorry ( this,"Failed to start calculator","internal error" );
@@ -2684,6 +2699,9 @@ void RelKinemaCls::showMenu()
 		int idt=pm.insertItem ( ptable,"Show Table",this,SLOT ( showResultListSlot() ),Key_T );
 		int idc=pm.insertItem ( pcalc, "Online Calculator",  this, SLOT ( calcSlot() ), Key_K );
 		pm.insertSeparator();
+		pm.insertItem ( "Check all for plot",this,SLOT ( checkAllPlotSlot() ) );
+		pm.insertItem ( "Check none for plot",this,SLOT ( checkNonePlotSlot() ) );
+		pm.insertSeparator();
 		int idr=pm.insertItem ( predo,"Reload && Recalc",this,SLOT ( redoSlot() ), Key_R );
 		pm.insertItem ( psettings,"Settings",this,SLOT ( toggleSettingsSlot() ),Key_S );
 		pm.setItemEnabled ( idt,tableBut->isEnabled() );
@@ -2695,6 +2713,7 @@ void RelKinemaCls::showMenu()
 		pm.insertItem ( "Return to Main",this,SLOT ( toggleSettingsSlot() ), Key_S );
 	}
 	pm.insertSeparator();
+	pm.insertItem ( "Clear Reaction",this,SLOT ( unsetMassSlot_all() ),Key_C );
 	pm.insertItem ( pload, "Load Reaction",this,SLOT ( loadRectCondSlot() ),CTRL+Key_O );
 	int ids=pm.insertItem ( psave, "Save Reaction",this,SLOT ( saveRectCondSlot() ),CTRL+Key_S );
 	pm.setItemEnabled ( ids, ReactionConditionBox->isEnabled() );
@@ -2923,7 +2942,7 @@ void RelKinemaCls::expr4Slot()
 void RelKinemaCls::exprSlot ( int id )
 {
 	exprSet[id]=false;
-	valBox[id]->setText("Undefined");
+	valBox[id]->setText ( "Undefined" );
 	plotBox[id]->setEnabled ( false );
 	valBox[id]->setPaletteForegroundColor ( "black" );
 }
@@ -2979,7 +2998,8 @@ void RelKinemaCls::exprSetSlot ( int id, bool setHist )
 		exprSet[id]=true;
 		updateExprSlot();
 		plotBox[id]->setEnabled ( true );
-		if(setHist){
+		if ( setHist )
+		{
 			exprBox[id]->addToHistory ( exprBox[id]->currentText() );
 			for ( int i=0;i<nexpmax;i++ )
 			{
@@ -3023,17 +3043,29 @@ void RelKinemaCls::updateExprSlot()
 			exprWarn ( i, "Syntax error" );
 			continue;
 		}
-		fzc_get_strans ( pfzc, ( size_t ) &cstr );
-		valBox[i]->setText ( cstr );
+		QString s;
+		valBox[i]->setText ( s.sprintf ( double_format,fzc_get_ans ( pfzc ) ) );
+		/*		fzc_get_strans ( pfzc, ( size_t ) &cstr );
+				valBox[i]->setText ( cstr );*/
 	}
 }
 
-void RelKinemaCls::setPlottables()
+void RelKinemaCls::setPlottables ( int pm )
 {
 	for ( int i=0;i<nrkpmax;i++ )
 	{
-		plotXBox[i]->setChecked ( BT ( plotmask,i ) );
+		plotXBox[i]->setChecked ( BT ( pm ,i ) );
 	}
+}
+
+void RelKinemaCls::checkAllPlotSlot()
+{
+	setPlottables ( -1 );
+}
+
+void RelKinemaCls::checkNonePlotSlot()
+{
+	setPlottables ( 0 );
 }
 
 #include "relkinemaCls.moc"

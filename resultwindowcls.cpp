@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                                 *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -31,6 +31,10 @@
 #include <qpushbutton.h>
 #include <qtable.h>
 #include <qtimer.h>
+#include <qpopupmenu.h>
+#include <qcursor.h>
+#include <qclipboard.h>
+#include <qapplication.h>
 
 #include <kfiledialog.h>
 #include <kmessagebox.h>
@@ -88,14 +92,15 @@ resultWindowCls::resultWindowCls ( QWidget *parent, const char *name, WFlags wf,
 		if ( ncolext!=0 )
 		{
 			resultTable->setNumCols ( ncol+ncolext );
+			int k=0;
 			for ( i=0;i<nexpmax;i++ )
 			{
 				if ( !ext[i] ) continue;
-				resultTable->horizontalHeader()->setLabel ( ncol+i,exprBox[i]->currentText() );
+				resultTable->horizontalHeader()->setLabel ( ncol+k,exprBox[i]->currentText() );
+				k++;
 			}
 		}
 	}
-
 	resultTable->setNumRows ( nrow_hdr ); //<<<<<<<<<<<<<
 	nrow=nr+nrow_hdr;
 
@@ -108,15 +113,18 @@ resultWindowCls::resultWindowCls ( QWidget *parent, const char *name, WFlags wf,
 			k++;
 		}
 	}
+	k=0;
 	for ( int ic=0;ic<nexpmax;ic++ )
 	{
 		if ( !ext[ic] ) continue;
-		resultTable->setText ( 1,ncol+ic,"N/A" );
+		resultTable->setText ( 1,ncol+k,"N/A" );
+		k++;
 	}
 	resultTable->verticalHeader()->setLabel ( 0,"plot" );
 	resultTable->verticalHeader()->setLabel ( 1,"unit" );
 
-	connect ( resultTable->verticalHeader(), SIGNAL ( sectionClicked ( int ) ), this, SLOT ( clearPlotSelect ( int ) ) );
+	connect ( resultTable->verticalHeader(), SIGNAL ( clicked ( int ) ), this, SLOT ( clearPlotSelect ( int ) ) );
+	connect ( resultTable, SIGNAL ( contextMenuRequested ( int,int,const QPoint& ) ), this, SLOT ( showTableMenu ( void ) ) );
 }
 
 void resultWindowCls::startPoll ( void )
@@ -185,13 +193,13 @@ void resultWindowCls::timerEvent ( QTimerEvent *e )
 	setTable();
 }
 
-void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnergy, double incidentMomentum, double Ex, double QValue, double beta, double gamma, double m1, double m2, double m3, double m4, QString fmt )
+void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnergy, double incidentMomentum, double Ex, double QValue, double beta, double gamma, double m1, double m2, double m3, double m4, QString fmt, QString eu )
 {
 	QString s,t;
 	resultDescBox->clear();
-	setCaption ( "Results: "+reaction+", incident "+QString::number ( incidentEnergy ) +" MeV" );
+	setCaption ( "Results: "+reaction+", incident "+QString::number ( incidentEnergy ) +" "+eu );
 	plotLbl=reaction+" K1="+s.sprintf ( fmt, incidentEnergy );
-	plotLbl+=" MeV Ex="+s.sprintf ( fmt, Ex ) +" MeV";
+	plotLbl+=" "+eu+" Ex="+s.sprintf ( fmt, Ex ) +" "+eu;
 	resultDescBox->append ( "Reaction: "+reaction );
 	resultDescBox->append ( "Mass: M2(M1, M3)M4" );
 	t=s.sprintf ( fmt,m2 ) +" ( ";
@@ -199,10 +207,10 @@ void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnerg
 	t+=s.sprintf ( fmt,m3 ) +" ) ";
 	t+=s.sprintf ( fmt,m4 );
 	resultDescBox->append ( t );
-	resultDescBox->append ( "Incident Energy: "+s.sprintf ( fmt, incidentEnergy ) +" MeV" );
-	resultDescBox->append ( "Incident Momentum: "+s.sprintf ( fmt, incidentMomentum ) +" MeV/c" );
-	resultDescBox->append ( "Excitation Energy: "+s.sprintf ( fmt, Ex ) +" MeV" );
-	resultDescBox->append ( "Q Value: "+s.sprintf ( fmt, QValue ) +" MeV" );
+	resultDescBox->append ( "Incident Energy: "+s.sprintf ( fmt, incidentEnergy ) +" "+eu );
+	resultDescBox->append ( "Incident Momentum: "+s.sprintf ( fmt, incidentMomentum ) +" "+eu+"/c" );
+	resultDescBox->append ( "Excitation Energy: "+s.sprintf ( fmt, Ex ) +" "+eu );
+	resultDescBox->append ( "Q Value: "+s.sprintf ( fmt, QValue ) +" "+eu );
 	resultDescBox->append ( "beta: "+s.sprintf ( fmt, beta ) );
 	resultDescBox->append ( "1/gamma: "+s.sprintf ( fmt, 1./gamma ) );
 	resultDescBox->append ( "gamma*beta: "+s.sprintf ( fmt, gamma*beta ) );
@@ -296,6 +304,26 @@ void resultWindowCls::saveasSlot()
 
 void resultWindowCls::keyPressEvent ( QKeyEvent *e )
 {
+
+	if(e->state() & Qt::ControlButton)
+	{
+		e->accept();
+		switch(e->key())
+		{
+			case Qt::Key_A:
+				selectAllTableItems();
+				return;
+			case Qt::Key_C:
+				copyTableItems();
+				return;
+			case Qt::Key_U:
+				clearPlotSelect();
+				return;
+			default:
+				break;
+		}
+	} 
+
 	switch ( e->key() )
 	{
 		case Qt::Key_Q:
@@ -326,7 +354,11 @@ void resultWindowCls::keyPressEvent ( QKeyEvent *e )
 				hideDescBut->setOn ( false );
 			}
 			break;
+		default:
+			e->ignore();
+			return;
 	}
+	e->accept();
 }
 
 void resultWindowCls::plotSlot()
@@ -521,15 +553,63 @@ int resultWindowCls::countCTI ( int i, int *liid )
 
 void resultWindowCls::clearPlotSelect ( int s )
 {
-/*	if ( s/=0 ) return;
-	for ( int ic=0;ic<resultTable->numCols();ic++ )
+	if ( s==0 )
 	{
-		QComboTableItem *c;
-		c= ( QComboTableItem* ) resultTable->item ( 0,ic );
- 		c->setCurrentItem ( 0 );
-	}*/
+		for ( int ic=0;ic<resultTable->numCols();ic++ )
+		{
+			QComboTableItem *c;
+			c= ( QComboTableItem* ) resultTable->item ( 0,ic );
+			c->setCurrentItem ( 0 );
+		}
+	}
 }
 
+void resultWindowCls::selectAllTableItems()
+{
+	resultTable->selectCells ( 1,0,resultTable->numRows(),resultTable->numCols() );
+}
+
+void resultWindowCls::copyTableItems()
+{
+	int is;
+	switch ( resultTable->numSelections() )
+	{
+		case 0:
+			return;
+		case 1:
+			is=0;
+			break;
+		default:
+			is=1;
+			break;
+	}
+	QString str;
+	int ir1=resultTable->selection ( is ).topRow();
+	int ic1=resultTable->selection ( is ).leftCol();
+	for ( int ir=ir1;ir<ir1+resultTable->selection ( is ).numRows();ir++ )
+	{
+		for ( int ic=ic1;ic<ic1+resultTable->selection ( is ).numCols();ic++ )
+		{
+			str+=resultTable->text ( ir,ic ) +", ";
+		}
+		str+="\n";
+	}
+	QClipboard *cb = QApplication::clipboard();
+	cb->setText ( str,QClipboard::Clipboard );
+}
+
+void resultWindowCls::showTableMenu()
+{
+	QPopupMenu pm ( resultTable );
+	pm.insertItem ( "copy",this,SLOT ( copyTableItems() ), CTRL+Key_C );
+	pm.insertItem ( "select all",this,SLOT ( selectAllTableItems() ), CTRL+Key_A );
+	pm.insertSeparator();
+	pm.insertItem ( "clear plot selection",this,SLOT ( clearPlotSelect() ), CTRL+Key_U );
+	pm.insertSeparator();
+	pm.insertSeparator();
+	pm.insertItem ( "close",this,SLOT ( close() ), QKeySequence(Key_Q, Key_Escape) );
+	pm.exec ( QCursor::pos() );
+}
 
 void resultWindowCls::rtSlot ( int r, int c )
 {

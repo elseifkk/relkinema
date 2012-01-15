@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -41,7 +41,7 @@ class kinemaPlotCls: public kinemaPlot
 		Q_OBJECT
 	public:
 		kinemaPlotCls ( QWidget *parent = 0, const char *name = 0, WFlags=0, QTable *table = 0,
-				QString *homedir=0, QString *plotLbl=0,
+		                QString *homedir=0, QString *plotLbl=0,
 		                int xcol = 0, int nycol = 0, int *ycols = 0,
 		                int nrow_hdr = 0, QFont font = QFont ( "Sans Serif", 11 ) );
 
@@ -85,6 +85,11 @@ class kinemaPlotCls: public kinemaPlot
 		void updateA();
 		void procLB ( QPoint );
 		void setYLabel();
+		void togglePlotOn ( int );
+		int countPlotOn();
+		void changeLineCol ( int,int );
+		void changeLineCol ( int,QColor );
+		void changeLineType ( int,int );
 
 	private:
 		QString *homedir;
@@ -121,7 +126,7 @@ class kinemaPlotCls: public kinemaPlot
 		QLineEdit *in;
 		QLabel *label;
 		int iread;
-		int fpw,fph,fpm;
+		int fpw,fph,fpm,wE;
 		QFont thefont;
 		bool showlegend;
 		QString messStr;
@@ -151,12 +156,18 @@ class kinemaPlotCls: public kinemaPlot
 		int linewidth;
 		QPixmap *thePlot;
 		QRect titleRect;
+		QRect xtRect, ytRect;
 		bool showlabel;
 		QString xt,yt;
 		QString yts[nlinemax];
 		QString yus[nlinemax];
 		int lenxt,lenyt;
 		QColor pc[nlinemax];
+		bool plotOn[nlinemax];
+		QRect legendRect;
+		int lg_lw;
+		int lg_hmar,lg_vmar;
+		int nlegend;
 
 		template<typename T>T**AllocMatrix ( int u,int v )
 		{

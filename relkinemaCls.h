@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by kazuaki kumagai                                 *
+ *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -101,7 +101,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void registParams ( size_t, size_t );
 		void registParam ( size_t, size_t, QString );
 		void exprWarn ( int,QString );
-		void setPlottables();
+		void setPlottables ( int );
 
 	private:
 		size_t prkc;
@@ -228,6 +228,8 @@ class RelKinemaCls: public RelKinemaDlg
 		void expr3SelectSlot();
 		void expr4SelectSlot();
 		void updateExprSlot();
+		void checkAllPlotSlot();
+		void checkNonePlotSlot();
 
 	protected:
 		void timerEvent ( QTimerEvent *e );
