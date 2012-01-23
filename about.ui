@@ -105,43 +105,6 @@
     </widget>
     <widget class="QLabel">
         <property name="name">
-            <cstring>textLabel5</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>260</x>
-                <y>220</y>
-                <width>200</width>
-                <height>20</height>
-            </rect>
-        </property>
-        <property name="paletteForegroundColor">
-            <color>
-                <red>240</red>
-                <green>240</green>
-                <blue>240</blue>
-            </color>
-        </property>
-        <property name="paletteBackgroundColor">
-            <color>
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-            </color>
-        </property>
-        <property name="font">
-            <font>
-            </font>
-        </property>
-        <property name="text">
-            <string>elseifkk@users.net</string>
-        </property>
-        <property name="alignment">
-            <set>AlignVCenter|AlignRight</set>
-        </property>
-    </widget>
-    <widget class="QLabel">
-        <property name="name">
             <cstring>TitleLbl</cstring>
         </property>
         <property name="geometry">
@@ -659,6 +622,43 @@
         <property name="text">
             <string>Copyleft: (!c) 2012 Elseif Laboratory.
                All rights reversed.</string>
+        </property>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>textLabel5</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>260</x>
+                <y>220</y>
+                <width>200</width>
+                <height>20</height>
+            </rect>
+        </property>
+        <property name="paletteForegroundColor">
+            <color>
+                <red>240</red>
+                <green>240</green>
+                <blue>240</blue>
+            </color>
+        </property>
+        <property name="paletteBackgroundColor">
+            <color>
+                <red>0</red>
+                <green>0</green>
+                <blue>0</blue>
+            </color>
+        </property>
+        <property name="font">
+            <font>
+            </font>
+        </property>
+        <property name="text">
+            <string>elseifkk@users.sf.net</string>
+        </property>
+        <property name="alignment">
+            <set>AlignVCenter|AlignRight</set>
         </property>
     </widget>
 </widget>
