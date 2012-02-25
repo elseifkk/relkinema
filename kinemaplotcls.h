@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -89,7 +89,6 @@ class kinemaPlotCls: public kinemaPlot
 		int countPlotOn();
 		void changeLineCol ( int,int );
 		void changeLineCol ( int,QColor );
-		void changeLineType ( int,int );
 
 	private:
 		QString *homedir;

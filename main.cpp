@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -48,7 +48,7 @@ static KCmdLineOptions options[] =
 
 int main ( int argc, char **argv )
 {
-	KAboutData about ( "relkinema", I18N_NOOP ( "relkinema" ), version, description,
+	KAboutData about ( package, I18N_NOOP ( package ), version, description,
 	                   KAboutData::License_GPL, "(C) 2012 Kazuaki Kumagai", 0, 0, "elseifkk@users.sf.net" );
 	about.addAuthor ( "Kazuaki Kumagai", 0, "elseifkk@users.sf.net" );
 	KCmdLineArgs::init ( argc, argv, &about );

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,6 +19,7 @@
  ***************************************************************************/
 #include "kinemaplotcls.h"
 #include "mboxcls.h"
+#include "misc.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -39,10 +40,6 @@
 #include <kmessagebox.h>
 #include <kfiledialog.h>
 #include <kcolordialog.h>
-
-#define MAX2(x, y) ((x) > (y) ? (x) : (y))
-#define MIN2(x, y) ((x) > (y) ? (y) : (x))
-#define NIN(x) floor(0.5 + (x) )
 
 int const messTime=3000;
 int const nx_def=10;
@@ -864,7 +861,7 @@ int kinemaPlotCls::ylabelMaxLen ( double y, double my )
 	return ylenmax;
 }
 
-void kinemaPlotCls::timerEvent ( QTimerEvent *e )
+void kinemaPlotCls::timerEvent ( QTimerEvent *unused )
 {
 	killTimer ( timerid );
 	timerid=-1;
@@ -1043,7 +1040,7 @@ void kinemaPlotCls::setMeasureGeom ( int w, int h )
 	}
 }
 
-void kinemaPlotCls::drawDots ( QPainter *p, int ixmin, int iymax, int shape )
+void kinemaPlotCls::drawDots ( QPainter *p, int ixmin, int iymax, int unused )
 {
 	p->save();
 	p->setBrush ( p->pen().color() );
@@ -1057,7 +1054,7 @@ void kinemaPlotCls::drawDots ( QPainter *p, int ixmin, int iymax, int shape )
 	p->restore();
 }
 
-void kinemaPlotCls::paintEvent ( QPaintEvent *e )
+void kinemaPlotCls::paintEvent ( QPaintEvent *unused )
 {
 	pveto.lock();
 	QPainter p;
@@ -1223,7 +1220,7 @@ void kinemaPlotCls::drawPlots ( QPainter *p )
 		p->setPen ( pline );
 		int n=0;
 		int k=-1;
-		for ( int i=0;i<pa->count();i++ )
+		for ( int i=0;i<(int)pa->count();i++ )
 		{
 			if ( plotRect.contains ( pa->point ( i ) ) )
 			{
@@ -1239,7 +1236,7 @@ void kinemaPlotCls::drawPlots ( QPainter *p )
 						k--;
 						n++;
 					}
-					if ( k<pa->count()-1 )
+					if ( k<(int)pa->count()-1 )
 					{
 						n++;
 					}
@@ -1410,7 +1407,7 @@ void kinemaPlotCls::mousePressEvent ( QMouseEvent *e )
 	}
 }
 
-void kinemaPlotCls::mouseReleaseEvent ( QMouseEvent *e )
+void kinemaPlotCls::mouseReleaseEvent ( QMouseEvent *unused )
 {
 	drag=0;
 }
@@ -1662,19 +1659,13 @@ void kinemaPlotCls::changeLineCol ( int i, QColor c )
 }
 void kinemaPlotCls::changeLineCol ( int i, int ic )
 {
-
-	QColor myColor;
-	int result = KColorDialog::getColor ( myColor );
-
+  //	QColor myColor;
+  //	int result = KColorDialog::getColor ( myColor );
 	int iic=ic;
 	if ( iic>=nlinemax ) iic=0;
 	if ( iic<0 ) iic=nlinemax-1;
 	pc_indx[i]=iic;
 	changeLineCol ( i,pc_col[iic] );
-}
-
-void kinemaPlotCls::changeLineType ( int i, int it )
-{
 }
 
 #include <X11/Xlib.h>

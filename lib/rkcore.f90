@@ -1,5 +1,5 @@
 !/***************************************************************************
-! *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+! *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
 ! *   elseifkk@users.sf.net                                                 *
 ! *                                                                         *
 ! *   This program is free software; you can redistribute it and/or modify  *
@@ -108,7 +108,7 @@ module rkcore
      integer stat
      integer eu
      logical deg
-     logical pelastic,relastic
+     logical pelastic,relastic,nelastic
      logical print_error
   end type t_rkc
 
@@ -130,6 +130,12 @@ module rkcore
   public rkc_set_p1
   public rkc_set_p1c
   public rkc_set_K34c
+  public rkc_set_Theta3_min
+  public rkc_set_Theta3c_min
+  public rkc_set_q_min
+  public rkc_set_Theta3_max
+  public rkc_set_Theta3c_max
+  public rkc_set_q_max
   public rkc_set_Theta3
   public rkc_set_Theta3c
   public rkc_set_q
@@ -298,6 +304,7 @@ module rkcore
 #define prkc_inout(p) prkc_in(p); type(t_rkc) rkc; pointer(prkc,rkc); prkc=p
 #define real_in(x) real(inp),intent(in),value::x
 #define retint int
+#define retreal real(outp)
 #define bool logical(C_BOOL)
 #define retlog bool
 #define bool_in(x) bool,intent(in),value::x
@@ -414,7 +421,7 @@ contains
     if(i>0.and.i<=size(ENGU)) rkc%eu=i
   end subroutine rkc_set_eunit
 
-  real(outp) function rkc_get_set_strip_mass(p,id,Z)
+  retreal function rkc_get_set_strip_mass(p,id,Z)
     real(rp) am
     int_in(id)
     int_in(Z)
@@ -439,11 +446,12 @@ contains
   ! internal
   subroutine rkc_set_is_elastic(rkc)
     type(t_rkc),intent(inout)::rkc
-    rkc%pelastic=(Ex==rzero.and.m1==m2.and.m2==m3.and.m3==m4)
-    rkc%relastic=(Ex==rzero.and.m1==m4.and.m2==m3.and..not.rkc%pelastic)
+    rkc%pelastic=(Ex==rzero.and.m1==m2.and.m2==m3.and.m3==m4)            ! p(p,p)p
+    rkc%relastic=(Ex==rzero.and.m1==m4.and.m2==m3.and..not.rkc%pelastic) ! p(n,p)n
+    rkc%nelastic=(Ex==rzero.and.m1==m3.and.m2==m4.and..not.rkc%pelastic) ! p(n,n)p
   end subroutine rkc_set_is_elastic
 
-  real(outp) function rkc_get_set_mass(p,id,A,m)
+  retreal function rkc_get_set_mass(p,id,A,m)
     real(rp) am
     int_in(id)
     int_in(A)
@@ -488,13 +496,13 @@ contains
   end subroutine rkc_set_mass
 
   ! internal
-  real(rp) function K_To_p(K,m)
+  pure real(rp) function K_To_p(K,m)
     real(rp),intent(in)::K,m
     K_To_p=sqrt(K*(K+2.0_rp*m))
   end function K_To_p
 
   ! internal
-  real(rp) function p_To_E(p,m)
+  pure real(rp) function p_To_E(p,m)
     real(rp),intent(in)::p,m
     p_To_E=sqrt(p*p+m*m)
   end function p_To_E
@@ -520,6 +528,14 @@ contains
   end subroutine rkc_set_Ex
 
   ! internal
+  subroutine set_K2c(rkc)
+    type(t_rkc),intent(inout)::rkc
+    p2c=p1c
+    E2c=p_To_E(p2c,m2)
+    K2c=E2c-m2
+  end subroutine set_K2c
+
+  ! internal
   subroutine K1c_To_K1(rkc)
     type(t_rkc),intent(inout)::rkc
     real(rp) m12,mm2,mm1
@@ -533,6 +549,7 @@ contains
     E1=K1+m1
     p1=K_To_p(K1,m1)    
     ExMax=theM-(m3+m4)
+    call set_K2c(rkc)
   end subroutine K1c_To_K1
 
   ! internal
@@ -547,6 +564,7 @@ contains
     E1c=K1c+m1
     p1c=K_To_p(K1c,m1)
     ExMax=theM-(m3+m4)
+    call set_K2c(rkc)
   end subroutine K1_To_K1c
 
   subroutine rkc_set_K1(p,K1_)
@@ -594,16 +612,22 @@ contains
     type(t_rkc),intent(inout)::rkc
     E3=gamma*(E3c+beta*p3c*cos(th3c))
     K3=E3-m3
-    p3=K_To_p(K3,m3)
+    if(K3<rzero) then
+       call warn(rkc,"set_K3_via_LB",RKCST_K_NEG,K3)
+       K3=rzero
+       p3=rzero
+    else
+       p3=K_To_p(K3,m3)
+    end if
   end subroutine rkc_set_K3_via_LB
 
   ! internal
   subroutine rkc_set_K3c(rkc)
     type(t_rkc),intent(inout)::rkc
-    if(rkc%pelastic) then
-       E3c=sqrt((2.0_rp*m1*m1+m1*K1)/2.0_rp)
-       p3c=sqrt(m1*K1/2.0_rp)
-       K3c=E3c-m3
+    if(rkc%pelastic.or.rkc%nelastic) then
+       E3c=E1c
+       p3c=p1c
+       K3c=K1c
        return
     end if
     E3c=theM/2.0_rp+(m3+(m4+Ex))*(m3-(m4+Ex))/(2.0_rp*theM)
@@ -621,22 +645,14 @@ contains
   ! internal
   subroutine rkc_set_K4c(rkc)
     type(t_rkc),intent(inout)::rkc
-    if(rkc%pelastic) then
-       K4c=K3c
-       E4c=E3c
-       p4c=p3c
+    p4c=p3c
+    if(rkc%pelastic.or.rkc%nelastic) then
+       K4c=K2c
+       E4c=E2c
        return
     end if
-    E4c=theM-E3c
+    E4c=p_To_E(p4c,m4+Ex)
     K4c=E4c-(m4+Ex)
-    if(K4c<rzero) then
-       call warn(rkc,"set_K4c",RKCST_K_NEG,K4c)
-       K4c=rzero
-       E4c=(m4+Ex)
-       p4c=rzero
-    else
-       p4c=K_To_p(K4c,m4+Ex)
-    end if
   end subroutine rkc_set_K4c
 
   ! internal
@@ -734,7 +750,7 @@ contains
     else if(p3==rzero) then
        th4=rzero
        return
-    else if(th3==rzero.or.abs(pi-th3)<=2.0_rp*reps) then
+    else if(th3==rzero.or.abs(pi-th3)<reps) then
        if(.not.rkc%th3MaxNe) then
           th4=rzero
        else
@@ -765,7 +781,10 @@ contains
           th3c=rzero
        end if
        return
-    else if(abs(pi-th3)<=2.0_rp*reps) then
+    else if(abs(pi-th3)<reps) then
+       th3c=pi
+       return
+    else if(rkc%relastic.and.abs(pi_2-th3)<reps) then
        th3c=pi
        return
     end if
@@ -789,6 +808,22 @@ contains
        th3=pi_2
        return
     end if
+    if(th3c==rzero) then
+       th3=rzero
+       return
+    end if
+    if(abs(pi-th3c)<reps) then
+       if(.not.rkc%th3MaxNe.and..not.rkc%invKin) then
+          th3=pi
+          return
+       else if(rkc%th3MaxNe.and..not.rkc%invKin) then
+          th3=pi_2
+          return
+       else if(.not.rkc%th3MaxNe.and.rkc%invKin) then
+          th3=rzero
+          return
+       end if
+    end if
     c=gamma*(p3c*cos(th3c)+beta*E3c)/p3
     if(c>1.0_rp) then
        call warn(rkc,"th3c_To_th3",RKCST_ACOS_OVER,c)
@@ -800,6 +835,33 @@ contains
        th3=acos(c)
     end if
   end subroutine th3c_To_th3
+  ! internal
+  subroutine th4c_To_th4(rkc)
+    type(t_rkc),intent(inout)::rkc
+    real(rp) c
+    if(p4==rzero) then
+       th4=pi_2
+       return
+    end if
+    if(th4c==rzero) then
+       th4=rzero
+       return
+    end if
+    if(.not.rkc%th3MaxNe.and..not.rkc%invKin.and.th3==rzero) then
+       th4=rzero
+       return
+    end if
+    c=gamma*(p4c*cos(th4c)+beta*E4c)/p4
+    if(c>1.0_rp) then
+       call warn(rkc,"th4c_To_th4",RKCST_ACOS_OVER,c)
+       th4=rzero
+    else if(c<-1.0_rp) then
+       call warn(rkc,"th4c_To_th4",RKCST_ACOS_UNDER,c)
+       th4=pi
+    else
+       th4=acos(c)
+    end if
+  end subroutine th4c_To_th4
 
   ! internal
   subroutine th3c_To_th4c(rkc)
@@ -826,7 +888,18 @@ contains
     type(t_rkc),intent(inout)::rkc
     real(rp),intent(in)::q,p_i,p_f
     real(rp) c
-    c=(p_i*p_i+p_f*p_f-(q*hbarc)**2.0_rp)/(2.0_rp*p_i*p_f)
+    if(abs(q-qMax)<reps) then
+       q2tcm=pi
+       return
+    else if(abs(q-qMin)<reps) then
+       q2tcm=rzero
+       return
+    end if
+    if(abs(p_i-p_f)<reps) then
+       c=(sqrt(2.0_rp)*p_i+q*hbarc)*(sqrt(2.0_rp)*p_i-q*hbarc)/(2.0_rp*p_i*p_f)
+    else
+       c=(p_i*p_i+p_f*p_f-(q*hbarc)**2.0_rp)/(2.0_rp*p_i*p_f)
+    end if
     if(c>1.0_rp) then
        call warn(rkc,"q2tcm",RKCST_ACOS_OVER,c)
        q2tcm=rzero
@@ -838,20 +911,39 @@ contains
     end if
   end function q2tcm
 
+  subroutine rkc_set_Theta3_min(p)
+    integer istat
+    prkc_inout(p)
+    th3=rzero
+    istat=rkc_check_set_Theta3(rkc)
+  end subroutine rkc_set_Theta3_min
+
+  subroutine rkc_set_Theta3_max(p)
+    integer istat
+    prkc_inout(p)
+    th3=th3Max
+    istat=rkc_check_set_Theta3(rkc)
+  end subroutine rkc_set_Theta3_max
+
   retint function rkc_set_Theta3(p,th3_)
     real_in(th3_)
     prkc_inout(p)
-    rkc%stat=0
     th3=th3_
     if(rkc%deg) th3=th3*pirad
+    rkc_set_Theta3=rkc_check_set_Theta3(rkc)
+  end function rkc_set_Theta3
+
+  retint function rkc_check_set_Theta3(rkc)
+    type(t_rkc),intent(inout)::rkc
+    rkc%stat=0
     if(th3<rzero) then
-       rkc_set_Theta3=RKCERR_RANGE_UNDER
+       rkc_check_set_Theta3=RKCERR_RANGE_UNDER
        th3=rzero
     else if(th3>th3Max) then
-       rkc_set_Theta3=RKCERR_RANGE_OVER
+       rkc_check_set_Theta3=RKCERR_RANGE_OVER
        th3=th3Max
     else
-       rkc_set_Theta3=0
+       rkc_check_set_Theta3=0
     end if
     call rkc_set_K3(rkc)
     call rkc_set_K4(rkc)
@@ -860,226 +952,266 @@ contains
     call th3c_To_th4c(rkc)
     theq=tcm2q(rkc,th3c,p1c,p3c)
     call rkc_set_other_params(rkc)
-  end function rkc_set_Theta3
+  end function rkc_check_set_Theta3
+
+  subroutine rkc_set_Theta3c_min(p)
+    integer istat
+    prkc_inout(p)
+    th3c=rzero
+    istat=rkc_check_set_Theta3c(rkc)
+  end subroutine rkc_set_Theta3c_min
+
+  subroutine rkc_set_Theta3c_max(p)
+    integer istat
+    prkc_inout(p)
+    th3c=pi
+    istat=rkc_check_set_Theta3c(rkc)
+  end subroutine rkc_set_Theta3c_max
 
   retint function rkc_set_Theta3c(p,th3c_)
     real_in(th3c_)
     prkc_inout(p)
-    rkc%stat=0
     th3c=th3c_
     if(rkc%deg) th3c=th3c*pirad
+    rkc_set_Theta3c=rkc_check_set_Theta3c(rkc)
+  end function rkc_set_Theta3c
+
+  ! internal
+  retint function rkc_check_set_Theta3c(rkc)
+    type(t_rkc),intent(inout)::rkc
+    rkc%stat=0
     if(th3c<rzero) then
-       rkc_set_Theta3c=RKCERR_RANGE_UNDER
+       rkc_check_set_Theta3c=RKCERR_RANGE_UNDER
        th3c=rzero
     else if(th3c>pi) then
-       rkc_set_Theta3c=RKCERR_RANGE_OVER
+       rkc_check_set_Theta3c=RKCERR_RANGE_OVER
        th3c=pi
     else
-       rkc_set_Theta3c=0
+       rkc_check_set_Theta3c=0
     end if
     call rkc_set_K3_via_LB(rkc)
     call rkc_set_K4(rkc)
     call th3c_To_th3(rkc)
-    call th3_To_th4(rkc)
     call th3c_To_th4c(rkc)
+    call th4c_To_th4(rkc)
     theq=tcm2q(rkc,th3c,p1c,p3c)
     call rkc_set_other_params(rkc)
-  end function rkc_set_Theta3c
+  end function rkc_check_set_Theta3c
 
-  integer function rkc_set_q(p,q_)
+  subroutine rkc_set_q_min(p)
+    integer istat
+    prkc_inout(p)
+    theq=qMin
+    istat=rkc_check_set_q(rkc)
+  end subroutine rkc_set_q_min
+
+  subroutine rkc_set_q_max(p)
+    integer istat
+    prkc_inout(p)
+    theq=qMax
+    istat=rkc_check_set_q(rkc)
+  end subroutine rkc_set_q_max
+
+  retint function rkc_set_q(p,q_)
     real_in(q_)
     prkc_inout(p)
-    rkc%stat=0
     theq=q_
+    rkc_set_q=rkc_check_set_q(rkc)
+  end function rkc_set_q
+
+  ! internal
+  retint function rkc_check_set_q(rkc)
+    type(t_rkc),intent(inout)::rkc
+    rkc%stat=0
     if(theq<qMin) then
-       rkc_set_q=RKCERR_RANGE_UNDER
+       rkc_check_set_q=RKCERR_RANGE_UNDER
        theq=qMin
     else if(theq>qMax) then
-       rkc_set_q=RKCERR_RANGE_OVER
+       rkc_check_set_q=RKCERR_RANGE_OVER
        theq=qMax
     else
-       rkc_set_q=0
+       rkc_check_set_q=0
     end if
     th3c=q2tcm(rkc,theq,p1c,p3c)
     call rkc_set_K3_via_LB(rkc)
     call rkc_set_K4(rkc)
     call th3c_To_th4c(rkc)
     call th3c_To_th3(rkc)
-    call th3_To_th4(rkc)
+    call th4c_To_th4(rkc)
     call rkc_set_other_params(rkc)
-  end function rkc_set_q
+  end function rkc_check_set_q
 
-  real(outp) function rkc_get_QValue(p)
+  retreal function rkc_get_QValue(p)
     prkc_inout(p)
     rkc_get_QValue=real(QValue*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_QValue
 
-  real(outp) function rkc_get_K1Min(p)
+  retreal function rkc_get_K1Min(p)
     prkc_inout(p)
     rkc_get_K1Min=real(K1Min*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_K1Min
 
-  real(outp) function rkc_get_K1cMin(p)
+  retreal function rkc_get_K1cMin(p)
     prkc_inout(p)
     rkc_get_K1cMin=real(K1cMin*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_K1cMin
 
-  real(outp) function rkc_get_p1Min(p)
+  retreal function rkc_get_p1Min(p)
     prkc_inout(p)
     rkc_get_p1Min=real(p1Min*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_p1Min
 
-  real(outp) function rkc_get_p1cMin(p)
+  retreal function rkc_get_p1cMin(p)
     prkc_inout(p)
     rkc_get_p1cMin=real(p1cMin*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_p1cMin
 
-  real(outp) function rkc_get_K1(p)
+  retreal function rkc_get_K1(p)
     prkc_inout(p)
     rkc_get_K1=real(K1*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_K1
 
-  real(outp) function rkc_get_K3(p)
+  retreal function rkc_get_K3(p)
     prkc_inout(p)
     rkc_get_K3=real(K3*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_K3
 
-  real(outp) function rkc_get_K4(p)
+  retreal function rkc_get_K4(p)
     prkc_inout(p)
     rkc_get_K4=real(K4*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_K4
 
-  real(outp) function rkc_get_p1(p)
+  retreal function rkc_get_p1(p)
     prkc_inout(p)
     rkc_get_p1=real(p1*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_p1
 
-  real(outp) function rkc_get_p3(p)
+  retreal function rkc_get_p3(p)
     prkc_inout(p)
     rkc_get_p3=real(p3*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_p3
 
-  real(outp) function rkc_get_p4(p)
+  retreal function rkc_get_p4(p)
     prkc_inout(p)
     rkc_get_p4=real(p4*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_p4
 
-  real(outp) function rkc_get_p1c(p)
+  retreal function rkc_get_p1c(p)
     prkc_inout(p)
     rkc_get_p1c=real(p1c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_p1c
 
-  real(outp) function rkc_get_p3c(p)
+  retreal function rkc_get_p3c(p)
     prkc_inout(p)
     rkc_get_p3c=real(p3c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_p3c
 
-  real(outp) function rkc_get_p4c(p)
+  retreal function rkc_get_p4c(p)
     prkc_inout(p)
     rkc_get_p4c=real(p4c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_p4c
 
-  real(outp) function rkc_get_K1c(p)
+  retreal function rkc_get_K1c(p)
     prkc_inout(p)
     rkc_get_K1c=real(K1c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_K1c
 
-  real(outp) function rkc_get_K2c(p)
+  retreal function rkc_get_K2c(p)
     prkc_inout(p)
     rkc_get_K2c=real(K2c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_K2c
 
-  real(outp) function rkc_get_K3c(p)
+  retreal function rkc_get_K3c(p)
     prkc_inout(p)
     rkc_get_K3c=real(K3c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_K3c
 
-  real(outp) function rkc_get_K4c(p)
+  retreal function rkc_get_K4c(p)
     prkc_inout(p)
     rkc_get_K4c=real(K4c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_K4c
 
-  real(outp) function rkc_get_E1(p)
+  retreal function rkc_get_E1(p)
     prkc_inout(p)
     rkc_get_E1=real(E1*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_E1
 
-  real(outp) function rkc_get_E3(p)
+  retreal function rkc_get_E3(p)
     prkc_inout(p)
     rkc_get_E3=real(E3*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_E3
 
-  real(outp) function rkc_get_E4(p)
+  retreal function rkc_get_E4(p)
     prkc_inout(p)
     rkc_get_E4=real(E4*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_E4
 
-  real(outp) function rkc_get_E1c(p)
+  retreal function rkc_get_E1c(p)
     prkc_inout(p)
     rkc_get_E1c=real(E1c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_E1c
 
-  real(outp) function rkc_get_E2c(p)
+  retreal function rkc_get_E2c(p)
     prkc_inout(p)
     rkc_get_E2c=real(E2c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_E2c
 
-  real(outp) function rkc_get_E3c(p)
+  retreal function rkc_get_E3c(p)
     prkc_inout(p)
     rkc_get_E3c=real(E3c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_E3c
 
-  real(outp) function rkc_get_E4c(p)
+  retreal function rkc_get_E4c(p)
     prkc_inout(p)
     rkc_get_E4c=real(E4c*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_E4c
 
-  real(outp) function rkc_get_gamma(p)
+  retreal function rkc_get_gamma(p)
     prkc_inout(p)
     rkc_get_gamma=real(gamma,kind=outp)
   end function rkc_get_gamma
 
-  real(outp) function rkc_get_beta(p)
+  retreal function rkc_get_beta(p)
     prkc_inout(p)
     rkc_get_beta=real(beta,kind=outp)
   end function rkc_get_beta
 
-  real(outp) function rkc_get_betagamma(p)
+  retreal function rkc_get_betagamma(p)
     prkc_inout(p)
     rkc_get_betagamma=real(beta*gamma,kind=outp)
   end function rkc_get_betagamma
 
-  real(outp) function rkc_get_invgamma(p)
+  retreal function rkc_get_invgamma(p)
     prkc_inout(p)
     rkc_get_invgamma=real(1.0_rp/gamma,kind=outp)
   end function rkc_get_invgamma
 
-  real(outp) function rkc_get_qMax(p)
+  retreal function rkc_get_qMax(p)
     prkc_inout(p)
     rkc_get_qMax=real(qMax,kind=outp)
   end function rkc_get_qMax
 
-  real(outp) function rkc_get_qMin(p)
+  retreal function rkc_get_qMin(p)
     prkc_inout(p)
     rkc_get_qMin=real(qMin,kind=outp)
   end function rkc_get_qMin
 
-  real(outp) function rkc_get_q(p)
+  retreal function rkc_get_q(p)
     prkc_inout(p)
     rkc_get_q=real(theq,kind=outp)
   end function rkc_get_q
 
-  real(outp) function rkc_get_ExMax(p)
+  retreal function rkc_get_ExMax(p)
     prkc_inout(p)
     rkc_get_ExMax=real(ExMax*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_ExMax
 
-  real(outp) function rkc_get_Ex(p)
+  retreal function rkc_get_Ex(p)
     prkc_inout(p)
     rkc_get_Ex=real(Ex*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_Ex
 
-  real(outp) function rkc_get_th3Max(p)
+  retreal function rkc_get_th3Max(p)
     real(rp) x
     prkc_inout(p)
     x=th3Max
@@ -1091,7 +1223,7 @@ contains
     rkc_get_th3Max=real(x,kind=outp)
   end function rkc_get_th3Max
 
-  real(outp) function rkc_get_th3cMax(p)
+  retreal function rkc_get_th3cMax(p)
     real(rp) x
     prkc_inout(p)
     x=pi
@@ -1099,7 +1231,7 @@ contains
     rkc_get_th3cMax=real(x,kind=outp)
   end function rkc_get_th3cMax
 
-  real(outp) function rkc_get_th3(p)
+  retreal function rkc_get_th3(p)
     real(rp) x
     prkc_inout(p)
     x=th3
@@ -1111,7 +1243,7 @@ contains
     rkc_get_th3=real(x,kind=outp)
   end function rkc_get_th3
 
-  real(outp) function rkc_get_th3c(p)
+  retreal function rkc_get_th3c(p)
     real(rp) x
     prkc_inout(p)
     x=th3c
@@ -1123,7 +1255,7 @@ contains
     rkc_get_th3c=real(x,kind=outp)
   end function rkc_get_th3c
 
-  real(outp) function rkc_get_th4(p)
+  retreal function rkc_get_th4(p)
     real(rp) x
     prkc_inout(p)
     x=th4
@@ -1135,7 +1267,7 @@ contains
     rkc_get_th4=real(x,kind=outp)
   end function rkc_get_th4
 
-  real(outp) function rkc_get_th4c(p)
+  retreal function rkc_get_th4c(p)
     real(rp) x
     prkc_inout(p)
     x=th4c
@@ -1155,20 +1287,24 @@ contains
     J3=(gamma*p3*(p3c+beta*E3c*c))/(p3c*p3c)
     J4=(gamma*p4*(p4c-beta*E4c*c))/(p4c*p4c)
     KShift=sin(th3)*J3*gamma*p3c*beta
-    KFactor=KShift*E3/(p3*p3)
+    if(p3/=rzero) then
+       KFactor=KShift*E3/(p3*p3)
+    else
+       KFactor=rzero
+    end if
   end subroutine rkc_set_other_params
 
-  real(outp) function rkc_get_J3(p)
+  retreal function rkc_get_J3(p)
     prkc_inout(p)
     rkc_get_J3=real(J3,kind=outp)
   end function rkc_get_J3
 
-  real(outp) function rkc_get_J4(p)
+  retreal function rkc_get_J4(p)
     prkc_inout(p)
     rkc_get_J4=real(J4,kind=outp)
   end function rkc_get_J4
 
-  real(outp) function rkc_get_KShift(p)
+  retreal function rkc_get_KShift(p)
     real(rp) x
     prkc_inout(p)
     x=KShift
@@ -1176,7 +1312,7 @@ contains
     rkc_get_KShift=real(x,kind=outp)
   end function rkc_get_KShift
 
-  real(outp) function rkc_get_KFactor(p)
+  retreal function rkc_get_KFactor(p)
     real(rp) x
     prkc_inout(p)
     x=KFactor

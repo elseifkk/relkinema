@@ -1,8 +1,8 @@
-RelKinema version 0.5.1
+RelKinema version 0.5.2
 ========= ======= =====
 
 Relativistic two-body kinematics calculator for nuclear reaction,
-including mass data manager, result list browser and plotter.
+including mass data manager, result table browser and plotter.
 
 
 
@@ -12,10 +12,12 @@ Requirements
 
 RelKinema mainly depends on the following packages:
 
-libfzcal-0.0.2
+libfzcal-0.0.3
 gfortran-4.6.1 or higher
 kdelibs-3.5.10
 qt-3.3.8
+
+Note that it cannot build with qt4/kde4 or above.
 
 
 
@@ -26,11 +28,11 @@ Build
 RelKinema uses fortran codes for the most of the physical calculations
 and the configure script should know what to use as a fortran compiler. 
   The calculation is performed with quad-precision if available, which
-is supported by Coltrane version 4.6.1 and above.
+is supported by gfortran version 4.6.1 and above.
   The compiler name and flags can be passed to configure script by FC
 and FCFLAGS variable, respectively.
 
-RelKinema depends on libfzcal for evaluating user-supplied expressions
+RelKinema depends on libfzcal for evaluating user-defined expressions
 with kinematic parameters, available at: 
 
 http://sourceforge.net/projects/fzcal/
@@ -51,7 +53,7 @@ setenv FC /usr/local/bin/gfortran46
 setenv FCFLAGS "-cpp -fcray-pointer -O2 -g0 -fdefault-integer-8"
 setenv CXXFLAGS "-O2 -g0"
 setenv LD_RUN_PATH /usr/local/lib/gcc46
-setenv LDFLAGS "-L/usr/local/lib/gcc46"
+setenv LDFLAGS -L/usr/local/lib/gcc46
 ./configure --prefix=/usr/local --without-arts
 gmake install
 
@@ -63,7 +65,7 @@ Atomic mass data
 
 RelKinema depends on atomic mass data files located in a local directory.
 The current version uses files extracted from a source data file available
-at:
+at (as of Feb 26, 2012):
 
 http://amdc.in2p3.fr/masstables/Ame2003/mass.mas03
 
@@ -88,7 +90,7 @@ Note
 Notations
 =========
 
-We assume a nuclear reaction of type M2(M1,M3)M4', where
+We assume a nuclear reaction of type m2(m1,m3)m4', where
   m1:    projectile,
   m2:    target,
   m3:    ejectile,
@@ -101,7 +103,7 @@ We assume a nuclear reaction of type M2(M1,M3)M4', where
                    /
                   / ) th3
 m1 -----------> m2 -----------------
-                  \  ) th4
+                  \ ) th4
                    \
                     \
                      \
@@ -149,14 +151,14 @@ K1cMin;           minimum K1 in CM frame,
 p1cMin;           minimum p1 in CM frame,
 theM;             the invariant mass,
 gamma, beta;      CM to Lab. conversion factor,
-th3, th4;         theta3 and theta4
-th3c, th4c        theta3 and theta4 in CM frame,
-theq;             momentum transfer in 1/fm,
+th3, th4;         theta3 and theta4,
+th3c, th4c;       theta3 and theta4 in CM frame,
+q;                momentum transfer in 1/fm,
 qMin;             minimum momentum transfer,
 qMax;             maximum momentum transfer,
 J3,J4;            solid angle Jacobian,
-KS;               kinematic shift,
-KF;               see source code.
+KS;               kinematic shift (dK3/dth3), 
+KF;               kinematic factor (dp3/dth3/p3).
 
 These names are case-sensitive, and read-only.
 
@@ -186,5 +188,5 @@ Contacts
 ========
 
 All reports and requests are welcome to
-https://sourceforge.net/projects/relkinema/
+http://sourceforge.net/projects/relkinema/
 E-Mail: elseifkk@gmail.com

@@ -19,6 +19,7 @@
  ***************************************************************************/
 #include "rwthreadcls.h"
 #include "rkcore.h"
+#include "misc.h"
 
 #include <fzc.h>
 

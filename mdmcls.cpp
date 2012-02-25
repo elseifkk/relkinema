@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -50,6 +50,7 @@ mdmCls::mdmCls ( QWidget *parent, const char *name, WFlags wf )
 	appBut->setEnabled ( false );
 	discardOk=0;
 	currentA=0;
+	currentA=0;
 	currentFile="";
 	currentFileExists=false;
 	timer=0;
@@ -58,6 +59,8 @@ mdmCls::mdmCls ( QWidget *parent, const char *name, WFlags wf )
 	pal.setColor ( QColorGroup::Highlight, qRgb ( 205,234,255 ) );
 	pal.setColor ( QColorGroup::HighlightedText, qRgb ( 0,71,171 ) );
 	EBox->setPalette ( pal );
+	ABox->setFocus();
+	ABox->selectAll();
 }
 
 void mdmCls::openMassData ( int A )
@@ -210,7 +213,7 @@ void mdmCls::showMass ( QString m )
 // m is in keV Excess
 		if ( showExcessBox->isChecked() )
 		{
-
+			if(stripBox->isChecked()) mass=mass-Me*1.0e3*currentZ;
 			switch ( MUnitBox->currentItem() )
 			{
 				case MU_EV:
@@ -233,6 +236,7 @@ void mdmCls::showMass ( QString m )
 		{
 
 			m0=AMU*ABox->value(); // in MeV
+			if(stripBox->isChecked()) m0=m0-Me*currentZ;
 			switch ( MUnitBox->currentItem() )
 			{
 				case MU_EV:
@@ -256,7 +260,7 @@ void mdmCls::showMass ( QString m )
 	massBox->blockSignals ( true );
 	massBox->setText ( QString::number ( mass, 'g',9 ) );
 	massBox->blockSignals ( false );
-	rawLbl->setText ( m );
+//	rawLbl->setText ( m );
 }
 
 void mdmCls::EBoxSlot()
@@ -273,6 +277,12 @@ void mdmCls::EBoxSlot()
 		{
 			int z=getZ ( EBox->currentText().simplifyWhiteSpace() );
 			if ( z>0 ) ZLbl->setText ( QString::number ( z ) );
+			currentZ=z;
+			if(z>0){
+				stripBox->setEnabled(true);
+			}else{
+				stripBox->setEnabled(false);
+			}
 		}
 		else
 		{
@@ -305,6 +315,11 @@ void mdmCls::changeASlot()
 	EeditBox->clear();
 	massBox->clear();
 	appBut->setEnabled ( false );
+}
+
+void mdmCls::stripSlot()
+{
+	EBoxSlot();
 }
 
 void mdmCls::changeUnitSlot()
@@ -349,7 +364,7 @@ void mdmCls::massChangedSlot()
 	double v=massBox->text().toDouble ( &ok );
 	if ( !ok ) return;
 	double m=readMass ( v );
-	rawLbl->setText ( QString::number ( m, 'g',9 ) );
+//	rawLbl->setText ( QString::number ( m, 'g',9 ) );
 
 	int i=EBox->currentItem();
 	QStringList::Iterator it = MList.at ( i );
@@ -595,7 +610,7 @@ void mdmCls::warn ( QString mess )
 	timer=startTimer ( 600 );
 }
 
-void mdmCls::timerEvent ( QTimerEvent *e )
+void mdmCls::timerEvent ( QTimerEvent *unused )
 {
 	if ( !blink )
 	{

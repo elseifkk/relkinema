@@ -27,6 +27,7 @@
 #include "rkcalccls.h"
 #include "rclistcls.h"
 #include "linereadcls.h"
+#include "misc.h"
 
 #include <fzc.h>
 
@@ -59,16 +60,16 @@
 #include <kfontrequester.h>
 #include <kcombobox.h>
 
-#define LEN_ELEMENT 8
+int const LEN_ELEMENT = 8;
 
 QFont const font_def ( "Helvetica",11 );
 QFont thefont;
 
-#define FIREFOX "firefox"
+QString const FIREFOX = "firefox";
 QString webbrowser=FIREFOX;
 
-#define CONFIGFILE_DEF ".relkinemarc"
-#define MASSDATA_DEF "massdata"
+QString const CONFIGFILE_DEF = ".relkinemarc";
+QString const MASSDATA_DEF   = "massdata";
 
 QString HOME;
 QString MASSDATA;
@@ -77,21 +78,21 @@ QString double_format;
 QString const double_format_def="%.6g";
 
 // NIST (2005)
-#define hbarc_DEF 197.326968
-#define AMU_DEF 931.494043
+double const hbarc_DEF = 197.326968;
+double const AMU_DEF   = 931.494043;
 double hbarc; // MeV fm
 double AMU;   // in MeV
 double Me,Mn,Mp,Mt,Md,Ma;
 
 // Reference Unknown
-#define r0_DEF     1.2
-#define e2_DEF     1.4406466
-#define Bv_DEF     15.56
-#define Bs_DEF     17.23
-#define Bsym_DEF   23.29
-#define Bp_DEF     12.00
-#define Bc_DEF     0.697
-#define hcRinf_DEF 13.6056981
+double const r0_DEF    = 1.2;
+double const e2_DEF    = 1.4406466;
+double const Bv_DEF    = 15.56;
+double const Bs_DEF    = 17.23;
+double const Bsym_DEF  = 23.29;
+double const Bp_DEF    = 12.00;
+double const Bc_DEF    = 0.697;
+double const hcRinf_DEF= 13.6056981;
 
 double r0;
 double e2;
@@ -169,6 +170,21 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	bzero ( &rectSet,sizeof ( rectSet ) );
 	bzero ( &exprSet,sizeof ( exprSet ) );
 
+	QString ver;
+	myname="RelKinema";
+	if ( v!=NULL )
+	{
+		ver=v;
+		myname+=" ver. "+QString ( v );
+	}
+	else
+	{
+		ver="unknown";
+	}
+	setCaption(myname);
+	ver.prepend ( "Release " );
+	verLbl->setText ( ver );
+
 	exprBox[0]=expr1Box;
 	exprBox[1]=expr2Box;
 	exprBox[2]=expr3Box;
@@ -232,8 +248,13 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	if ( !QFile::exists ( CONFIGFILE ) ) saveConfig ( CONFIGFILE );
 	QFileInfo fi ( MASSDATA );
 	if ( !QFile::exists ( MASSDATA ) || !fi.isReadable() )
-		KMessageBox::sorry ( this,  "Cannot locate mass data!","error" );
-
+	{
+		KMessageBox::sorry ( this,  "Cannot locate mass data!\nChoose mass data directory.","error" );
+		confMassDataDirBox->blockSignals ( true );
+		massDataDirSlot();
+		confMassDataDirBox->blockSignals ( false );
+		MASSDATA=confMassDataDirBox->text();
+	}
 	K1Set=false;
 	ExOk=true;
 
@@ -266,11 +287,6 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	for ( int i=4;i<8;i++ ) flipoff[i]=- ( i-4 ) *8;
 	flipoff[8]=-4;//<<<<<<<<<<<<
 	timerid=startTimer ( 80 );
-
-	QString ver="unknown";
-	if ( v!=NULL ) ver=v;
-	ver.prepend ( "Release " );
-	verLbl->setText ( ver );
 }
 
 int RelKinemaCls::adjCol ( bool *d, int c, int *off )
@@ -304,7 +320,7 @@ int RelKinemaCls::adjCol ( bool *d, int c, int *off )
 	return cc;
 }
 
-void RelKinemaCls::timerEvent ( QTimerEvent *e )
+void RelKinemaCls::timerEvent ( QTimerEvent *unused )
 {
 	timerProcMt.lock();
 	QLineEdit *L1=NULL;
@@ -444,9 +460,22 @@ void RelKinemaCls::setDispFont()
 	p4cunitLbl->setFont ( f );
 	dK3_dth3_unitLbl->setFont ( f );
 	KparamUnitLbl->setFont ( f );
+	setScrTypeFont();
+	setTitleFont();
 }
 
-void  RelKinemaCls::closeEvent ( QCloseEvent *e )
+void RelKinemaCls::setTitleFont()
+{
+	QFont f=thefont;
+	f.setPointSize ( thefont.pointSize() +1 );
+	f.setBold ( true );
+	pkgLbl->setFont ( f );
+	verLbl->setFont ( f );
+	mess1Lbl->setFont ( f );
+	mess2Lbl->setFont ( f );
+}
+
+void  RelKinemaCls::closeEvent ( QCloseEvent *unused )
 {
 	saveConfig ( CONFIGFILE );
 	close();
@@ -901,7 +930,7 @@ void RelKinemaCls::setMass ( int id, bool comp )
 	*m0=getMass ( sa,sn,a,z, calc );
 	if ( *m0>=0 )
 	{
-		if ( stripBox->isChecked() && *a>0 && MT->currentItem()==MT_EXP)
+		if ( stripBox->isChecked() && *a>0 && MT->currentItem() ==MT_EXP )
 		{
 			*m=stripMass ( *m0,*z );
 		}
@@ -946,7 +975,7 @@ void RelKinemaCls::seeIfMassSet()
 	}
 	else
 	{
-		setCaption ( "RelKinema" );
+		setCaption ( myname );
 		ReactionBox->setTitle ( "Reaction" );
 		theReaction="";
 		ReactionConditionBox->setEnabled ( false );
@@ -971,7 +1000,7 @@ void RelKinemaCls::setReactionLbl()
 	if ( a4>0 ) a.sprintf ( "%d",a4 );
 	s+=a+nc4;
 	theReaction=s;
-	setCaption ( "RelKinema: "+s );
+	setCaption ( myname+": "+s );
 	s="Reaction: "+s;
 	ReactionBox->setTitle ( s );
 }
@@ -1092,7 +1121,7 @@ void RelKinemaCls::unsetMass ( int id, bool clear )
 	EmissionBox->setEnabled ( false );
 	SetBut->setEnabled ( true );
 	msgLbl->clear();
-	setCaption ( "Relkinema" );
+	setCaption ( myname );
 	theReaction="";
 	ReactionBox->setTitle ( "Reaction" );
 }
@@ -1250,11 +1279,26 @@ void RelKinemaCls::showEnergyL ( double E, QLineEdit *L, QString prep )
 	L->setCursorPosition ( 0 );
 }
 
+void RelKinemaCls::setActiveTextColLE ( QString c, QLineEdit *L )
+{
+	QPalette p=L->palette();
+	p.setColor ( QPalette::Active,QColorGroup::Text,QColor ( c ) );
+	L->setPalette ( p );
+}
+
 void RelKinemaCls::showEnergyLE ( double E, QLineEdit *L )
 {
 	QString s;
 	s.sprintf ( double_format, E );
 	L->blockSignals ( true );
+	if ( E<0. )
+	{
+		setActiveTextColLE ( "red",L );
+	}
+	else
+	{
+		setActiveTextColLE ( "black",L );
+	}
 	L->setText ( s );
 	L->setCursorPosition ( 0 );
 	L->blockSignals ( false );
@@ -1598,6 +1642,14 @@ void RelKinemaCls::showValueLE ( double v, QLineEdit *b )
 	QString s;
 	s.sprintf ( double_format,v );
 	b->blockSignals ( true );
+	if ( v<0. )
+	{
+		setActiveTextColLE ( "red",b );
+	}
+	else
+	{
+		setActiveTextColLE ( "black",b );
+	}
 	b->setText ( s );
 	b->setCursorPosition ( 0 );
 	b->blockSignals ( false );
@@ -1683,6 +1735,20 @@ void RelKinemaCls::showTheta4()
 	showAngleLE ( th4c,RThetaCMBox );
 }
 
+bool RelKinemaCls::setTheta3c ( double v )
+{
+	if ( nearly_eq ( v,thetaMaxCM ) )
+	{
+		rkc_set_Theta3c_max ( prkc );
+		return true;
+	}
+	else
+	{
+		if ( v<0. || v>thetaMaxCM ) return false;
+		return rkc_set_Theta3c ( prkc, v ) >=0;
+	}
+}
+
 void RelKinemaCls::thetaCMSlot ( bool internal )
 {
 	if ( !internal )
@@ -1694,12 +1760,12 @@ void RelKinemaCls::thetaCMSlot ( bool internal )
 		setAngle ( false );
 		bool ok;
 		double v=ThetaCMBox->text().toDouble ( &ok );
-		if ( !ok || v<0. || rkc_set_Theta3c ( prkc,v ) < 0 ) return;
+		if ( !ok || !setTheta3c ( v ) ) return;
 		th3c=rkc_get_th3c ( prkc );
 	}
 	else
 	{
-		if ( rkc_set_Theta3c ( prkc,th3c ) < 0 ) return;
+		if ( !setTheta3c ( th3c ) ) return;
 		showAngleLE ( th3c,ThetaCMBox );
 	}
 	th4c=rkc_get_th4c ( prkc );
@@ -1768,6 +1834,20 @@ void RelKinemaCls::setK3 ( )
 	showKp3();
 }
 
+bool RelKinemaCls::setTheta3 ( double v )
+{
+	if ( nearly_eq ( v,thetaMax ) )
+	{
+		rkc_set_Theta3_max ( prkc );
+		return true;
+	}
+	else
+	{
+		if ( v<0. || v>thetaMax ) return false;
+		return rkc_set_Theta3 ( prkc, v ) >=0;
+	}
+}
+
 void RelKinemaCls::thetaLabSlot ( bool internal )
 {
 	if ( !internal )
@@ -1779,12 +1859,12 @@ void RelKinemaCls::thetaLabSlot ( bool internal )
 		setAngle ( false );
 		bool ok;
 		double v=ThetaLabBox->text().toDouble ( &ok );
-		if ( !ok || v<0. || rkc_set_Theta3 ( prkc,v ) < 0 ) return;
+		if ( !ok || !setTheta3 ( v ) ) return;
 		th3=rkc_get_th3 ( prkc );
 	}
 	else
 	{
-		if ( rkc_set_Theta3 ( prkc,th3 ) < 0 ) return;
+		if ( !setTheta3 ( th3 ) ) return;
 		showAngleLE ( th3,ThetaLabBox );
 	}
 	setK3 ();
@@ -1810,6 +1890,25 @@ void RelKinemaCls::thetaCMSlot()
 void RelKinemaCls::qSlot()
 {qSlot ( false );}
 
+bool RelKinemaCls::setq ( double v )
+{
+	if ( nearly_eq ( v,qmin ) )
+	{
+		rkc_set_q_min ( prkc );
+		return true;
+	}
+	else if ( nearly_eq ( v,qmax ) )
+	{
+		rkc_set_q_max ( prkc );
+		return true;
+	}
+	else
+	{
+		if ( v<qmin || v>qmax ) return false;
+		return rkc_set_q ( prkc, v ) >=0;
+	}
+}
+
 void RelKinemaCls::qSlot ( bool internal )
 {
 	if ( !internal )
@@ -1821,14 +1920,13 @@ void RelKinemaCls::qSlot ( bool internal )
 		setAngle ( false );
 		bool ok;
 		double v=qBox->text().toDouble ( &ok );
-		if ( !ok ) return;
-		if ( v<qmin || v>qmax || rkc_set_q ( prkc, v ) < 0 ) return;
-		theq=v;
+		if ( !ok || !setq ( v ) ) return;
+		theq=rkc_get_q ( prkc );
 		setAngle ( true );
 	}
 	else
 	{
-		if ( rkc_set_q ( prkc,theq ) < 0 ) return;
+		if ( !setq ( theq ) ) return;
 		showValueLE ( theq,qBox );
 	}
 	th3c=rkc_get_th3c ( prkc );
@@ -1884,6 +1982,33 @@ QString RelKinemaCls::getAngleUnit()
 	}
 }
 
+void RelKinemaCls::setScrTypeFont()
+{
+	QLabel *L;
+	QFont f=thefont;
+	switch ( scrTypeBox->currentItem() )
+	{
+		case ST_THETALAB:
+			L=theLabLbl;
+			break;
+		case ST_THETACM:
+			L=theCMLbl;
+			break;
+		case ST_Q:
+			L=theqLbl;
+			break;
+	}
+	theqLbl->setPaletteForegroundColor ( "black" );
+	theLabLbl->setPaletteForegroundColor ( "black" );
+	theCMLbl->setPaletteForegroundColor ( "black" );
+	theLabLbl->setFont ( thefont );
+	theCMLbl->setFont ( thefont );
+	theqLbl->setFont ( thefont );
+	L->setPaletteForegroundColor ( "blue" );
+	f.setBold ( true );
+	L->setFont ( f );
+}
+
 void RelKinemaCls::scrTypeSlot()
 {
 	bool ok;
@@ -1892,14 +2017,7 @@ void RelKinemaCls::scrTypeSlot()
 	double max=0,min=0;
 	void ( RelKinemaCls::*eval ) ();
 	QString unit;
-	QLabel *L;
 	thetaBar->setEnabled ( false );
-	theqLbl->setPaletteForegroundColor ( "black" );
-	theLabLbl->setPaletteForegroundColor ( "black" );
-	theCMLbl->setPaletteForegroundColor ( "black" );
-	theLabLbl->setFont ( thefont );
-	theCMLbl->setFont ( thefont );
-	theqLbl->setFont ( thefont );
 	switch ( scrTypeBox->currentItem() )
 	{
 		case ST_THETALAB:
@@ -1909,7 +2027,6 @@ void RelKinemaCls::scrTypeSlot()
 			max=thetaMax;
 			min=0.;
 			unit=getAngleUnit();
-			L=theLabLbl;
 			rkc_set_K3Sign ( prkc,1 );
 			anotherSolutionBox->setEnabled ( inv && !thetaMaxNe );
 			anotherSolutionBox->setChecked ( false );
@@ -1925,7 +2042,6 @@ void RelKinemaCls::scrTypeSlot()
 			max=thetaMaxCM;
 			min=0.;
 			unit=getAngleUnit();
-			L=theCMLbl;
 			anotherSolutionBox->setEnabled ( false );
 			anotherSolutionBox->setChecked ( false );
 			tbMax=&thetaMaxCM;
@@ -1939,7 +2055,6 @@ void RelKinemaCls::scrTypeSlot()
 			max=qmax;
 			min=qmin;
 			unit="fm-1";
-			L=theqLbl;
 			anotherSolutionBox->setEnabled ( false );
 			anotherSolutionBox->setChecked ( false );
 			tbMax=&qmax;
@@ -1952,10 +2067,7 @@ void RelKinemaCls::scrTypeSlot()
 	stepUnitLbl->setText ( unit );
 	if ( !ok || d == 0. ) return;
 
-	L->setPaletteForegroundColor ( "blue" );
-	QFont f=thefont;
-	f.setBold ( true );
-	L->setFont ( f );
+	setScrTypeFont();
 	setThetaBarStep ( min,max,d,v );
 	thetaBar->setEnabled ( true );
 }
@@ -2143,10 +2255,10 @@ void RelKinemaCls::stripSlot()
 {
 	if ( stripBox->isChecked() )
 	{
-		if ( a1>0&&massSet[1] && mass1TypeBox->currentItem()==MT_EXP ) m1=stripMass ( m10,z1 );
-		if ( a2>0&&massSet[0] && mass2TypeBox->currentItem()==MT_EXP ) m2=stripMass ( m20,z2 );
-		if ( a3>0&&massSet[3] && mass3TypeBox->currentItem()==MT_EXP ) m3=stripMass ( m30,z3 );
-		if ( a4>0&&massSet[4] && mass4TypeBox->currentItem()==MT_EXP ) m4=stripMass ( m40,z4 );
+		if ( a1>0&&massSet[1] && mass1TypeBox->currentItem() ==MT_EXP ) m1=stripMass ( m10,z1 );
+		if ( a2>0&&massSet[0] && mass2TypeBox->currentItem() ==MT_EXP ) m2=stripMass ( m20,z2 );
+		if ( a3>0&&massSet[3] && mass3TypeBox->currentItem() ==MT_EXP ) m3=stripMass ( m30,z3 );
+		if ( a4>0&&massSet[4] && mass4TypeBox->currentItem() ==MT_EXP ) m4=stripMass ( m40,z4 );
 	}
 	else
 	{
@@ -2219,7 +2331,7 @@ void RelKinemaCls::showResultListSlot()
 
 	win->initResultDescBox ( theReaction, K1, p1, Ex, QValue, beta,gamma,
 	                         m1/AMU, m2/AMU, m3/AMU, m4/AMU, double_format,
-				 EUnitBox->currentText() );
+	                         EUnitBox->currentText() );
 
 	/*	win->initResultTable (  );*/
 	prkc_dmy=rkc_cp ( prkc );
@@ -2423,8 +2535,6 @@ void RelKinemaCls::initSettingsPage ( bool first )
 	configEdit->blockSignals ( true );
 	if ( first )
 	{
-		confDoubleNumberFormatLbl->clear();
-		confMassDataDirLbl->clear();
 		confMassDataDirBox->setText ( MASSDATA );
 		confDoubleNumberFormatBox->setText ( double_format );
 	}
@@ -2543,6 +2653,9 @@ void RelKinemaCls::saveConfSlot()
 	saveConfig ( CONFIGFILE );
 	reinitRelKinema();
 	initSettingsPage();
+	saveConfBut->setEnabled ( false );
+	confDoubleNumberFormatLbl->clear();
+	confMassDataDirLbl->clear();
 }
 
 void RelKinemaCls::returnSlot()
@@ -2621,7 +2734,7 @@ void RelKinemaCls::registParams ( size_t prkc_, size_t pfzc_ )
 	registParam ( pfzc_, rkc_getp_th3c ( prkc_ ), "th3c" );
 	registParam ( pfzc_, rkc_getp_th4c ( prkc_ ), "th4c" );
 
-	registParam ( pfzc_, rkc_getp_theq ( prkc_ ), "theq" );
+	registParam ( pfzc_, rkc_getp_theq ( prkc_ ), "q" );
 	registParam ( pfzc_, rkc_getp_qMin ( prkc_ ), "qMin" );
 	registParam ( pfzc_, rkc_getp_qMax ( prkc_ ), "qMax" );
 
@@ -2636,7 +2749,7 @@ void RelKinemaCls::calcSlot()
 {
 	rkCalcCls *win = new rkCalcCls ( NULL,NULL,Qt::WDestructiveClose,
 	                                 &CONFIGFILE, pfzc );
-	win->setFont(thefont);
+	win->setFont ( thefont );
 
 	if ( !win->initRKC() )
 	{
@@ -2707,16 +2820,16 @@ void RelKinemaCls::showMenu()
 		pm.setItemEnabled ( idt,tableBut->isEnabled() );
 		pm.setItemEnabled ( idc,calcBut->isEnabled() );
 		pm.setItemEnabled ( idr,redoBut->isEnabled() );
+		pm.insertSeparator();
+		pm.insertItem ( "Clear Reaction",this,SLOT ( unsetMassSlot_all() ),Key_C );
+		pm.insertItem ( pload, "Load Reaction",this,SLOT ( loadRectCondSlot() ),CTRL+Key_O );
+		int ids=pm.insertItem ( psave, "Save Reaction",this,SLOT ( saveRectCondSlot() ),CTRL+Key_S );
+		pm.setItemEnabled ( ids, ReactionConditionBox->isEnabled() );
 	}
 	else
 	{
 		pm.insertItem ( "Return to Main",this,SLOT ( toggleSettingsSlot() ), Key_S );
 	}
-	pm.insertSeparator();
-	pm.insertItem ( "Clear Reaction",this,SLOT ( unsetMassSlot_all() ),Key_C );
-	pm.insertItem ( pload, "Load Reaction",this,SLOT ( loadRectCondSlot() ),CTRL+Key_O );
-	int ids=pm.insertItem ( psave, "Save Reaction",this,SLOT ( saveRectCondSlot() ),CTRL+Key_S );
-	pm.setItemEnabled ( ids, ReactionConditionBox->isEnabled() );
 	pm.insertSeparator();
 	pm.insertSeparator();
 	pm.insertItem ( pabout,"About",this,SLOT ( showAbout() ) );
@@ -2847,7 +2960,7 @@ void RelKinemaCls::saveRectCondSlot()
 	KConfig *conf = new KConfig ( CONFIGFILE );
 	if ( conf==NULL ) return;
 
-	linereadCls *dlg = new linereadCls ( NULL,NULL,Qt::WDestructiveClose,"Save Reaction Condition:"
+	linereadCls *dlg = new linereadCls ( NULL,NULL,Qt::WDestructiveClose,"Save Reaction Condition: "
 	                                     +theReaction,"Any Comments?", thefont );
 
 	if ( dlg->exec() !=QDialog::Accepted ) return;
@@ -2881,6 +2994,8 @@ void RelKinemaCls::saveRectCondSlot()
 
 void RelKinemaCls::checkAppSlot()
 {
+	confDoubleNumberFormatLbl->clear();
+	confMassDataDirLbl->clear();
 	confAppBut->setEnabled ( true );
 }
 
@@ -2889,9 +3004,9 @@ void RelKinemaCls::checkConfSlot()
 	saveConfBut->setEnabled ( true );
 }
 
-void RelKinemaCls::fontSlot ( const QFont &f )
+void RelKinemaCls::fontSlot ( const QFont &unused )
 {
-	confAppBut->setEnabled ( true );
+	checkAppSlot();
 }
 
 void RelKinemaCls::loadDefConfSlot()
@@ -3045,8 +3160,6 @@ void RelKinemaCls::updateExprSlot()
 		}
 		QString s;
 		valBox[i]->setText ( s.sprintf ( double_format,fzc_get_ans ( pfzc ) ) );
-		/*		fzc_get_strans ( pfzc, ( size_t ) &cstr );
-				valBox[i]->setText ( cstr );*/
 	}
 }
 
@@ -3066,6 +3179,17 @@ void RelKinemaCls::checkAllPlotSlot()
 void RelKinemaCls::checkNonePlotSlot()
 {
 	setPlottables ( 0 );
+}
+
+void RelKinemaCls::clearHistSlot()
+{
+	for ( int i=0;i<4;i++ )
+	{
+		exprBox[i]->blockSignals ( true );
+		exprBox[i]->clearHistory();
+		exprBox[i]->completionObject()->clear();
+		exprBox[i]->blockSignals ( false );
+	}
 }
 
 #include "relkinemaCls.moc"

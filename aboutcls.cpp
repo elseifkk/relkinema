@@ -118,7 +118,7 @@ void aboutcls::urlSlot()
 	p.start();
 }
 
-void aboutcls::paintEvent ( QPaintEvent *e )
+void aboutcls::paintEvent ( QPaintEvent *unused )
 {
 #ifdef ENABLE_LOGO_FADEIN
 	if ( this->pmput )
@@ -138,7 +138,7 @@ QColor aboutcls::setFgCol ( double z )
 	return qRgb ( r,g,b );
 }
 
-void aboutcls::timerEvent ( QTimerEvent *e )
+void aboutcls::timerEvent ( QTimerEvent *unused )
 {
 	int r,g,b;
 	float z;

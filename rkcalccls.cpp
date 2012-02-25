@@ -94,7 +94,7 @@ void rkCalcCls::enterSlot ( void )
 			return;
 	}
 
-	mess ( formulaBox->currentText() +" =","black", false );
+	mess ( QString(cstr) +" =","black", false );
 	rc=fzc_set_formula ( pfzc, pcstr );
 	if ( rc>0 )
 	{
@@ -125,6 +125,7 @@ void rkCalcCls::enterSlot ( void )
 void rkCalcCls::clearSlot()
 {
 	ansBox->clear();
+	formulaBox->clear();
 }
 
 void rkCalcCls::keyPressEvent ( QKeyEvent *e )
@@ -140,6 +141,12 @@ void rkCalcCls::keyPressEvent ( QKeyEvent *e )
 			e->ignore();
 			break;
 	}
+}
+
+void rkCalcCls::clearHistSlot()
+{
+	formulaBox->clearHistory();
+	formulaBox->completionObject()->clear();
 }
 
 void rkCalcCls::closeEvent ( QCloseEvent *e )

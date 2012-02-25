@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -102,6 +102,12 @@ class RelKinemaCls: public RelKinemaDlg
 		void registParam ( size_t, size_t, QString );
 		void exprWarn ( int,QString );
 		void setPlottables ( int );
+		void setScrTypeFont();
+		void setTitleFont();
+		void setActiveTextColLE(QString,QLineEdit*);
+		bool setq(double);
+		bool setTheta3(double);
+		bool setTheta3c(double);
 
 	private:
 		size_t prkc;
@@ -148,6 +154,7 @@ class RelKinemaCls: public RelKinemaDlg
 		QCheckBox *plotBox[4];
 		QCheckBox *plotXBox[nrkpmax];
 		int plotmask;
+		QString myname;
 
 	private slots:
 		void setMassSlot_0();
@@ -230,6 +237,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void updateExprSlot();
 		void checkAllPlotSlot();
 		void checkNonePlotSlot();
+		void clearHistSlot();
 
 	protected:
 		void timerEvent ( QTimerEvent *e );

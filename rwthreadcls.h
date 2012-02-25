@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -22,8 +22,6 @@
 
 #include <qthread.h>
 #include <qstringlist.h>
-
-#define BT(var,pos) ((var) & (1<<(pos)))
 
 int const rkp_th3  =  0;
 int const rkp_th3c =  1;
@@ -50,6 +48,7 @@ class rwThreadCls: public QThread
 				:step ( step ), rmin ( rmin ), irmax ( irmax ),
 				prkc ( prkc ), sid ( sid ), fmt ( fmt ),
 				col_first ( col_first ), pfzc ( pfzc ), plotmask ( plotmask ) {ndone=0; memcpy ( &ext, ext_in, sizeof ( bool ) *nexpmax );}
+
 	public:
 		QStringList sl;
 		int ndone;

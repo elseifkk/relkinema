@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -24,129 +24,135 @@
 extern "C"
 {
 #endif
-	size_t __rkcore_MOD_init_rkc ( void );
-	void __rkcore_MOD_uinit_rkc ( const size_t );
-	size_t __rkcore_MOD_cp_rkc ( const size_t );
-	void __rkccore_MOD_rkc_clear_stat ( const size_t );
-	void __rkccore_MOD_rkc_set_print_error ( const size_t, const bool );
-	void __rkcore_MOD_rkc_set_param ( const size_t, const double, const double );
-	void __rkcore_MOD_rkc_set_eunit ( const size_t, const int );
-	void __rkcore_MOD_rkc_set_aunit ( const size_t, const int );
-	void __rkcore_MOD_rkc_set_mass ( const size_t, const double, const double, const double, const double );
-	double __rkcore_MOD_rkc_get_set_mass ( const size_t, const size_t, const size_t, const double );
-	double __rkcore_MOD_rkc_get_set_strip_mass ( const size_t, const size_t, const double );
-	void __rkcore_MOD_rkc_set_ex ( const size_t, const double );
-	void __rkcore_MOD_rkc_set_k1 ( const size_t, const double );
-	void __rkcore_MOD_rkc_set_k1c ( const size_t, const double );
-	void __rkcore_MOD_rkc_set_p1 ( const size_t, const double );
-	void __rkcore_MOD_rkc_set_p1c ( const size_t, const double );
-	void __rkcore_MOD_rkc_set_k34c ( const size_t );
-	void __rkcore_MOD_rkc_set_th3max ( const size_t );
-	void __rkcore_MOD_rkc_set_k3sign ( const size_t, const int );
-	int __rkcore_MOD_rkc_set_theta3 ( const size_t, const double );
-	int __rkcore_MOD_rkc_set_theta3c ( const size_t, const double );
-	int __rkcore_MOD_rkc_set_q ( const size_t, const double );
-	double __rkcore_MOD_rkc_get_qvalue ( const size_t );
-	double __rkcore_MOD_rkc_get_k1min ( const size_t );
-	double __rkcore_MOD_rkc_get_k1cmin ( const size_t );
-	double __rkcore_MOD_rkc_get_p1min ( const size_t );
-	double __rkcore_MOD_rkc_get_p1cmin ( const size_t );
-	double __rkcore_MOD_rkc_get_k1 ( const size_t );
-	double __rkcore_MOD_rkc_get_k3 ( const size_t );
-	double __rkcore_MOD_rkc_get_k4 ( const size_t );
-	double __rkcore_MOD_rkc_get_k1c ( const size_t );
-	double __rkcore_MOD_rkc_get_k2c ( const size_t );
-	double __rkcore_MOD_rkc_get_k3c ( const size_t );
-	double __rkcore_MOD_rkc_get_k4c ( const size_t );
-	double __rkcore_MOD_rkc_get_p1 ( const size_t );
-	double __rkcore_MOD_rkc_get_p3 ( const size_t );
-	double __rkcore_MOD_rkc_get_p4 ( const size_t );
-	double __rkcore_MOD_rkc_get_p1c ( const size_t );
-	double __rkcore_MOD_rkc_get_p3c ( const size_t );
-	double __rkcore_MOD_rkc_get_p4c ( const size_t );
-	double __rkcore_MOD_rkc_get_e1 ( const size_t );
-	double __rkcore_MOD_rkc_get_e3 ( const size_t );
-	double __rkcore_MOD_rkc_get_e4 ( const size_t );
-	double __rkcore_MOD_rkc_get_e1c ( const size_t );
-	double __rkcore_MOD_rkc_get_e2c ( const size_t );
-	double __rkcore_MOD_rkc_get_e3c ( const size_t );
-	double __rkcore_MOD_rkc_get_e4c ( const size_t );
-	double __rkcore_MOD_rkc_get_beta ( const  size_t );
-	double __rkcore_MOD_rkc_get_gamma ( const size_t );
-	double __rkcore_MOD_rkc_get_betagamma ( const size_t );
-	double __rkcore_MOD_rkc_get_invgamma ( const size_t );
-	double __rkcore_MOD_rkc_get_qmax ( const size_t );
-	double __rkcore_MOD_rkc_get_qmin ( const size_t );
-	double __rkcore_MOD_rkc_get_exmax ( const size_t );
-	double __rkcore_MOD_rkc_get_ex ( const size_t );
-	double __rkcore_MOD_rkc_get_th3 ( const size_t );
-	double __rkcore_MOD_rkc_get_th4 ( const size_t );
-	double __rkcore_MOD_rkc_get_th3c ( const size_t );
-	double __rkcore_MOD_rkc_get_th4c ( const size_t );
-	double __rkcore_MOD_rkc_get_th3max ( const size_t );
-	double __rkcore_MOD_rkc_get_th3cmax ( const size_t );
-	double __rkcore_MOD_rkc_get_q ( const size_t );
-	double __rkcore_MOD_rkc_get_j3 ( const size_t );
-	double __rkcore_MOD_rkc_get_j4 ( const size_t );
-	double __rkcore_MOD_rkc_get_kshift ( const size_t );
-	double __rkcore_MOD_rkc_get_kfactor ( const size_t );
-	bool __rkcore_MOD_rkc_get_flag_invkin ( const size_t );
-	bool __rkcore_MOD_rkc_get_flag_th3maxne ( const size_t );
-	size_t __rkcore_MOD_rkc_get_m1_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_m2_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_m3_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_m4_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_e1_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_e2_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_e3_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_e4_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p1_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p2_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p3_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p4_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_k1_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_k3_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_k4_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_e1c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_e2c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_e3c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_e4c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p1c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p2c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p3c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p4c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_k1c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_k2c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_k3c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_k4c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_qvalue_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_ex_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_exmax_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_k1min_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p1min_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_k1cmin_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_p1cmin_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_them_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_gamma_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_beta_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_th3max_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_th3_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_th4_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_th3c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_th4c_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_theq_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_qmin_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_qmax_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_j3_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_j4_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_kshift_ref ( const size_t );
-	size_t __rkcore_MOD_rkc_get_kfactor_ref ( const size_t );
+  size_t __rkcore_MOD_init_rkc ( void );
+  void __rkcore_MOD_uinit_rkc ( const size_t );
+  size_t __rkcore_MOD_cp_rkc ( const size_t );
+  void __rkccore_MOD_rkc_clear_stat ( const size_t );
+  void __rkccore_MOD_rkc_set_print_error ( const size_t, const bool );
+  void __rkcore_MOD_rkc_set_param ( const size_t, const double, const double );
+  void __rkcore_MOD_rkc_set_eunit ( const size_t, const int );
+  void __rkcore_MOD_rkc_set_aunit ( const size_t, const int );
+  void __rkcore_MOD_rkc_set_mass ( const size_t, const double, const double, const double, const double );
+  double __rkcore_MOD_rkc_get_set_mass ( const size_t, const size_t, const size_t, const double );
+  double __rkcore_MOD_rkc_get_set_strip_mass ( const size_t, const size_t, const double );
+  void __rkcore_MOD_rkc_set_ex ( const size_t, const double );
+  void __rkcore_MOD_rkc_set_k1 ( const size_t, const double );
+  void __rkcore_MOD_rkc_set_k1c ( const size_t, const double );
+  void __rkcore_MOD_rkc_set_p1 ( const size_t, const double );
+  void __rkcore_MOD_rkc_set_p1c ( const size_t, const double );
+  void __rkcore_MOD_rkc_set_k34c ( const size_t );
+  void __rkcore_MOD_rkc_set_th3max ( const size_t );
+  void __rkcore_MOD_rkc_set_k3sign ( const size_t, const int );
+  int __rkcore_MOD_rkc_set_theta3 ( const size_t, const double );
+  int __rkcore_MOD_rkc_set_theta3c ( const size_t, const double );
+  int __rkcore_MOD_rkc_set_q ( const size_t, const double );
+  void __rkcore_MOD_rkc_set_theta3_min ( const size_t);
+  void __rkcore_MOD_rkc_set_theta3c_min ( const size_t);
+  void __rkcore_MOD_rkc_set_q_min ( const size_t);
+  void __rkcore_MOD_rkc_set_theta3_max ( const size_t);
+  void __rkcore_MOD_rkc_set_theta3c_max ( const size_t);
+  void __rkcore_MOD_rkc_set_q_max ( const size_t);
+  double __rkcore_MOD_rkc_get_qvalue ( const size_t );
+  double __rkcore_MOD_rkc_get_k1min ( const size_t );
+  double __rkcore_MOD_rkc_get_k1cmin ( const size_t );
+  double __rkcore_MOD_rkc_get_p1min ( const size_t );
+  double __rkcore_MOD_rkc_get_p1cmin ( const size_t );
+  double __rkcore_MOD_rkc_get_k1 ( const size_t );
+  double __rkcore_MOD_rkc_get_k3 ( const size_t );
+  double __rkcore_MOD_rkc_get_k4 ( const size_t );
+  double __rkcore_MOD_rkc_get_k1c ( const size_t );
+  double __rkcore_MOD_rkc_get_k2c ( const size_t );
+  double __rkcore_MOD_rkc_get_k3c ( const size_t );
+  double __rkcore_MOD_rkc_get_k4c ( const size_t );
+  double __rkcore_MOD_rkc_get_p1 ( const size_t );
+  double __rkcore_MOD_rkc_get_p3 ( const size_t );
+  double __rkcore_MOD_rkc_get_p4 ( const size_t );
+  double __rkcore_MOD_rkc_get_p1c ( const size_t );
+  double __rkcore_MOD_rkc_get_p3c ( const size_t );
+  double __rkcore_MOD_rkc_get_p4c ( const size_t );
+  double __rkcore_MOD_rkc_get_e1 ( const size_t );
+  double __rkcore_MOD_rkc_get_e3 ( const size_t );
+  double __rkcore_MOD_rkc_get_e4 ( const size_t );
+  double __rkcore_MOD_rkc_get_e1c ( const size_t );
+  double __rkcore_MOD_rkc_get_e2c ( const size_t );
+  double __rkcore_MOD_rkc_get_e3c ( const size_t );
+  double __rkcore_MOD_rkc_get_e4c ( const size_t );
+  double __rkcore_MOD_rkc_get_beta ( const  size_t );
+  double __rkcore_MOD_rkc_get_gamma ( const size_t );
+  double __rkcore_MOD_rkc_get_betagamma ( const size_t );
+  double __rkcore_MOD_rkc_get_invgamma ( const size_t );
+  double __rkcore_MOD_rkc_get_qmax ( const size_t );
+  double __rkcore_MOD_rkc_get_qmin ( const size_t );
+  double __rkcore_MOD_rkc_get_exmax ( const size_t );
+  double __rkcore_MOD_rkc_get_ex ( const size_t );
+  double __rkcore_MOD_rkc_get_th3 ( const size_t );
+  double __rkcore_MOD_rkc_get_th4 ( const size_t );
+  double __rkcore_MOD_rkc_get_th3c ( const size_t );
+  double __rkcore_MOD_rkc_get_th4c ( const size_t );
+  double __rkcore_MOD_rkc_get_th3max ( const size_t );
+  double __rkcore_MOD_rkc_get_th3cmax ( const size_t );
+  double __rkcore_MOD_rkc_get_q ( const size_t );
+  double __rkcore_MOD_rkc_get_j3 ( const size_t );
+  double __rkcore_MOD_rkc_get_j4 ( const size_t );
+  double __rkcore_MOD_rkc_get_kshift ( const size_t );
+  double __rkcore_MOD_rkc_get_kfactor ( const size_t );
+  bool __rkcore_MOD_rkc_get_flag_invkin ( const size_t );
+  bool __rkcore_MOD_rkc_get_flag_th3maxne ( const size_t );
+  size_t __rkcore_MOD_rkc_get_m1_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_m2_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_m3_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_m4_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_e1_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_e2_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_e3_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_e4_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p1_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p2_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p3_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p4_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_k1_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_k3_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_k4_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_e1c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_e2c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_e3c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_e4c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p1c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p2c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p3c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p4c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_k1c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_k2c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_k3c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_k4c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_qvalue_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_ex_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_exmax_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_k1min_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p1min_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_k1cmin_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_p1cmin_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_them_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_gamma_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_beta_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_th3max_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_th3_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_th4_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_th3c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_th4c_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_theq_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_qmin_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_qmax_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_j3_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_j4_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_kshift_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_kfactor_ref ( const size_t );
 #ifdef __cplusplus
 }
 #endif
 
-#define RKCERR_RANGE_UNDER 1
-#define RKCERR_RANGE_OVER  2
+int const RKCERR_RANGE_UNDER = 1;
+int const RKCERR_RANGE_OVER  = 2;
 
 #define rkc_init                 __rkcore_MOD_init_rkc
 #define rkc_uinit                __rkcore_MOD_uinit_rkc
@@ -167,6 +173,12 @@ extern "C"
 #define rkc_set_K34c             __rkcore_MOD_rkc_set_k34c
 #define rkc_set_th3Max           __rkcore_MOD_rkc_set_th3max
 #define rkc_set_K3Sign           __rkcore_MOD_rkc_set_k3sign
+#define rkc_set_Theta3_min        __rkcore_MOD_rkc_set_theta3_min
+#define rkc_set_Theta3c_min       __rkcore_MOD_rkc_set_theta3c_min
+#define rkc_set_q_min             __rkcore_MOD_rkc_set_q_min
+#define rkc_set_Theta3_max        __rkcore_MOD_rkc_set_theta3_max
+#define rkc_set_Theta3c_max       __rkcore_MOD_rkc_set_theta3c_max
+#define rkc_set_q_max             __rkcore_MOD_rkc_set_q_max
 #define rkc_set_Theta3           __rkcore_MOD_rkc_set_theta3
 #define rkc_set_Theta3c          __rkcore_MOD_rkc_set_theta3c
 #define rkc_set_q                __rkcore_MOD_rkc_set_q

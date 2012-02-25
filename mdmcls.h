@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -23,13 +23,13 @@
 #include "mdmDlg.h"
 
 // PDG (2009)
-#define Mn_DEF   939.565346
-#define Mp_DEF   938.272013
-#define Me_DEF   0.510998910
+double const Mn_DEF =  939.565346;
+double const Mp_DEF =  938.272013;
+double const Me_DEF =  0.510998910;
 // NIST
-#define Md_DEF 1875.612793
-#define Mt_DEF 2808.920906
-#define Ma_DEF 3727.379240
+double const Md_DEF = 1875.612793;
+double const Mt_DEF = 2808.920906;
+double const Ma_DEF = 3727.379240;
 
 int const PID_GAMMA    =0;
 int const PID_ELECTRON =1;
@@ -249,6 +249,7 @@ class mdmCls: public massDataManager
 		QString currentFile;
 		bool currentFileExists;
 		int currentA;
+		int currentZ;
 		QStringList MList;
 		int discardOk;
 		int timer;
@@ -279,6 +280,7 @@ class mdmCls: public massDataManager
 		void appSlot();
 		void massDataDirSlot();
 		void massDataFileSlot();
+		void stripSlot();
 
 	protected:
 		void timerEvent ( QTimerEvent *e );

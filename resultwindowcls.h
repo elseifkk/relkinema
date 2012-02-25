@@ -93,7 +93,6 @@ class resultWindowCls: public resultWindow
 		void redSlot();
 		void hideDescSlot();
 		void plotDone();
-		void rtSlot ( int,int );
 		void setTable();
 		void clearPlotSelect(int s=0);
 		void showTableMenu();

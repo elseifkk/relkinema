@@ -21,6 +21,7 @@
 
 #include "resultwindowcls.h"
 #include "kinemaplotcls.h"
+#include "misc.h"
 
 #include <qtextedit.h>
 #include <qlistview.h>
@@ -50,8 +51,8 @@ resultWindowCls::resultWindowCls ( QWidget *parent, const char *name, WFlags wf,
 	ncol=0;
 	QString plotLbl[ncolmax]=
 	{
-		"Theta3LAB","Theta3CM","q","K3","p3","do3CM/do3LAB","dK3/dTheta3LAB","1/p3/(dp3/dTheta3LAB)",
-		"Theta4LAB","Theta4CM","K4","p4","do4CM/do4LAB"
+		"th3","th3c","q","K3","p3","J3","KS","KF",
+		"th4","th4c","K4","p4","J4"
 	};
 	QString uLbl[ncolmax]={al,al,"1/fm",el,pl,"",el+"/"+al,"1/"+al,al,al,el,pl,""};
 
@@ -179,7 +180,7 @@ done:
 	emit done();
 }
 
-void resultWindowCls::timerEvent ( QTimerEvent *e )
+void resultWindowCls::timerEvent ( QTimerEvent *unused )
 {
 	if ( *ndone>=0 )
 	{
@@ -201,7 +202,7 @@ void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnerg
 	plotLbl=reaction+" K1="+s.sprintf ( fmt, incidentEnergy );
 	plotLbl+=" "+eu+" Ex="+s.sprintf ( fmt, Ex ) +" "+eu;
 	resultDescBox->append ( "Reaction: "+reaction );
-	resultDescBox->append ( "Mass: M2(M1, M3)M4" );
+	resultDescBox->append ( "Mass: m2(m1, m3)m4 in AMU:" );
 	t=s.sprintf ( fmt,m2 ) +" ( ";
 	t+=s.sprintf ( fmt,m1 ) +", ";
 	t+=s.sprintf ( fmt,m3 ) +" ) ";
@@ -210,7 +211,7 @@ void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnerg
 	resultDescBox->append ( "Incident Energy: "+s.sprintf ( fmt, incidentEnergy ) +" "+eu );
 	resultDescBox->append ( "Incident Momentum: "+s.sprintf ( fmt, incidentMomentum ) +" "+eu+"/c" );
 	resultDescBox->append ( "Excitation Energy: "+s.sprintf ( fmt, Ex ) +" "+eu );
-	resultDescBox->append ( "Q Value: "+s.sprintf ( fmt, QValue ) +" "+eu );
+	resultDescBox->append ( "Q-Value: "+s.sprintf ( fmt, QValue ) +" "+eu );
 	resultDescBox->append ( "beta: "+s.sprintf ( fmt, beta ) );
 	resultDescBox->append ( "1/gamma: "+s.sprintf ( fmt, 1./gamma ) );
 	resultDescBox->append ( "gamma*beta: "+s.sprintf ( fmt, gamma*beta ) );
@@ -466,6 +467,7 @@ void resultWindowCls::changeFontSize ( int d )
 	}
 	f.setPointSize ( p );
 	setFont ( f );
+	resultTable->setFont(f);
 	adjTable();
 }
 
@@ -609,10 +611,6 @@ void resultWindowCls::showTableMenu()
 	pm.insertSeparator();
 	pm.insertItem ( "close",this,SLOT ( close() ), QKeySequence(Key_Q, Key_Escape) );
 	pm.exec ( QCursor::pos() );
-}
-
-void resultWindowCls::rtSlot ( int r, int c )
-{
 }
 
 #include "resultwindowcls.moc"

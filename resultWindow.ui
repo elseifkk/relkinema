@@ -660,18 +660,6 @@
         <receiver>resultWindow</receiver>
         <slot>hideDescSlot()</slot>
     </connection>
-    <connection>
-        <sender>resultTable</sender>
-        <signal>clicked(int,int,int,const QPoint&amp;)</signal>
-        <receiver>resultWindow</receiver>
-        <slot>rtSlot(int,int)</slot>
-    </connection>
-    <connection>
-        <sender>resultTable</sender>
-        <signal>currentChanged(int,int)</signal>
-        <receiver>resultWindow</receiver>
-        <slot>rtSlot(int,int)</slot>
-    </connection>
 </connections>
 <slots>
     <slot>saveasSlot()</slot>
