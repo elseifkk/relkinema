@@ -947,6 +947,7 @@ void RelKinemaCls::setMass ( int id, bool comp )
 	{
 		// if m==-2 it might be calculated.
 		massSet[id]=false;
+		L1->setPaletteForegroundColor("red");
 		if ( !calc )
 		{
 			L1->setText ( "Not Found" );
@@ -1028,6 +1029,7 @@ void RelKinemaCls::showMass ( double m, QLineEdit *L )
 	QString s;
 	mm=m*MU[MUnitBox->currentItem() ];
 	s.sprintf ( double_format,mm );
+	L->setPaletteForegroundColor("black");
 	L->setText ( s );
 	L->setCursorPosition ( 0 );
 }
@@ -2421,10 +2423,13 @@ void RelKinemaCls::updateThetaBar()
 	thetaBar->blockSignals ( false );
 }
 
-void RelKinemaCls::mdmSlot()
+void RelKinemaCls::mdmSlot(int page)
 {
-	mdmCls *win = new mdmCls ( NULL,NULL,Qt::WDestructiveClose );
-	win->massdata=MASSDATA;
+	Qt::WFlags wf=Qt::WDestructiveClose;
+	if(page!=0) wf|=Qt::WStyle_StaysOnTop;
+	mdmCls *win = new mdmCls ( NULL,NULL,wf );
+	connect(win, SIGNAL(updateMassDataDir()), this, SLOT(updateMassDataDirSlot()));
+	win->massdata=&MASSDATA;
 	win->home=HOME;
 	win->AMU=AMU;
 	win->Me=Me;
@@ -2437,6 +2442,8 @@ void RelKinemaCls::mdmSlot()
 	win->openMassData ( 0 );
 	win->setFont ( thefont );
 	win->show();
+	win->mdmStack->raiseWidget(page);
+	if(page!=0) win->mess("Select a mass data file","red");
 }
 
 void RelKinemaCls::keyPressEvent ( QKeyEvent *e )
@@ -2669,6 +2676,11 @@ void RelKinemaCls::massDataDirSlot()
 	if ( !s.isEmpty() )
 	{
 		confMassDataDirBox->setText ( s );
+		updateMassDataDirSlot();
+	}else{
+		if(KMessageBox::Yes==KMessageBox::questionYesNo ( this, 
+			"May I run the Massdata Manager?\n",
+			"You need mass data" ))  mdmSlot(1);
 	}
 }
 
@@ -3190,6 +3202,11 @@ void RelKinemaCls::clearHistSlot()
 		exprBox[i]->completionObject()->clear();
 		exprBox[i]->blockSignals ( false );
 	}
+}
+
+void RelKinemaCls::updateMassDataDirSlot()
+{
+redoSlot();
 }
 
 #include "relkinemaCls.moc"

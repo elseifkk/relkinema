@@ -227,19 +227,19 @@ class mdmCls: public massDataManager
 	public:
 		mdmCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0 );
 		void openMassData ( int A );
+		void mess ( QString m, QString col="black" );
 
 	public:
 		QString home;
 		double AMU; // in MeV
 		double Me,Mn,Mp,Md,Mt,Ma; // in MeV&&
-		QString massdata;
+		QString *massdata;
 		QString wb;
 
 	private:
 		void showMass ( QString m );
 		void setReady ( bool );
 		double readMass ( double );
-		void mess ( QString m, QString col="black" );
 		int applyChanges ( QTextStream*, bool );
 		void warn ( QString );
 		void warnDiscard();
@@ -281,6 +281,9 @@ class mdmCls: public massDataManager
 		void massDataDirSlot();
 		void massDataFileSlot();
 		void stripSlot();
+
+	signals:
+		void updateMassDataDir(); //QString const);
 
 	protected:
 		void timerEvent ( QTimerEvent *e );

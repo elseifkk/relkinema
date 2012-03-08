@@ -195,7 +195,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void stripSlot();
 		void thetaStepSlot();
 		void showResultListSlot();
-		void mdmSlot();
+		void mdmSlot(int page=0);
 		void showAbout();
 		void saveConfSlot();
 		void settingsSlot();
@@ -238,6 +238,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void checkAllPlotSlot();
 		void checkNonePlotSlot();
 		void clearHistSlot();
+		void updateMassDataDirSlot() ;//QString const);
 
 	protected:
 		void timerEvent ( QTimerEvent *e );

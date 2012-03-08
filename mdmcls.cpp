@@ -66,7 +66,7 @@ mdmCls::mdmCls ( QWidget *parent, const char *name, WFlags wf )
 void mdmCls::openMassData ( int A )
 {
 	QString f;
-	f=massdata+"/A";
+	f=*massdata+"/A";
 	if ( A!=0 )
 	{
 		f+=QString::number ( A );
@@ -446,7 +446,7 @@ void mdmCls::createMassDataSlot()
 		warnDiscard();
 		return;
 	}
-	wStack->raiseWidget ( 1 );
+	mdmStack->raiseWidget ( 1 );
 	createMassDataBut->setEnabled ( false );
 	editDataBut->setEnabled ( true );
 	msgLbl->clear();
@@ -458,7 +458,7 @@ void mdmCls::createMassDataSlot()
 
 void mdmCls::editDataSlot()
 {
-	wStack->raiseWidget ( 0 );
+	mdmStack->raiseWidget ( 0 );
 	createMassDataBut->setEnabled ( true );
 	editDataBut->setEnabled ( false );
 	if ( currentFileExists )
@@ -539,6 +539,7 @@ void mdmCls::extMassDataSlot()
 		double MassExcess;
 		bool start=false;
 		bool opened=false;
+		int nf=0;
 		while ( !stream.atEnd() )
 		{
 			line = stream.readLine();
@@ -546,11 +547,8 @@ void mdmCls::extMassDataSlot()
 			N    = line.mid ( 4,5 ).toInt();
 			Z    = line.mid ( 9,5 ).toInt();
 			A    = line.mid ( 14,5 ).toInt();
-			if ( !start && (NsubZ==1&&N==1&&Z==0&&A==1 )){
-				 start=true;
-			}else{
-				continue;
-			}
+			if ( !start && (NsubZ==1&&N==1&&Z==0&&A==1 )) start=true;
+			if(!start) continue;
 			EL   = line.mid ( 20,3 );
 			Decay = line.mid ( 23,4 );
 			m=line.mid ( 29,13 ).replace ( "#","." );
@@ -562,6 +560,7 @@ void mdmCls::extMassDataSlot()
 				fout=foutd+"/A"+line.mid ( 14,5 ).simplifyWhiteSpace() +".dat";
 				ofile.setName ( fout );
 				opened=ofile.open ( IO_WriteOnly );
+				nf++;
 				if ( opened ) ostream.setDevice ( &ofile );
 			}
 			if ( opened )
@@ -578,6 +577,7 @@ void mdmCls::extMassDataSlot()
 
 		ofile.setName ( foutd+"/A.dat" );
 		ofile.open ( IO_WriteOnly );
+		nf++;
 		ostream.setDevice ( &ofile );
 		ostream << "g        " << QString::number ( 0.,'g',9 ) << endl;
 		ostream << "e        " << QString::number ( Me,'g',9 ) << endl;
@@ -589,7 +589,9 @@ void mdmCls::extMassDataSlot()
 		ofile.close();
 		if ( start )
 		{
-			mess ( "Creating mass data done","blue" );
+			*massdata=foutd;
+			mess ( "Creating mass data done: "+QString::number(nf)+" files","blue" );
+			emit(updateMassDataDir());
 		}
 		else
 		{
