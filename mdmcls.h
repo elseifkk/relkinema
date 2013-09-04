@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -232,7 +232,7 @@ class mdmCls: public massDataManager
 	public:
 		QString home;
 		double AMU; // in MeV
-		double Me,Mn,Mp,Md,Mt,Ma; // in MeV&&
+		double Me;
 		QString *massdata;
 		QString wb;
 
@@ -283,7 +283,7 @@ class mdmCls: public massDataManager
 		void stripSlot();
 
 	signals:
-		void updateMassDataDir(); //QString const);
+		void updateMass();
 
 	protected:
 		void timerEvent ( QTimerEvent *e );

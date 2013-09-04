@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -180,6 +180,7 @@ double mdmCls::readMass ( double m )
 }
 
 void mdmCls::showMass ( QString m )
+
 {
 	bool ok;
 	double mass=m.toDouble ( &ok );
@@ -213,7 +214,7 @@ void mdmCls::showMass ( QString m )
 // m is in keV Excess
 		if ( showExcessBox->isChecked() )
 		{
-			if(stripBox->isChecked()) mass=mass-Me*1.0e3*currentZ;
+			if ( stripBox->isChecked() ) mass=mass-Me*1.0e3*currentZ;
 			switch ( MUnitBox->currentItem() )
 			{
 				case MU_EV:
@@ -236,7 +237,7 @@ void mdmCls::showMass ( QString m )
 		{
 
 			m0=AMU*ABox->value(); // in MeV
-			if(stripBox->isChecked()) m0=m0-Me*currentZ;
+			if ( stripBox->isChecked() ) m0=m0-Me*currentZ;
 			switch ( MUnitBox->currentItem() )
 			{
 				case MU_EV:
@@ -260,12 +261,11 @@ void mdmCls::showMass ( QString m )
 	massBox->blockSignals ( true );
 	massBox->setText ( QString::number ( mass, 'g',9 ) );
 	massBox->blockSignals ( false );
-//	rawLbl->setText ( m );
 }
 
 void mdmCls::EBoxSlot()
 {
-	if ( EBox->count() <=0 || EBox->currentItem()<0) return;
+	if ( EBox->count() <=0 || EBox->currentItem() <0 ) return;
 	QStringList::Iterator it = MList.at ( EBox->currentItem() );
 	if ( it!=NULL )
 	{
@@ -278,10 +278,13 @@ void mdmCls::EBoxSlot()
 			int z=getZ ( EBox->currentText().simplifyWhiteSpace() );
 			if ( z>0 ) ZLbl->setText ( QString::number ( z ) );
 			currentZ=z;
-			if(z>0){
-				stripBox->setEnabled(true);
-			}else{
-				stripBox->setEnabled(false);
+			if ( z>0 )
+			{
+				stripBox->setEnabled ( true );
+			}
+			else
+			{
+				stripBox->setEnabled ( false );
 			}
 		}
 		else
@@ -364,8 +367,6 @@ void mdmCls::massChangedSlot()
 	double v=massBox->text().toDouble ( &ok );
 	if ( !ok ) return;
 	double m=readMass ( v );
-//	rawLbl->setText ( QString::number ( m, 'g',9 ) );
-
 	int i=EBox->currentItem();
 	QStringList::Iterator it = MList.at ( i );
 	*it=QString::number ( m,'g',9 );
@@ -398,6 +399,7 @@ void mdmCls::appSlot()
 		file.close();
 		mess ( "Changes saved: "+currentFile,"blue" );
 		appBut->setEnabled ( false );
+		emit ( updateMass() );
 	}
 	else
 	{
@@ -547,8 +549,8 @@ void mdmCls::extMassDataSlot()
 			N    = line.mid ( 4,5 ).toInt();
 			Z    = line.mid ( 9,5 ).toInt();
 			A    = line.mid ( 14,5 ).toInt();
-			if ( !start && (NsubZ==1&&N==1&&Z==0&&A==1 )) start=true;
-			if(!start) continue;
+			if ( !start && ( NsubZ==1&&N==1&&Z==0&&A==1 ) ) start=true;
+			if ( !start ) continue;
 			EL   = line.mid ( 20,3 );
 			Decay = line.mid ( 23,4 );
 			m=line.mid ( 29,13 ).replace ( "#","." );
@@ -580,18 +582,18 @@ void mdmCls::extMassDataSlot()
 		nf++;
 		ostream.setDevice ( &ofile );
 		ostream << "g        " << QString::number ( 0.,'g',9 ) << endl;
-		ostream << "e        " << QString::number ( Me,'g',9 ) << endl;
-		ostream << "n        " << QString::number ( Mn,'g',9 ) << endl;
-		ostream << "p        " << QString::number ( Mp,'g',9 ) << endl;
-		ostream << "d        " << QString::number ( Md,'g',9 ) << endl;
-		ostream << "t        " << QString::number ( Mt,'g',9 ) << endl;
-		ostream << "a        " << QString::number ( Ma,'g',9 ) << endl;
+		ostream << "e        " << QString::number ( ParticleM[PID_ELECTRON],'g',9 ) << endl;
+		ostream << "n        " << QString::number ( ParticleM[PID_NEUTRON],'g',9 ) << endl;
+		ostream << "p        " << QString::number ( ParticleM[PID_PROTON],'g',9 ) << endl;
+		ostream << "d        " << QString::number ( ParticleM[PID_DEUTERON],'g',9 ) << endl;
+		ostream << "t        " << QString::number ( ParticleM[PID_TRITON],'g',9 ) << endl;
+		ostream << "a        " << QString::number ( ParticleM[PID_ALPHA],'g',9 ) << endl;
 		ofile.close();
 		if ( start )
 		{
 			*massdata=foutd;
-			mess ( "Creating mass data done: "+QString::number(nf)+" files","blue" );
-			emit(updateMassDataDir());
+			mess ( "Creating mass data done: "+QString::number ( nf ) +" files","blue" );
+			emit ( updateMass() );
 		}
 		else
 		{
@@ -602,6 +604,7 @@ void mdmCls::extMassDataSlot()
 	{
 		warn ( "Failed to read: "+fin );
 	}
+	openMassData ( 0 );
 }
 
 void mdmCls::warn ( QString mess )

@@ -1,8 +1,8 @@
-RelKinema version 0.5.2
+RelKinema version 0.5.4
 ========= ======= =====
 
 Relativistic two-body kinematics calculator for nuclear reaction,
-including mass data manager, result table browser and plotter.
+including mass data manager, table browser and plotter.
 
 
 
@@ -12,7 +12,7 @@ Requirements
 
 RelKinema mainly depends on the following packages:
 
-libfzcal-0.0.3
+libfzcal-0.0.4
 gfortran-4.6.1 or higher
 kdelibs-3.5.10
 qt-3.3.8
@@ -25,35 +25,35 @@ Note that it cannot build with qt4/kde4 or above.
 Build
 =====
 
-RelKinema uses fortran codes for the most of the physical calculations
-and the configure script should know what to use as a fortran compiler. 
-  The calculation is performed with quad-precision if available, which
-is supported by gfortran version 4.6.1 and above.
-  The compiler name and flags can be passed to configure script by FC
-and FCFLAGS variable, respectively.
+RelKinema uses fortran codes for calculations of nuclear physics and
+the configure script should know what to use as a fortran compiler.
+The calculation is performed with quad-precision, which is supported
+by gfortran since version 4.6, and truncated to double precision on
+display. The compiler name and flags can be passed to configure script
+by FC and FCFLAGS variable, respectively. For some fortran compilers
+that does not support quad-precision, the following parameter might be
+necessary:
+
+setenv FCFLAGS "-D_NO_REAL10_ -D_NO_REAL16_"
 
 RelKinema depends on libfzcal for evaluating user-defined expressions
 with kinematic parameters, available at: 
 
 http://sourceforge.net/projects/fzcal/
 
-  Since libfzcal depends on libgfortran, path for the library might be 
-necessary for LDFLAGS.
+When compiled by gfortran libfzcal will depend on libgfortran, and
+path for the library might be necessary for LDFLAGS.
 
-Note that for some systems, qt3/kde3 environment might work unexpectedly
-if qt4/kde4 coexists. In that case, removing qt4/kde4 would always be 
-the flawless solution. Coexistence of different versions of gcc (gfortran)
-can also cause problem at run-time, to which we suggest use of LD_RUN_PATH
-at linking-time as a workaround.
-
+Note that for some systems, qt3/kde3 environment might work
+unexpectedly if qt4/kde4 coexists. Coexistence of different versions
+of gcc (gfortran) can also cause problem at run-time, to which we
+suggest use of LD_RUN_PATH at linking-time as a workaround.
 
 Here's an example of build steps:
 
-setenv FC /usr/local/bin/gfortran46
+setenv FC /usr/local/bin/gfortran
 setenv FCFLAGS "-cpp -fcray-pointer -O2 -g0 -fdefault-integer-8"
 setenv CXXFLAGS "-O2 -g0"
-setenv LD_RUN_PATH /usr/local/lib/gcc46
-setenv LDFLAGS -L/usr/local/lib/gcc46
 ./configure --prefix=/usr/local --without-arts
 gmake install
 
@@ -65,7 +65,7 @@ Atomic mass data
 
 RelKinema depends on atomic mass data files located in a local directory.
 The current version uses files extracted from a source data file available
-at (as of Feb 26, 2012):
+at (as of Aug 29, 2013):
 
 http://amdc.in2p3.fr/masstables/Ame2003/mass.mas03
 
@@ -83,6 +83,24 @@ Note
 * For a pure decay process, i.e., no target, you can set "g" as target.
 * In plot window, hit H key to show key-bindings.
 * Some configurations are saved in ~/.relkinemarc.
+
+
+
+
+Key bindings
+============
+Escape	discard keyboard input focus
+A	show popup menu
+M	invoke mass data manager
+T	open table&plot window
+K	call calculator
+R	refresh
+S	turn to settings page
+C	clear reaction
+Ctrl+O	load saved reaction
+Ctrl+S	save current reaction
+1,2,3	show energy, momentum and custom page in the emission box
+Q	quit
 
 
 
@@ -160,7 +178,8 @@ J3,J4;            solid angle Jacobian,
 KS;               kinematic shift (dK3/dth3), 
 KF;               kinematic factor (dp3/dth3/p3).
 
-These names are case-sensitive, and read-only.
+These parameters are case-sensitive and read-only, and passed by
+reference to libfzcal in quad-precsion, if possible.
 
 The results are always in MeV for energy and the angles in radian. 
 

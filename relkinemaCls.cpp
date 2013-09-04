@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -130,7 +130,7 @@ double fPI=M_PI;
 double *tbTarg;
 void ( RelKinemaCls::*tbEval ) ( bool );
 
-rwThreadCls *rwt;
+rwThreadCls *rwt=0;
 
 double const thetaStepMin=0.0001;
 int const thetaStepPrec = 4;
@@ -140,6 +140,7 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
                              const char *v, QString conf )
 		:RelKinemaDlg ( parent, name, wf )
 		,prkc ( rkc_init() ), pfzc ( fzc_init() )
+		,prkc_dmy ( 0 ), pfzc_dmy ( 0 )
 		,CONFIGFILE ( "" )
 		,K1th ( 0. ),K1cth ( 0. ),Ex ( 0. ),Exmax ( 0. )
 		,p1th ( 0. ),p1cth ( 0. )
@@ -181,7 +182,7 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	{
 		ver="unknown";
 	}
-	setCaption(myname);
+	setCaption ( myname );
 	ver.prepend ( "Release " );
 	verLbl->setText ( ver );
 
@@ -421,6 +422,12 @@ void RelKinemaCls::timerEvent ( QTimerEvent *unused )
 
 void RelKinemaCls::reinitRelKinema()
 {
+	setParMass();
+	setDispFont();
+}
+
+void RelKinemaCls::setParMass()
+{
 	double v;
 	Me=ParticleM[PID_ELECTRON];
 	Mp=ParticleM[PID_PROTON];
@@ -440,8 +447,6 @@ void RelKinemaCls::reinitRelKinema()
 	if ( v>0 ) Mt=v;
 	v=readMass ( "A.dat","a" );
 	if ( v>0 ) Ma=v;
-
-	setDispFont();
 }
 
 void RelKinemaCls::setDispFont()
@@ -479,6 +484,7 @@ void  RelKinemaCls::closeEvent ( QCloseEvent *unused )
 {
 	saveConfig ( CONFIGFILE );
 	close();
+	printf("thank you\n٩(๑❛ᴗ❛๑)۶\n");
 	exit ( 0 );
 }
 
@@ -947,7 +953,7 @@ void RelKinemaCls::setMass ( int id, bool comp )
 	{
 		// if m==-2 it might be calculated.
 		massSet[id]=false;
-		L1->setPaletteForegroundColor("red");
+		L1->setPaletteForegroundColor ( "red" );
 		if ( !calc )
 		{
 			L1->setText ( "Not Found" );
@@ -1029,7 +1035,7 @@ void RelKinemaCls::showMass ( double m, QLineEdit *L )
 	QString s;
 	mm=m*MU[MUnitBox->currentItem() ];
 	s.sprintf ( double_format,mm );
-	L->setPaletteForegroundColor("black");
+	L->setPaletteForegroundColor ( "black" );
 	L->setText ( s );
 	L->setCursorPosition ( 0 );
 }
@@ -1269,7 +1275,7 @@ void RelKinemaCls::setK1th()
 
 void RelKinemaCls::setQValue()
 {
-	QValue=rkc_get_QValue ( prkc );//m1+m2- ( m3+ ( m4+Ex ) );
+	QValue=rkc_get_QValue ( prkc );
 	showEnergyLE ( QValue,QValueBox );
 }
 
@@ -2335,7 +2341,6 @@ void RelKinemaCls::showResultListSlot()
 	                         m1/AMU, m2/AMU, m3/AMU, m4/AMU, double_format,
 	                         EUnitBox->currentText() );
 
-	/*	win->initResultTable (  );*/
 	prkc_dmy=rkc_cp ( prkc );
 	int n=0;
 	for ( int i=0;i<4;i++ ) if ( exprPlot[i] ) n++;
@@ -2362,9 +2367,10 @@ void RelKinemaCls::showResultListSlot()
 
 void RelKinemaCls::teDone ( void )
 {
-	delete rwt;
-	rkc_uinit ( prkc_dmy );
+	if ( rwt!=0 ) delete rwt;
+	if ( prkc_dmy!=0 ) rkc_uinit ( prkc_dmy );
 	if ( pfzc_dmy!=0 ) fzc_uinit ( pfzc_dmy );
+	rwt=0; prkc_dmy=0; pfzc_dmy=0;
 	tableBut->setEnabled ( true );
 	stopBut->setEnabled ( false );
 }
@@ -2423,27 +2429,35 @@ void RelKinemaCls::updateThetaBar()
 	thetaBar->blockSignals ( false );
 }
 
-void RelKinemaCls::mdmSlot(int page)
+void RelKinemaCls::mdmSlot()
+{
+	openMdm();
+}
+
+void RelKinemaCls::openMdm ( int page )
 {
 	Qt::WFlags wf=Qt::WDestructiveClose;
-	if(page!=0) wf|=Qt::WStyle_StaysOnTop;
+	if ( page!=0 )
+	{
+		wf|=Qt::WStyle_StaysOnTop;
+	}
 	mdmCls *win = new mdmCls ( NULL,NULL,wf );
-	connect(win, SIGNAL(updateMassDataDir()), this, SLOT(updateMassDataDirSlot()));
+	connect ( win, SIGNAL ( updateMass() ), this, SLOT ( updateMassSlot() ) );
 	win->massdata=&MASSDATA;
 	win->home=HOME;
 	win->AMU=AMU;
 	win->Me=Me;
-	win->Mp=Mp;
-	win->Mn=Mn;
-	win->Mt=Mt;
-	win->Ma=Ma;
-	win->Md=Md;
 	win->wb=webbrowser;
 	win->openMassData ( 0 );
 	win->setFont ( thefont );
 	win->show();
-	win->mdmStack->raiseWidget(page);
-	if(page!=0) win->mess("Select a mass data file","red");
+	win->mdmStack->raiseWidget ( page );
+	if ( page!=0 )
+	{
+		win->mess ( "Select a mass data file","red" );
+		win->createMassDataBut->setEnabled ( false );
+		win->editDataBut->setEnabled ( true );
+	}
 }
 
 void RelKinemaCls::keyPressEvent ( QKeyEvent *e )
@@ -2496,6 +2510,15 @@ void RelKinemaCls::keyPressEvent ( QKeyEvent *e )
 				break;
 			case Qt::Key_A:
 				showMenu();
+				break;
+			case Qt::Key_1:
+				EmissionBox->showPage(EmissionBox->page(0));
+				break;
+			case Qt::Key_2:
+				EmissionBox->showPage(EmissionBox->page(1));
+				break;
+			case Qt::Key_3:
+				EmissionBox->showPage(EmissionBox->page(2));
 				break;
 			default:
 				e->ignore();
@@ -2676,11 +2699,13 @@ void RelKinemaCls::massDataDirSlot()
 	if ( !s.isEmpty() )
 	{
 		confMassDataDirBox->setText ( s );
-		updateMassDataDirSlot();
-	}else{
-		if(KMessageBox::Yes==KMessageBox::questionYesNo ( this, 
-			"May I run the Massdata Manager?\n",
-			"You need mass data" ))  mdmSlot(1);
+		updateMassSlot();
+	}
+	else
+	{
+		if ( KMessageBox::Yes==KMessageBox::questionYesNo ( this,
+		        "May I run the Massdata Manager?\n",
+		        "You need mass data" ) )  openMdm ( 1 );
 	}
 }
 
@@ -2827,7 +2852,7 @@ void RelKinemaCls::showMenu()
 		pm.insertItem ( "Check all for plot",this,SLOT ( checkAllPlotSlot() ) );
 		pm.insertItem ( "Check none for plot",this,SLOT ( checkNonePlotSlot() ) );
 		pm.insertSeparator();
-		int idr=pm.insertItem ( predo,"Reload && Recalc",this,SLOT ( redoSlot() ), Key_R );
+		int idr=pm.insertItem ( predo,"Refresh",this,SLOT ( redoSlot() ), Key_R );
 		pm.insertItem ( psettings,"Settings",this,SLOT ( toggleSettingsSlot() ),Key_S );
 		pm.setItemEnabled ( idt,tableBut->isEnabled() );
 		pm.setItemEnabled ( idc,calcBut->isEnabled() );
@@ -3118,9 +3143,11 @@ void RelKinemaCls::exprSetSlot ( int id, bool setHist )
 	QString str=expr[id]+"=\""+exprBox[id]->currentText() +"\"";
 	char cstr[LEN_FZCSTR_MAX];
 	strcpy ( cstr,str.latin1() );
-	fzc_set_opt ( pfzc,FZCOPT_NOAUTO_ADDPAR );
-	int rc=fzc_set_formula ( pfzc, ( size_t ) &cstr );
-	if ( rc==0 )
+
+	fzc_set_mode ( pfzc,FZCOPT_NOAUTO_ADDPAR | FZCOPT_NOSTDOUT );
+	int k=0;
+
+	if ( fzc_setparse_formula ( pfzc, ( size_t ) &cstr ) == FZCSTA_MACSET )
 	{
 		exprSet[id]=true;
 		updateExprSlot();
@@ -3145,7 +3172,7 @@ void RelKinemaCls::exprSetSlot ( int id, bool setHist )
 		exprWarn ( id, "Syntax error" );
 		plotBox[id]->setEnabled ( false );
 	}
-	fzc_cle_opt ( pfzc,FZCOPT_NOAUTO_ADDPAR );
+	fzc_cle_mode ( pfzc,FZCOPT_NOAUTO_ADDPAR | FZCOPT_NOSTDOUT );
 }
 
 void RelKinemaCls::updateExprSlot()
@@ -3155,7 +3182,7 @@ void RelKinemaCls::updateExprSlot()
 	{
 		if ( !exprSet[i] ) continue;
 		strcpy ( cstr,expr[i].latin1() );
-		int rc=fzc_set_formula ( pfzc, ( size_t ) &cstr );
+		int rc=fzc_setparse_formula ( pfzc, ( size_t ) &cstr );
 		if ( rc==0 )
 		{
 			rc=fzc_eval ( pfzc );
@@ -3204,9 +3231,10 @@ void RelKinemaCls::clearHistSlot()
 	}
 }
 
-void RelKinemaCls::updateMassDataDirSlot()
+void RelKinemaCls::updateMassSlot()
 {
-redoSlot();
+	setParMass();
+	redoSlot();
 }
 
 #include "relkinemaCls.moc"

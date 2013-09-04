@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -104,10 +104,12 @@ class RelKinemaCls: public RelKinemaDlg
 		void setPlottables ( int );
 		void setScrTypeFont();
 		void setTitleFont();
-		void setActiveTextColLE(QString,QLineEdit*);
-		bool setq(double);
-		bool setTheta3(double);
-		bool setTheta3c(double);
+		void setActiveTextColLE ( QString,QLineEdit* );
+		bool setq ( double );
+		bool setTheta3 ( double );
+		bool setTheta3c ( double );
+		void openMdm ( int page=0 );
+		void setParMass();
 
 	private:
 		size_t prkc;
@@ -195,7 +197,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void stripSlot();
 		void thetaStepSlot();
 		void showResultListSlot();
-		void mdmSlot(int page=0);
+		void mdmSlot();
 		void showAbout();
 		void saveConfSlot();
 		void settingsSlot();
@@ -238,7 +240,7 @@ class RelKinemaCls: public RelKinemaDlg
 		void checkAllPlotSlot();
 		void checkNonePlotSlot();
 		void clearHistSlot();
-		void updateMassDataDirSlot() ;//QString const);
+		void updateMassSlot();
 
 	protected:
 		void timerEvent ( QTimerEvent *e );

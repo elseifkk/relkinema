@@ -1,0 +1,18 @@
+v0.5.4
+* FIX: failed to open mass data manager with the message:
+  "RelKinemaDlg::mdmSlot(): Not implemented yet".
+* FIX: with newer gcc kinemaplotcls.h wont compile because of
+  -fno-exception flag.  this line was appended to configure.in.in:
+  CXXFLAGS="$CXXFLAGS $USE_EXCEPTIONS"
+* FIX: mdm sets particle masses to zero if invoked with no mass
+  data directory given.
+* FIX: geometry of message label changed in mdm.
+* FIX: table&plot button remains disabled and rkc and fzc left
+  uninitialized when the table closed before calculation is
+  finished.
+* adapted to libfzcal v0.0.4, which is only a bugfix release with
+  some updates in C interface.
+* mdm now emits updateMass signal when the contents of mass data
+  file are updated and the main performs reload the mass data and
+  recalculation of the reaction.
+* new-kb: 1,2,3 to show page of the Emission box.

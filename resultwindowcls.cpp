@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -530,6 +530,7 @@ void resultWindowCls::closeEvent ( QCloseEvent *e )
 			delete cti[ic];
 		}
 		e->accept();
+		emit done(); 
 	}
 	else
 	{

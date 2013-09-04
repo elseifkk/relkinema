@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -84,18 +84,8 @@ void rkCalcCls::enterSlot ( void )
 
 	if ( autoClearBox->isChecked() ) clearSlot();
 
-	switch ( fzc_proc_com ( pfzc, pcstr ) )
-	{
-		case FZCCID_INV:
-			mess ( "Invalid command\n","red", false );
-			return;
-		case FZCCID_DONE:
-			mess ( "ok\n","blue", false );
-			return;
-	}
-
-	mess ( QString(cstr) +" =","black", false );
-	rc=fzc_set_formula ( pfzc, pcstr );
+	mess ( QString ( cstr ) +" =","black", false );
+	rc=fzc_setparse_formula ( pfzc, pcstr );
 	if ( rc>0 )
 	{
 		mess ( "Syntacs Error","red" );
@@ -107,16 +97,20 @@ void rkCalcCls::enterSlot ( void )
 	else
 	{
 		rc=fzc_eval ( pfzc );
-		if ( rc!=0 )
-		{
-			mess ( "Eval Error","red" );
-		}
-		else
+		if ( rc==0 )
 		{
 			formulaBox->addToHistory ( formulaBox->currentText() );
 			fzc_get_strans ( pfzc, pcstr );
 			str=cstr;
 			mess ( str );
+		}
+		else if ( rc<0 )
+		{
+			mess ( "ok","blue" );
+		}
+		else
+		{
+			mess ( "Eval Error","red" );
 		}
 	}
 	mess ( "" );
