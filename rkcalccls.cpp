@@ -88,7 +88,7 @@ void rkCalcCls::enterSlot ( void )
 	rc=fzc_setparse_formula ( pfzc, pcstr );
 	if ( rc>0 )
 	{
-		mess ( "Syntacs Error","red" );
+		mess ( rkcErrStr(rc), "red" );
 	}
 	else if ( rc<0 )
 	{
@@ -110,10 +110,20 @@ void rkCalcCls::enterSlot ( void )
 		}
 		else
 		{
-			mess ( "Eval Error","red" );
+			mess ( rkcErrStr(rc),"red" );
 		}
 	}
 	mess ( "" );
+}
+
+QString rkCalcCls::rkcErrStr(int rc)
+{
+	QString str;
+	char cstr[LEN_FZCSTR_MAX];
+	size_t pcstr= ( size_t ) &cstr[0];
+	fzc_get_strerr ( rc, pcstr );
+	str=cstr;
+	return str;
 }
 
 void rkCalcCls::clearSlot()

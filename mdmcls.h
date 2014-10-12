@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2014 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -244,6 +244,7 @@ class mdmCls: public massDataManager
 		void warn ( QString );
 		void warnDiscard();
 		void stopTimer();
+		QString newmassdata;
 
 	private:
 		QString currentFile;
@@ -281,6 +282,7 @@ class mdmCls: public massDataManager
 		void massDataDirSlot();
 		void massDataFileSlot();
 		void stripSlot();
+		void setDefaultSlot();
 
 	signals:
 		void updateMass();

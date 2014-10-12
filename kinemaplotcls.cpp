@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2012,2014 by Kazuaki Kumagai                       *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -41,11 +41,11 @@
 #include <kfiledialog.h>
 #include <kcolordialog.h>
 
-int const messTime=3000;
-int const nx_def=10;
-int const ny_def=10;
-double const rescaleFactor=1./16.;
-double const shiftFactor=1./16.;
+int const messTime = 3000;
+int const nx_def = 10;
+int const ny_def = 10;
+double const rescaleFactor = 1. / 16.;
+double const shiftFactor = 1. / 16.;
 
 int const PC_COLOR = 0;
 int const PC_MONO  = 1;
@@ -55,24 +55,24 @@ int const SAM_ANY   = 0;
 int const SAM_IMAGE = 1;
 int const SAM_PRINT = 2;
 
-int const min_pointsize=4;
-int const max_pointsize=32;
+int const min_pointsize = 4;
+int const max_pointsize = 32;
 
-int pc_indx[]=
+int pc_indx[] =
 {
-	0,1,2,3,4,5,6,7,8,9,10,
-	11,12,13,14,15,16
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+	11, 12, 13, 14, 15, 16
 };
 
-QColor const pc_col[]=
+QColor const pc_col[] =
 {
 	"white", "skyblue", "magenta", "cyan", "green",
 	"orange", "yellow", "pink", "purple", "chocolate",
-	"gray", "seagreen","red","blue","lightgreen",
+	"gray", "seagreen", "red", "blue", "lightgreen",
 	"brown"
 };
 
-Qt::PenStyle ps[nlinemax]=
+Qt::PenStyle ps[nlinemax] =
 {
 	Qt::SolidLine, Qt::DashLine, Qt::DotLine, Qt::DashDotLine, Qt::DashDotDotLine,
 	Qt::SolidLine, Qt::DashLine, Qt::DotLine, Qt::DashDotLine, Qt::DashDotDotLine,
@@ -83,73 +83,75 @@ Qt::PenStyle ps[nlinemax]=
 kinemaPlotCls::kinemaPlotCls ( QWidget *parent, const char *name, WFlags wf, QTable *table,
                                QString *homedir, QString *plotLbl,
                                int xcol, int nycol, int *ycols, int nrow_hdr, QFont font )
-		:kinemaPlot ( parent, name, wf ), homedir ( homedir ), plotLbl ( plotLbl ),
+		: kinemaPlot ( parent, name, wf ), homedir ( homedir ), plotLbl ( plotLbl ),
 		xcol ( xcol ), nycol ( nycol ), theuifont ( font )
 {
-	nplots=table->numRows()-nrow_hdr;
-	memcpy ( this->ycols,ycols,sizeof ( int ) *nycol );
-	bzero ( plotOn,sizeof ( bool ) *nlinemax );
-	pas=ALLOC_MATRIX ( double,nycol+1,nplots );
-	for ( int i=0; i<nplots; i++ )
+	nplots = table->numRows() - nrow_hdr;
+	memcpy ( this->ycols, ycols, sizeof ( int ) *nycol );
+	bzero ( plotOn, sizeof ( bool ) *nlinemax );
+	theMeasurePrecX=1;
+	theMeasurePrecY=1;
+	pas = ALLOC_MATRIX ( double, nycol + 1, nplots );
+	for ( int i = 0; i < nplots; i++ )
 	{
-		pas[0][i]=table->text ( i+nrow_hdr,xcol ).toDouble();
+		pas[0][i] = table->text ( i + nrow_hdr, xcol ).toDouble();
 	}
-	for ( int iy=0;iy<nycol;iy++ )
+	for ( int iy = 0;iy < nycol;iy++ )
 	{
-		plotOn[iy]=true;
-		for ( int i=0; i<nplots; i++ )
+		plotOn[iy] = true;
+		for ( int i = 0; i < nplots; i++ )
 		{
-			pas[iy+1][i]=table->text ( i+nrow_hdr,this->ycols[iy] ).toDouble();
+			pas[iy+1][i] = table->text ( i + nrow_hdr, this->ycols[iy] ).toDouble();
 		}
 	}
-	ymaxmar=1.06;
-	xmaxmar=1.06;
+	ymaxmar = 1.06;
+	xmaxmar = 1.06;
 	setPlotMinMax();
 	pa = new QPointArray ( nplots );
 	thefont.setFamily ( "Monospace" );
-	thefont.setPointSize ( fontsz=12 );
+	thefont.setPointSize ( fontsz = 12 );
 	fm = new QFontMetrics ( thefont );
-	fph=fm->height();
-	wE=fm->width ( "E" );
+	fph = fm->height();
+	wE = fm->width ( "E" );
 
-	QString xunit=table->text ( 1,xcol );
-	if ( !xunit.isEmpty() ) xunit="["+xunit+"]";
-	xt=table->horizontalHeader()->label ( xcol );
-	if ( !xunit.isEmpty() ) xt+=" "+xunit;
-	lenxt=fm->width ( ( const QString& ) xt );
+	QString xunit = table->text ( 1, xcol );
+	if ( !xunit.isEmpty() ) xunit = "[" + xunit + "]";
+	xt = table->horizontalHeader()->label ( xcol );
+	if ( !xunit.isEmpty() ) xt += " " + xunit;
+	lenxt = fm->width ( ( const QString& ) xt );
 
-	for ( int iy=0;iy<nycol;iy++ )
+	for ( int iy = 0;iy < nycol;iy++ )
 	{
-		yts[iy]=table->horizontalHeader()->label ( ycols[iy] );
-		yus[iy]=table->text ( 1,ycols[iy] );
+		yts[iy] = table->horizontalHeader()->label ( ycols[iy] );
+		yus[iy] = table->text ( 1, ycols[iy] );
 	}
 	setYLabel();
 
-	theWidth=width();
-	theHeight=height();
-	linewidth=2;
-	cx=-1;
-	cy=-1;
-	scale=1.;
-	sdx=0;
-	sdy=0;
-	drag=0;
-	timerid=-1;
-	msrOn=true;
-	dotOn=false;
-	crossOn=false;
-	nx=0;
-	ny=0;
-	mx0=0;
-	my0=0;
-	lendigitmax=0;
-	rep=false;
-	in=NULL;
-	label=NULL;
-	iread=0;
+	theWidth = width();
+	theHeight = height();
+	linewidth = 2;
+	cx = -1;
+	cy = -1;
+	scale = 1.;
+	sdx = 0;
+	sdy = 0;
+	drag = 0;
+	timerid = -1;
+	msrOn = true;
+	dotOn = false;
+	crossOn = false;
+	nx = 0;
+	ny = 0;
+	mx0 = 0;
+	my0 = 0;
+	lendigitmax = 0;
+	rep = false;
+	in = NULL;
+	label = NULL;
+	iread = 0;
 
-	showlegend=true;
-	showlabel=true;
+	showlegend = true;
+	showlabel = true;
 	uchar cross_bits[] = {  0x00, 0x00,
 	                        0x00, 0x00,
 	                        0x00, 0x00,
@@ -186,57 +188,61 @@ kinemaPlotCls::kinemaPlotCls ( QWidget *parent, const char *name, WFlags wf, QTa
 	                     };
 	QBitmap const cb ( 16, 16, cross_bits, TRUE );
 	QBitmap const cm ( 16, 16, cross_mask, TRUE );
-	setCursor ( QCursor ( cb,cm,7,7 ) );
+	setCursor ( QCursor ( cb, cm, 7, 7 ) );
 
 	setPlotColors ( PC_COLOR );
-	colorps=true;
+	colorps = true;
 	setBackgroundMode ( Qt::NoBackground );
 	getRootWindowSize ( &rootw, &rooth );
-	thePlot=new QPixmap ( rootw,rooth );
-	if ( rootw<=0||rooth<=0 )
+	thePlot = new QPixmap ( rootw, rooth );
+	if ( rootw <= 0 || rooth <= 0 )
 	{
-		rootw=2560; //<<<<<<<<<<<<<<
-		rooth=1600;
+		rootw = 2560; //<<<<<<<<<<<<<<
+		rooth = 1600;
 	}
 }
 
 void kinemaPlotCls::setYLabel()
 {
-	QString yunit="";
-	yt="";
-	for ( int iy=0; iy<nycol; iy++ )
+	QString yunit = "";
+	yt = "";
+	for ( int iy = 0; iy < nycol; iy++ )
 	{
 		if ( !plotOn[iy] ) continue;
 		if ( yunit.isEmpty() )
 		{
-			yt=yts[iy];
-			yunit=yus[iy];
+			yt = yts[iy];
+			yunit = yus[iy];
 		}
 		else
 		{
-			yt="";
-			if ( yus[iy] !=yunit )
+			yt = "";
+			if ( yus[iy] != yunit )
 			{
-				yunit="a.u.";
+				yunit = "a.u.";
 				break;
 			}
 		}
 	}
-	if ( !yunit.isEmpty() ) yunit="["+yunit+"]";
-	if ( !yunit.isEmpty() ) yt+=" "+yunit;
-	lenyt=fm->width ( ( const QString& ) yt );
+	if ( !yunit.isEmpty() ) yunit = "[" + yunit + "]";
+	if ( !yunit.isEmpty() ) yt += " " + yunit;
+	lenyt = fm->width ( ( const QString& ) yt );
 }
 void kinemaPlotCls::getInput ( QString caption, int ir )
 {
-	int xorig=width() /2;
-	int yorig=height() /2;
-	int inwidth=wE *16;
-	int labelwidth;
 	if ( rveto.locked() ) return;
+	int xorig = width() / 2;
+	int yorig = height() / 2;
+	int inwidth = wE * 16;
+	int labelwidth;
 	rveto.lock();
-	iread=ir;
+	iread = ir;
 	label = new QLabel ( this );
 	in = new QLineEdit ( this );
+	/*
+		in grabs keyboard focus forever on ARM platform.
+	*/
+	in->setFocusPolicy ( QWidget::ClickFocus );
 	label->setFont ( thefont );
 	in->setFont ( thefont );
 	label->setPaletteForegroundColor ( "skyblue" );
@@ -246,115 +252,120 @@ void kinemaPlotCls::getInput ( QString caption, int ir )
 	connect ( in, SIGNAL ( returnPressed() ), this, SLOT ( readInput() ) );
 	label->setText ( caption );
 	label->adjustSize();
-	labelwidth=label->width();
-	xorig-= ( labelwidth+inwidth ) /2;
-	label->setGeometry ( xorig,yorig,labelwidth,fph );
-	in->setGeometry ( xorig+labelwidth,yorig,inwidth,fph );
+	labelwidth = label->width();
+	xorig -= ( labelwidth + inwidth ) / 2;
+	label->setGeometry ( xorig, yorig, labelwidth, fph );
+	in->setGeometry ( xorig + labelwidth, yorig, inwidth, fph );
 	label->show();
 	in->show();
 	in->setFocus();
+	in->grabKeyboard();
 }
 
-int const IR_NOP =0;
-int const IR_XMIN=1;
-int const IR_XMAX=2;
-int const IR_YMIN=3;
-int const IR_YMAX=4;
-int const IR_DX  =5;
-int const IR_DY  =6;
-int const IR_SDX =7;
-int const IR_SDY =8;
-int const IR_NDX =9;
-int const IR_NDY =10;
-int const IR_LW  =11;
+int const IR_NOP = 0;
+int const IR_XMIN = 1;
+int const IR_XMAX = 2;
+int const IR_YMIN = 3;
+int const IR_YMAX = 4;
+int const IR_DX  = 5;
+int const IR_DY  = 6;
+int const IR_SDX = 7;
+int const IR_SDY = 8;
+int const IR_NDX = 9;
+int const IR_NDY = 10;
+int const IR_LW  = 11;
 
 void kinemaPlotCls::readInput()
 {
 	bool ok;
-	double v;
-	in->clearFocus();
-	label->clearFocus();
+	double v = in->text().toDouble ( &ok );
 	disconnect ( in, SIGNAL ( returnPressed() ), this, SLOT ( readInput() ) );
-	label->close();
-	in->close();
-	v=in->text().toDouble ( &ok );
+	in->clearFocus();
+	in->releaseKeyboard();
+	label->close ( TRUE );
+	in->close ( TRUE );
 	if ( ok )
 	{
 		switch ( iread )
 		{
 			case IR_XMIN:
-				if ( v<xmax )
+				if ( v < xmax )
 				{
-					xmin=v;
+					xmin = v;
 				}
 				break;
 			case IR_XMAX:
-				if ( v>xmin )
+				if ( v > xmin )
 				{
-					xmax=v;
+					xmax = v;
 				}
 				break;
 			case IR_YMIN:
-				if ( v<ymax )
+				if ( v < ymax )
 				{
-					ymin=v;
+					ymin = v;
 				}
 				break;
 			case IR_YMAX:
-				if ( v>ymin )
+				if ( v > ymin )
 				{
-					ymax=v;
+					ymax = v;
 				}
 				break;
 			case IR_DX:
-				if ( v>0&&v<xmax ) mx0=v;
+				if ( v > 0 && v < xmax ) mx0 = v;
 				break;
 			case IR_DY:
-				if ( v>0&&v<ymax ) my0=v;
+				if ( v > 0 && v < ymax ) my0 = v;
 				break;
 			case IR_SDX:
-				if ( v>=0 ) sdx=v;
+				if ( v >= 0 ) sdx = v;
 				break;
 			case IR_SDY:
-				if ( v>=0 ) sdy=v;
+				if ( v >= 0 ) sdy = v;
 				break;
 			case IR_NDX:
-				if ( v>1 )
+				if ( v > 1 )
 				{
-					mx0=0;
-					nx=v;
+					mx0 = 0;
+					nx = v;
+					theMeasurePrecX=2;
 				}
 				break;
 			case IR_NDY:
-				if ( v>1 )
+				if ( v > 1 )
 				{
-					my0=0;
-					ny=v;
+					my0 = 0;
+					ny = v;
+					theMeasurePrecY=2;
 				}
 				break;
 			case IR_LW:
-				if ( v>=1 ) linewidth=v;
+				if ( v >= 1 ) linewidth = v;
 				break;
 		}
 	}
-	delete in;
-	delete label;
 	updateA();
-	iread=0;
+	iread = 0;
 	rveto.unlock();
+	/*
+		setFocusPolicy( QWidget::WheelFocus );
+		setFocus();
+		grabKeyboard();
+	*/
 }
 
 void kinemaPlotCls::setFontSize ( int sz )
 {
-	fontsz=sz;
+	fontsz = sz;
 	thefont.setPointSize ( fontsz );
 	pveto.lock(); // for safety
 	mveto.lock();
 	rveto.lock();
 	delete fm;
-	fm=new QFontMetrics ( thefont );
-	fph=fm->height();
-	wE=fm->width ( "E" );
+	fm = new QFontMetrics ( thefont );
+	fph = fm->height();
+	wE = fm->width ( "E" );
 	pveto.unlock();
 	mveto.unlock();
 	rveto.unlock();
@@ -362,14 +373,14 @@ void kinemaPlotCls::setFontSize ( int sz )
 
 void kinemaPlotCls::changeFontSize ( int d )
 {
-	int sz=fontsz+d;
-	if ( sz>max_pointsize )
+	int sz = fontsz + d;
+	if ( sz > max_pointsize )
 	{
-		sz=max_pointsize;
+		sz = max_pointsize;
 	}
-	else if ( sz<min_pointsize )
+	else if ( sz < min_pointsize )
 	{
-		sz=min_pointsize;
+		sz = min_pointsize;
 	}
 	setFontSize ( sz );
 	updateA();
@@ -378,42 +389,42 @@ void kinemaPlotCls::changeFontSize ( int d )
 void kinemaPlotCls::toggleOnTop()
 {
 	int f;
-	QPoint p ( geometry().x(),geometry().y() );
-	f=getWFlags();
+	QPoint p ( geometry().x(), geometry().y() );
+	f = getWFlags();
 	if ( f&Qt::WStyle_StaysOnTop )
 	{
-		f^=Qt::WStyle_StaysOnTop;
+		f ^= Qt::WStyle_StaysOnTop;
 	}
 	else
 	{
-		f|=Qt::WStyle_StaysOnTop;
+		f |= Qt::WStyle_StaysOnTop;
 	}
-	reparent ( 0,f,p,true );
+	reparent ( 0, f, p, true );
 }
 
 void kinemaPlotCls::shiftX ( double f )
 {
-	double len=xmax-xmin;
-	xmax+=len*f;
-	xmin+=len*f;
+	double len = xmax - xmin;
+	xmax += len * f;
+	xmin += len * f;
 }
 void kinemaPlotCls::shiftY ( double f )
 {
-	double len=ymax-ymin;
-	ymax+=len*f;
-	ymin+=len*f;
+	double len = ymax - ymin;
+	ymax += len * f;
+	ymin += len * f;
 }
 void kinemaPlotCls::rescaleX ( double f )
 {
-	double len=xmax-xmin;
-	xmax+=len*f;
-	xmin-=len*f;
+	double len = xmax - xmin;
+	xmax += len * f;
+	xmin -= len * f;
 }
 void kinemaPlotCls::rescaleY ( double f )
 {
-	double len=ymax-ymin;
-	ymax+=len*f;
-	ymin-=len*f;
+	double len = ymax - ymin;
+	ymax += len * f;
+	ymin -= len * f;
 }
 
 QString kinemaPlotCls::bool2str ( bool b )
@@ -455,34 +466,34 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 		switch ( e->key() )
 		{
 			case Qt::Key_1:
-				changeLineCol ( 0,pc_indx[0]+1 );
+				changeLineCol ( 0, pc_indx[0] + 1 );
 				return;
 			case Qt::Key_2:
-				changeLineCol ( 1,pc_indx[1]+1 );
+				changeLineCol ( 1, pc_indx[1] + 1 );
 				return;
 			case Qt::Key_3:
-				changeLineCol ( 2,pc_indx[2]+1 );
+				changeLineCol ( 2, pc_indx[2] + 1 );
 				return;
 			case Qt::Key_4:
-				changeLineCol ( 3,pc_indx[3]+1 );
+				changeLineCol ( 3, pc_indx[3] + 1 );
 				return;
 			case Qt::Key_5:
-				changeLineCol ( 4,pc_indx[4]+1 );
+				changeLineCol ( 4, pc_indx[4] + 1 );
 				return;
 			case Qt::Key_6:
-				changeLineCol ( 5,pc_indx[5]+1 );
+				changeLineCol ( 5, pc_indx[5] + 1 );
 				return;
 			case Qt::Key_7:
-				changeLineCol ( 6,pc_indx[6]+1 );
+				changeLineCol ( 6, pc_indx[6] + 1 );
 				return;
 			case Qt::Key_8:
-				changeLineCol ( 7,pc_indx[7]+1 );
+				changeLineCol ( 7, pc_indx[7] + 1 );
 				return;
 			case Qt::Key_9:
-				changeLineCol ( 8,pc_indx[8]+1 );
+				changeLineCol ( 8, pc_indx[8] + 1 );
 				return;
 			case Qt::Key_0:
-				changeLineCol ( 9,pc_indx[9]+1 );
+				changeLineCol ( 9, pc_indx[9] + 1 );
 				return;
 		}
 	}
@@ -492,10 +503,10 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 		switch ( e->key() )
 		{
 			case Qt::Key_X:
-				getInput ( "Ticks subdivision in X = ", IR_SDX );
+				setSdx();
 				return;
 			case Qt::Key_Y:
-				getInput ( "Ticks subdivision in Y = ", IR_SDY );
+				setSdy();
 				return;
 		}
 	}
@@ -504,10 +515,10 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 		switch ( e->key() )
 		{
 			case Qt::Key_X:
-				getInput ( "Major Ticks division in X = ", IR_NDX );
+				setNdx();
 				return;
 			case Qt::Key_Y:
-				getInput ( "Major Ticks division in Y = ", IR_NDY );
+				setNdy();
 				return;
 		}
 	}
@@ -541,10 +552,6 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 		case Qt::Key_9:
 			togglePlotOn ( 9 );
 			return;
-		case Qt::Key_0:
-			togglePlotOn ( 10 );
-			return;
-
 		case Qt::Key_A:
 			showMenu();
 			return;
@@ -561,10 +568,10 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 			getInput ( "Line width = ", IR_LW );
 			return;
 		case Qt::Key_X:
-			getInput ( "Major Ticks in X = ", IR_DX );
+			setdx();
 			return;
 		case Qt::Key_Y:
-			getInput ( "Major Ticks in Y = ", IR_DY );
+			setdy();
 			return;
 		case Qt::Key_K:
 			toggleColorPS();
@@ -575,10 +582,28 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 		case Qt::Key_H:
 			showUsage();
 			return;
+		case Qt::Key_M:
+			mveto.lock();
+			if ( crossOn ) eraseCross();
+			if ( windowState() & Qt::WindowMaximized )
+			{
+				setWindowState ( Qt::WindowNoState );
+			}
+			else
+			{
+				if ( windowState() & Qt::WindowFullScreen )
+				{
+					setWindowState ( Qt::WindowNoState );
+				}
+				setWindowState ( Qt::WindowMaximized );
+			}
+			mveto.unlock();
+			return;
+
 		case Qt::Key_F:
 			mveto.lock();
 			if ( crossOn ) eraseCross();
-			if ( windowState() &Qt::WindowFullScreen )
+			if ( windowState() & Qt::WindowFullScreen )
 			{
 				setWindowState ( Qt::WindowNoState );
 			}
@@ -589,11 +614,11 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 			mveto.unlock();
 			return;
 		case Qt::Key_L:
-			showlegend=!showlegend;
+			showlegend = !showlegend;
 			updateA();
 			return;
 		case Qt::Key_N:
-			showlabel=!showlabel;
+			showlabel = !showlabel;
 			updateA();
 			return;
 		case Qt::Key_Plus:
@@ -604,13 +629,13 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 			return;
 		case Qt::Key_Q:
 		case Qt::Key_Escape:
-			if ( iread==0 )
+			if ( iread == 0 )
 			{
 				close();
 			}
 			else
 			{
-				iread=IR_NOP;
+				iread = IR_NOP;
 				readInput();
 			}
 			return;
@@ -620,13 +645,18 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 		case Qt::Key_S:
 			saveas ( SAM_IMAGE );
 			return;
+		case Qt::Key_0:
+			xmin = xmin0;
+			ymin = ymin0;
+			updateA();
+			return;
 		case Qt::Key_Home:
-			xmin=xmin0;
-			xmax=xmax0;
-			ymin=ymin0;
-			ymax=ymax0;
-			mx0=0;
-			my0=0;
+			xmin = xmin0;
+			xmax = xmax0;
+			ymin = ymin0;
+			ymax = ymax0;
+			mx0 = 0;
+			my0 = 0;
 			updateA();
 			return;
 		case Qt::Key_Left:
@@ -730,10 +760,10 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 			updateA();
 			return;
 		case Qt::Key_R:
-			if ( timerid!=-1 )
+			if ( timerid != -1 )
 			{
 				killTimer ( timerid );
-				timerid=-1;
+				timerid = -1;
 			}
 			updateA();
 			return;
@@ -741,85 +771,49 @@ void kinemaPlotCls::keyPressEvent ( QKeyEvent *e )
 	e->ignore();
 }
 
-void kinemaPlotCls::mouseMoveEvent ( QMouseEvent *e )
-{
-	if ( e->x() <x0||e->y() >y0 )
-	{
-		e->ignore();
-		return;
-	}
-
-	if ( drag>=1 )
-	{
-		double dx,dy;
-		drag=2; // useless ?
-		dx=drgdx* ( drgpos0.x()-e->pos().x() );
-		dy=drgdy* ( drgpos0.y()-e->pos().y() );
-		xmax=drgxmax0+dx;
-		xmin=drgxmin0+dx;
-		ymax=drgymax0+dy;
-		ymin=drgymin0+dy;
-		updateA(); // repaint?
-		return;
-	}
-	QBrush b ( "black" );
-	QString pos=QString::number ( tegX ( e->x() ) ) +", "+QString::number ( tegY ( e->y() ) );
-	mveto.lock();
-	if ( crossOn ) eraseCross();
-	unsigned int l=fm->width ( ( const QString& ) pos );
-	if ( crossOn ) drawCross ( e->x(),e->y() );
-	mveto.unlock();
-	if ( lendigitmax<l ) lendigitmax=l;
-	QPainter p ( this );
-	p.setFont ( thefont );
-	p.setPen ( "yellow" );
-	eraseCoord ( &p );
-	p.drawText ( 0,height()-1,pos );
-}
-
 int kinemaPlotCls::getMaxlenytitle()
 {
-	unsigned int ml=0;
-	for ( int iy=0;iy<nycol;iy++ )
+	unsigned int ml = 0;
+	for ( int iy = 0;iy < nycol;iy++ )
 	{
 		if ( !plotOn[iy] ) continue;
-		unsigned int l=fm->width ( ( const QString& ) yts[iy] );
-		if ( ml<l ) ml=l;
+		unsigned int l = fm->width ( ( const QString& ) yts[iy] );
+		if ( ml < l ) ml = l;
 	}
 	return ml;
 }
 
 void kinemaPlotCls::setPlotMinMax()
 {
-	double x,y;
-	xmin=1e38;
-	xmax=-1e38;
-	ymin=1e38;
-	ymax=-1e38;
-	for ( int i=0;i<nplots;i++ )
+	double x, y;
+	xmin = 1e38;
+	xmax = -1e38;
+	ymin = 1e38;
+	ymax = -1e38;
+	for ( int i = 0;i < nplots;i++ )
 	{
-		x=pas[0][i];
-		for ( int iy=0;iy<nycol;iy++ )
+		x = pas[0][i];
+		for ( int iy = 0;iy < nycol;iy++ )
 		{
-			y=pas[iy+1][i];
-			if ( x<xmin ) xmin=x;
-			if ( x>xmax ) xmax=x;
-			if ( y<ymin ) ymin=y;
-			if ( y>ymax ) ymax=y;
+			y = pas[iy+1][i];
+			if ( x < xmin ) xmin = x;
+			if ( x > xmax ) xmax = x;
+			if ( y < ymin ) ymin = y;
+			if ( y > ymax ) ymax = y;
 		}
 	}
-	ymax*=ymaxmar;
-	xmax*=xmaxmar;
-	xmin0=xmin;
-	xmax0=xmax;
-	ymin0=ymin;
-	ymax0=ymax;
+	ymax *= ymaxmar;
+	xmax *= xmaxmar;
+	xmin0 = xmin;
+	xmax0 = xmax;
+	ymin0 = ymin;
+	ymax0 = ymax;
 }
 
 void kinemaPlotCls::setPlotPoints ( int iy )
 {
-	double *x=pas[0], *y=pas[iy+1];
-	for ( int i=0;i<nplots;i++ )
+	double *x = pas[0], *y = pas[iy+1];
+	for ( int i = 0;i < nplots;i++ )
 		pa->setPoint ( i, getX ( x[i] ), getY ( y[i] ) );
 }
 
@@ -828,35 +822,35 @@ int kinemaPlotCls::getX ( double x )
 	/*	return MIN2 ( 32767,MAX2 ( -32767,
 		                           + ( ( double ) ( theWidth-1-x0 ) *x
 		                               + ( ( double ) x0*xmax-xmin* ( double ) ( theWidth -1 ) ) ) / ( 	*/
-	return ( ( double ) ( theWidth-1-x0 ) *x
-	         + ( ( double ) x0*xmax-xmin* ( double ) ( theWidth -1 ) ) ) / ( xmax-xmin );
+	return ( ( double ) ( theWidth -1 - x0 ) *x
+	         + ( ( double ) x0*xmax - xmin* ( double ) ( theWidth - 1 ) ) ) / ( xmax - xmin );
 }
 int kinemaPlotCls::getY ( double y )
 {
 	/*	return MIN2 ( 32767,MAX2 ( -32767,
 		                           ( - ( double ) y0*y + ( double ) y0*ymax ) / ( ymax-ymin ) ) );*/
-	return ( - ( double ) y0*y + ( double ) y0*ymax ) / ( ymax-ymin );
+	return ( - ( double ) y0*y + ( double ) y0*ymax ) / ( ymax - ymin );
 }
 double kinemaPlotCls::tegX ( int x )
 {
-	return ( xmax-xmin ) * ( double ) x/ ( double ) ( theWidth-1-x0 )
-	       - ( xmax* ( double ) x0-xmin* ( double ) ( theWidth-1 ) ) / ( double ) ( theWidth-1-x0 );
+	return ( xmax -xmin ) * ( double ) x / ( double ) ( theWidth - 1 - x0 )
+	       - ( xmax* ( double ) x0 - xmin* ( double ) ( theWidth - 1 ) ) / ( double ) ( theWidth - 1 - x0 );
 }
 double kinemaPlotCls::tegY ( int y )
 {
-	return - ( ymax-ymin ) * ( double ) y/ ( double ) y0+ymax;
+	return - ( ymax - ymin ) * ( double ) y / ( double ) y0 + ymax;
 }
 
 int kinemaPlotCls::ylabelMaxLen ( double y, double my )
 {
-	int ylenmax=0;
-	for ( int iy=0;iy<ny;iy++ )
+	int ylenmax = 0;
+	for ( int iy = 0;iy < ny;iy++ )
 	{
-		y+=my;
-		if ( y>=ymax ) break;
-		if ( fabs ( y ) <my/2. ) y=0.;
-		int ylen=fm->width ( QString::number ( y ) );
-		if ( ylenmax<ylen ) ylenmax=ylen;
+		y += my;
+		if ( y >= ymax ) break;
+		if ( fabs ( y ) < my / 2. ) y = 0.;
+		int ylen = fm->width ( QString::number ( y ) );
+		if ( ylenmax < ylen ) ylenmax = ylen;
 	}
 	return ylenmax;
 }
@@ -864,64 +858,64 @@ int kinemaPlotCls::ylabelMaxLen ( double y, double my )
 void kinemaPlotCls::timerEvent ( QTimerEvent *unused )
 {
 	killTimer ( timerid );
-	timerid=-1;
+	timerid = -1;
 	updateA();
 }
 
 void kinemaPlotCls::eraseCoord ( QPainter *p )
 {
-	QRect r ( 0,height()-1- ( fph -1 ),lendigitmax, fph );
+	QRect r ( 0, height() - 1 - ( fph - 1 ), lendigitmax, fph );
 	p->fillRect ( r, QBrush ( "black" ) );
 }
 
 void kinemaPlotCls::saveas ( int mode )
 {
-	QString filter="";
+	QString filter = "";
 	switch ( mode )
 	{
 		case SAM_ANY:
 		case SAM_IMAGE:
-			filter="*.png|PNG image (*.png)\n*.jpg|JPG image (*.jpg)\n*.xpm|XPM image (*.xpm)\n";
-			if ( mode!=SAM_ANY ) break;
+			filter = "*.png|PNG image (*.png)\n*.jpg|JPG image (*.jpg)\n*.xpm|XPM image (*.xpm)\n";
+			if ( mode != SAM_ANY ) break;
 		case SAM_PRINT:
 			filter.append ( "*.eps|Encapsulated PostScript (*.eps)\n*.ps|PostScript (*.ps)\n" );
 			break;
 	}
 	filter.append ( "*.*|All (*.*)" );
 
-	QString f= KFileDialog::getSaveFileName ( *homedir,filter,this,
-	           tr ( "Save plot as" ) );
-	if ( f.length() <=0 ) return;
+	QString f = KFileDialog::getSaveFileName ( *homedir, filter, this,
+	            tr ( "Save plot as" ) );
+	if ( f.length() <= 0 ) return;
 	if ( QFile::exists ( f ) )
 	{
 		if ( KMessageBox::questionYesNo ( this,
-		                                  "File already exists:\n"+f+"\n Replace it?",
+		                                  "File already exists:\n" + f + "\n Replace it?",
 		                                  "kinemaPlot: Warning!" )
-		        !=KMessageBox::Yes ) return;
+		        != KMessageBox::Yes ) return;
 	}
 
 	bool ok;
-	QString fmt="";
+	QString fmt = "";
 	if ( f.lower().endsWith ( ".png" ) )
 	{
-		fmt="PNG";
+		fmt = "PNG";
 	}
 	else if ( f.lower().endsWith ( ".jpg" ) )
 	{
-		fmt="JPEG";
+		fmt = "JPEG";
 	}
 	else if ( f.lower().endsWith ( ".xpm" ) )
 	{
-		fmt="XPM";
+		fmt = "XPM";
 	}
-	else if ( f.lower().endsWith ( ".eps" ) ||f.lower().endsWith ( ".ps" ) )
+	else if ( f.lower().endsWith ( ".eps" ) || f.lower().endsWith ( ".ps" ) )
 	{
 		printPlot ( f );
-		ok=true;
+		ok = true;
 	}
 	else
 	{
-		ok=false;
+		ok = false;
 	}
 
 	if ( !fmt.isEmpty() )
@@ -930,111 +924,129 @@ void kinemaPlotCls::saveas ( int mode )
 		bitBlt ( &pm, 0, 0, this );
 		QPainter p ( &pm );
 		eraseCoord ( &p );
-		ok= pm.save ( f,fmt );
+		ok = pm.save ( f, fmt );
 	}
 
 	if ( ok )
 	{
-		messStr="Plot saved on "+f;
-		messCol="skyblue";
+		messStr = "Plot saved on " + f;
+		messCol = "skyblue";
 	}
 	else
 	{
 		if ( !fmt.isEmpty() )
 		{
-			messStr="Failed to save file: "+f;
-			messCol="red";
+			messStr = "Failed to save file: " + f;
+			messCol = "red";
 		}
 		else
 		{
-			messStr="Unsupported format: "+f;
-			messCol="red";
+			messStr = "Unsupported format: " + f;
+			messCol = "red";
 		}
 	}
-	timerid=startTimer ( messTime );
+	timerid = startTimer ( messTime );
 	updateA();
 }
 
 void kinemaPlotCls::mess ( QPainter *p )
 {
-	int x,y,wx,wy;
-	int mar=4;
-	wx=fm->width ( ( const QString& ) messStr );
-	wy=fph;
-	x=width() /2 -wx/2;
-	y=height() /2-wy/2;
-	QRect messrect ( x-mar,y-mar,wx+mar*2, wy+mar*2 );
-	p->fillRect ( messrect,QBrush ( "black" ) );
+	int x, y, wx, wy;
+	int mar = 4;
+	wx = fm->width ( ( const QString& ) messStr );
+	wy = fph;
+	x = width() / 2 - wx / 2;
+	y = height() / 2 - wy / 2;
+	QRect messrect ( x - mar, y - mar, wx + mar*2, wy + mar*2 );
+	p->fillRect ( messrect, QBrush ( "black" ) );
 	p->setFont ( thefont );
 	p->setPen ( messCol );
-	p->drawText ( messrect, Qt::AlignHCenter|Qt::AlignVCenter, messStr );
+	p->drawText ( messrect, Qt::AlignHCenter | Qt::AlignVCenter, messStr );
 }
 
 void kinemaPlotCls::setMeasureGeom ( int w, int h )
 {
-	theWidth=w;
-	theHeight=h;
-	if ( mx0!=0 )
+	theWidth = w;
+	theHeight = h;
+	if ( mx0 != 0 )
 	{
-		mx=mx0;
-		nx=NIN ( ( xmax-xmin ) /mx0 );
+		mx = mx0;
+		nx = NIN ( ( xmax - xmin ) / mx0 );
 	}
 	else
 	{
-		if ( nx==0 ) nx=nx_def;
-		mx=QString::number ( ( xmax-xmin ) /nx,'g',1 ).toDouble();
+		int pr;
+		if ( nx == 0 )
+		{
+			nx = nx_def;
+			pr=1;
+		}
+		else
+		{
+			pr=theMeasurePrecX;
+		}
+		mx = QString::number ( ( xmax - xmin ) / nx, 'g', pr ).toDouble();
 	}
-	if ( my0!=0 )
+	if ( my0 != 0 )
 	{
-		my=my0;
-		ny=NIN ( ( ymax-ymin ) /my0 );
+		my = my0;
+		ny = NIN ( ( ymax - ymin ) / my0 );
 	}
 	else
 	{
-		if ( ny==0 ) ny=ny_def;
-		my=QString::number ( ( ymax-ymin ) /ny,'g',1 ).toDouble();
+		int pr;
+		if ( ny == 0 )
+		{
+			ny = ny_def;
+			pr=1;
+		}
+		else
+		{
+			pr=theMeasurePrecY;
+		}
+		my = QString::number ( ( ymax - ymin ) / ny, 'g', pr ).toDouble();
 	}
-	x_start=floor ( xmin/mx ) *mx;
-	y_start=floor ( ymin/my ) *my;
+	x_start = floor ( xmin / mx ) * mx;
+	y_start = floor ( ymin / my ) * my;
 // text geom
-	int ylml=ylabelMaxLen ( y_start,my );
-	vs=hs=fph/3;
-	leftmar= NIN ( ( double ) ( ylml+fph+hs ) *1.2 );
-	botmar= ( fph+fph+vs );
+	int ylml = ylabelMaxLen ( y_start, my );
+	vs = hs = fph / 3;
+	leftmar = NIN ( ( double ) ( ylml + fph + hs ) * 1.2 );
+	botmar = ( fph + fph + vs );
 // the origin in px
-	x0=leftmar;
-	y0=theHeight-1-botmar;
+	x0 = leftmar;
+	y0 = theHeight - 1 - botmar;
 // plot region
 	plotRect.setLeft ( x0 );
-	plotRect.setRight ( theWidth-1 );
+	plotRect.setRight ( theWidth - 1 );
 	plotRect.setTop ( 0 );
 	plotRect.setBottom ( y0 );
 
 	titleRect.setLeft ( x0 );
-	titleRect.setWidth ( fm->width ( *plotLbl ) +wE *4 );
+	titleRect.setWidth ( fm->width ( *plotLbl ) + wE *4 );
 	titleRect.setTop ( 0 );
 	titleRect.setHeight ( fm->height() *1.5 );
 
 	xtRect.setLeft ( x0 );
-	xtRect.setWidth ( theWidth-x0 );
-	xtRect.setTop ( theHeight-fph-1 );
+	xtRect.setWidth ( theWidth - x0 );
+	xtRect.setTop ( theHeight - fph - 1 );
 	xtRect.setHeight ( fph );
 
 	ytRect.setLeft ( -y0 );
-	ytRect.setWidth ( y0+1 );
+	ytRect.setWidth ( y0 + 1 );
 	ytRect.setTop ( 0 );
 	ytRect.setHeight ( fph );
 
-	nlegend=countPlotOn();
-	if ( nlegend>0 )
+	nlegend = countPlotOn();
+	if ( nlegend > 0 )
 	{
-		lg_hmar=wE;
-		lg_vmar=fph/2;
-		lg_lw=wE*8;
-		int legendWidth=getMaxlenytitle() +lg_lw+lg_hmar*3;
-		int legendHeight=nlegend*fph+lg_vmar*2; // no space between text
-		legendRect.setLeft ( theWidth-1-legendWidth );
-		legendRect.setRight ( theWidth-1 );
+		lg_hmar = wE;
+		lg_vmar = fph / 2;
+		lg_lw = wE * 8;
+		int legendWidth = getMaxlenytitle() + lg_lw + lg_hmar * 3;
+		int legendHeight = nlegend * fph + lg_vmar * 2; // no space between text
+		legendRect.setLeft ( theWidth - 1 - legendWidth );
+		legendRect.setRight ( theWidth - 1 );
 		legendRect.setTop ( 0 );
 		legendRect.setBottom ( legendHeight );
 	}
@@ -1044,12 +1056,12 @@ void kinemaPlotCls::drawDots ( QPainter *p, int ixmin, int iymax, int unused )
 {
 	p->save();
 	p->setBrush ( p->pen().color() );
-	for ( int i=0;i<nplots;i++ )
+	for ( int i = 0;i < nplots;i++ )
 	{
-		int x=pa->point ( i ).x()-2;
-		int y=pa->point ( i ).y()-2;
-		if ( ixmin<=x&&x<theWidth-1&&0<y&&y<=iymax )
-			p->drawEllipse ( x,y,5,5 );
+		int x = pa->point ( i ).x() - 2;
+		int y = pa->point ( i ).y() - 2;
+		if ( ixmin <= x && x < theWidth - 1 && 0 < y && y <= iymax )
+			p->drawEllipse ( x, y, 5, 5 );
 	}
 	p->restore();
 }
@@ -1063,7 +1075,7 @@ void kinemaPlotCls::paintEvent ( QPaintEvent *unused )
 	p.setBackgroundColor ( "black" );
 	p.eraseRect ( rect() );
 
-	setMeasureGeom ( width(),height() );
+	setMeasureGeom ( width(), height() );
 
 // draw measure
 	drawSubMeasure ( &p );
@@ -1076,28 +1088,28 @@ void kinemaPlotCls::paintEvent ( QPaintEvent *unused )
 	drawPlots ( &p );
 	p.setClipping ( false );
 
-	if ( nycol>1&&showlegend && nlegend>0 ) drawLegend ( &p );
+	if ( nycol > 1 && showlegend && nlegend > 0 ) drawLegend ( &p );
 
-	if ( timerid!=-1 ) mess ( &p );
+	if ( timerid != -1 ) mess ( &p );
 
 	// draw axis
 	drawAxis ( &p );
 
 	p.end();
 
-	bitBlt ( this, 0, 0, thePlot,0,0,width(),height() );
+	bitBlt ( this, 0, 0, thePlot, 0, 0, width(), height() );
 
 	pveto.unlock();
 }
 
 void kinemaPlotCls::drawMeasure ( QPainter *p )
 {
-	int y00=0;
-	int x00=theWidth-1;
+	int y00 = 0;
+	int x00 = theWidth - 1;
 	if ( !msrOn )
 	{
-		x00=x0+10;//<<<<<<<<<<<<
-		y00=y0-10;//<<<<<<<<<<<<
+		x00 = x0 + 10;//<<<<<<<<<<<<
+		y00 = y0 - 10;//<<<<<<<<<<<<
 	}
 	p->setFont ( thefont );
 	QPen mmp;
@@ -1106,85 +1118,85 @@ void kinemaPlotCls::drawMeasure ( QPainter *p )
 	QPen mlp;
 	mlp.setColor ( colMeasureLabel );
 	mlp.setStyle ( Qt::SolidLine );
-	double x=x_start-mx;
-	for ( int ix=0;;ix++ )
+	double x = x_start - mx;
+	for ( int ix = 0;;ix++ )
 	{
-		x+=mx;
-		if ( x<xmin ) continue;
-		if ( x>xmax ) break;
-		int px=getX ( x );
+		x += mx;
+		if ( x < xmin ) continue;
+		if ( x > xmax ) break;
+		int px = getX ( x );
 		p->setPen ( mmp );
-		p->drawLine ( px,y0,px,y00 );
+		p->drawLine ( px, y0, px, y00 );
 		p->setPen ( mlp );
-		if ( fabs ( x ) <mx/2. ) x=0.;
-		QString s=QString::number ( x );
-		int l= fm->width ( ( const QString& ) s ) /2;
-		p->drawText ( px-l,y0+fph,s );
+		if ( fabs ( x ) < mx / 2. ) x = 0.;
+		QString s = QString::number ( x );
+		int l = fm->width ( ( const QString& ) s ) / 2;
+		p->drawText ( px - l, y0 + fph, s );
 	}
-	double y=y_start-my;
-	for ( int iy=0;;iy++ )
+	double y = y_start - my;
+	for ( int iy = 0;;iy++ )
 	{
-		y+=my;
-		if ( y<ymin ) continue;
-		if ( y>ymax ) break;
-		int py=getY ( y );
+		y += my;
+		if ( y < ymin ) continue;
+		if ( y > ymax ) break;
+		int py = getY ( y );
 		p->setPen ( mmp );
-		p->drawLine ( x0,py,x00,py );
+		p->drawLine ( x0, py, x00, py );
 		p->setPen ( mlp );
-		if ( fabs ( y ) <my/2. ) y=0.;
-		QString s=QString::number ( y );
-		int l=fm->width ( ( const  QString& ) s );
-		p->drawText ( x0-l-hs,py+fph/2, s );
+		if ( fabs ( y ) < my / 2. ) y = 0.;
+		QString s = QString::number ( y );
+		int l = fm->width ( ( const  QString& ) s );
+		p->drawText ( x0 - l - hs, py + fph / 2, s );
 	}
 }
 
 void kinemaPlotCls::drawSubMeasure ( QPainter *p )
 {
-	int y00=0;
-	int x00=theWidth-1;
+	int y00 = 0;
+	int x00 = theWidth - 1;
 	if ( !msrOn )
 	{
-		x00=x0+10;//<<<<<<<<<<<<
-		y00=y0-10;//<<<<<<<<<<<<
+		x00 = x0 + 10;//<<<<<<<<<<<<
+		y00 = y0 - 10;//<<<<<<<<<<<<
 	}
 	QPen smp;
 	smp.setColor ( colSubMeasure );
-	smp.setStyle ( Qt::DotLine );//<<<<<<<<<<<<<<<<
-	if ( sdx>1 )
+	smp.setStyle ( Qt::DotLine );   //<<<<<<<<<<<<<<<<
+	if ( sdx > 1 )
 	{
-		double x=x_start-mx-mx;
+		double x = x_start - mx - mx;
 		p->setPen ( smp );
-		double smx=mx/sdx;
-		for ( int ix=0;;ix++ )
+		double smx = mx / sdx;
+		for ( int ix = 0;;ix++ )
 		{
-			x+=mx;
-			if ( x>xmax ) break;
-			for ( int iix=1;iix<sdx;iix++ )
+			x += mx;
+			if ( x > xmax ) break;
+			for ( int iix = 1;iix < sdx;iix++ )
 			{
-				double xx=x+smx*iix;
-				if ( xx<xmin ) continue;
-				if ( xx>xmax ) break;
-				int px=getX ( xx );
-				p->drawLine ( px,y0,px,y00 );
+				double xx = x + smx * iix;
+				if ( xx < xmin ) continue;
+				if ( xx > xmax ) break;
+				int px = getX ( xx );
+				p->drawLine ( px, y0, px, y00 );
 			}
 		}
 	}
-	if ( sdy>1 )
+	if ( sdy > 1 )
 	{
-		double y=y_start-my-my;
+		double y = y_start - my - my;
 		p->setPen ( smp );
-		double smy=my/sdy;
-		for ( int iy=0;;iy++ )
+		double smy = my / sdy;
+		for ( int iy = 0;;iy++ )
 		{
-			y+=my;
-			if ( y>ymax ) break;
-			for ( int iiy=1;iiy<sdy;iiy++ )
+			y += my;
+			if ( y > ymax ) break;
+			for ( int iiy = 1;iiy < sdy;iiy++ )
 			{
-				double yy=y+smy*iiy;
-				if ( yy<ymin ) continue;
-				if ( yy>ymax ) break;
-				int py=getY ( yy );
-				p->drawLine ( x0,py,x00,py );
+				double yy = y + smy * iiy;
+				if ( yy < ymin ) continue;
+				if ( yy > ymax ) break;
+				int py = getY ( yy );
+				p->drawLine ( x0, py, x00, py );
 			}
 		}
 	}
@@ -1198,19 +1210,19 @@ void kinemaPlotCls::drawTitle ( QPainter *p )
 	if ( showlabel )
 	{
 		p->eraseRect ( titleRect );
-		p->drawText ( titleRect, Qt::AlignHCenter|Qt::AlignVCenter, *plotLbl );
+		p->drawText ( titleRect, Qt::AlignHCenter | Qt::AlignVCenter, *plotLbl );
 	}
 
-	p->drawText ( xtRect, Qt::AlignHCenter|Qt::AlignVCenter, xt );
+	p->drawText ( xtRect, Qt::AlignHCenter | Qt::AlignVCenter, xt );
 	p->rotate ( -90. );
-	p->drawText ( ytRect, Qt::AlignHCenter|Qt::AlignVCenter, yt );
+	p->drawText ( ytRect, Qt::AlignHCenter | Qt::AlignVCenter, yt );
 	p->rotate ( 90. );
 }
 
 void kinemaPlotCls::drawPlots ( QPainter *p )
 {
 	QPen pline;
-	for ( int iy=0;iy<nycol;iy++ )
+	for ( int iy = 0;iy < nycol;iy++ )
 	{
 		if ( !plotOn[iy] ) continue;
 		setPlotPoints ( iy );
@@ -1218,36 +1230,36 @@ void kinemaPlotCls::drawPlots ( QPainter *p )
 		pline.setColor ( pc[iy] );
 		pline.setWidth ( linewidth );
 		p->setPen ( pline );
-		int n=0;
-		int k=-1;
-		for ( int i=0;i<(int)pa->count();i++ )
+		int n = 0;
+		int k = -1;
+		for ( int i = 0;i < ( int ) pa->count();i++ )
 		{
 			if ( plotRect.contains ( pa->point ( i ) ) )
 			{
 				n++;
-				if ( k==-1 ) k=i;
+				if ( k == -1 ) k = i;
 			}
 			else
 			{
-				if ( k!=-1 )
+				if ( k != -1 )
 				{
-					if ( k>1 )
+					if ( k > 1 )
 					{
 						k--;
 						n++;
 					}
-					if ( k<(int)pa->count()-1 )
+					if ( k < ( int ) pa->count() - 1 )
 					{
 						n++;
 					}
-					if ( n>1 ) p->drawPolyline ( *pa, k, n );
+					if ( n > 1 ) p->drawPolyline ( *pa, k, n );
 				}
-				k=-1;
-				n=0;
+				k = -1;
+				n = 0;
 			}
 
 		}
-		if ( k!=-1&&n>1 ) p->drawPolyline ( *pa, k, n );
+		if ( k != -1 && n > 1 ) p->drawPolyline ( *pa, k, n );
 		if ( dotOn ) drawDots ( p, x0, y0 );
 //		p->drawPoints ( *pa );
 	}
@@ -1260,19 +1272,19 @@ void kinemaPlotCls::drawLegend ( QPainter *p )
 	p->setPen ( colLegendRect );
 	p->drawRect ( legendRect );
 	pline.setWidth ( linewidth );
-	int iyy=-1;
-	for ( int iy=0;iy<nycol;iy++ )
+	int iyy = -1;
+	for ( int iy = 0;iy < nycol;iy++ )
 	{
 		if ( !plotOn[iy] ) continue;
 		iyy++;
-		int yy= iyy*fph + lg_vmar + fph/2;
-		int xx=legendRect.left() + lg_hmar;
+		int yy = iyy * fph + lg_vmar + fph / 2;
+		int xx = legendRect.left() + lg_hmar;
 		pline.setStyle ( ps[iy] );
 		pline.setColor ( pc[iy] );
 		p->setPen ( pline );
-		p->drawLine ( xx,yy,xx+lg_lw,yy );
+		p->drawLine ( xx, yy, xx + lg_lw, yy );
 		p->setPen ( colLegendText );
-		p->drawText ( xx+lg_lw+lg_hmar,yy+fph/2, yts[iy] );
+		p->drawText ( xx + lg_lw + lg_hmar, yy + fph / 2, yts[iy] );
 	}
 }
 
@@ -1292,95 +1304,106 @@ void kinemaPlotCls::drawAxis ( QPainter *p )
 	ap.setColor ( colAxis );
 	ap.setWidth ( 2 );
 	p->setPen ( ap );
-	p->drawLine ( x0,y0,theWidth-1,y0 );
-	p->drawLine ( x0,y0,x0,0 );
+	p->drawLine ( x0, y0, theWidth - 1, y0 );
+	p->drawLine ( x0, y0, x0, 0 );
 
 }
 
 void kinemaPlotCls::showUsage()
 {
-	QString usage=
+	QString usage =
 	    "=== Key bindings ===\n\n"
-	    "  arrow key:  \tmove\n"
-	    "    +ctrl:    \tmagnify/reduce\n"
-	    "    +shft:    \tmove/magnify/reduce large\n"
-	    "    +alt:     \tset x/y min/max\n"
-	    "    +ctrl+alt:\tsame as above\n"
-	    "  1-9:        \ttoggle show plots\n"
-	    "  home:       \tto original position\n"
-	    "  plus:       \tenlarge font\n"
-	    "  minus:      \tshrink font\n"
-	    "  cntl+s:     \tsave image as png/jpg/xpm file\n"
-	    "  cntl+p:     \tprint plots on ps/eps file\n"
-	    "  X,Y:        \tset dx/dy\n"
-	    "    +shft     \tset subdivision in x/y\n"
-	    "    +ctrl     \tset division in x/y\n"
-	    "  A:           \tshow menu\n"
-	    "  C:           \ttoggle cross-hair cursor\n"
-	    "  D:           \ttoggle dots\n"
-	    "  F:           \ttoggle full screen\n"
-	    "  G:           \ttoggle grid\n"
-	    "  K:           \tToggle color mode when saving (e)ps\n"
-	    "  L:           \ttoggle legend\n"
-	    "  N:           \ttoggle reaction label\n"
-	    "  R:           \trefresh\n"
-	    "  T:           \ttoggle stay on top\n"
-	    "  W:           \tset line width\n"
-	    "  Escape, Q:  \texit";
+	    "  arrow key:     \tmove plots\n"
+	    "    +ctrl:       \tmagnify/reduce plots\n"
+	    "    +shft:       \tmove/magnify/reduce plots in larger steps\n"
+	    "    +alt:        \tset x/y min/max\n"
+	    "  1-9:           \ttoggle show plot of given index\n"
+	    "  0:             \trestore origin\n"
+	    "  home:          \trestore original scale\n"
+	    "  plus:          \tenlarge font\n"
+	    "  minus:         \tshrink font\n"
+	    "  ctrl+s:        \tsave image as png/jpg/xpm file\n"
+	    "  ctrl+p:        \tprint plots on ps/eps file\n"
+	    "  X,Y:           \tset x/y ticks interval\n"
+	    "    +shft        \tset number of subdivision in x/y\n"
+	    "    +ctrl        \tset number of division in x/y\n"
+	    "  A:             \tshow menu\n"
+	    "  C:             \ttoggle cross-hair cursor\n"
+	    "  D:             \ttoggle dots\n"
+	    "  F:             \ttoggle full screen\n"
+	    "  G:             \ttoggle grid\n"
+	    "  K:             \ttoggle color mode when saving (e)ps\n"
+	    "  L:             \ttoggle legend\n"
+	    "  M:             \ttoggle maximize\n"
+	    "  N:             \ttoggle reaction label\n"
+	    "  R:             \trefresh\n"
+	    "  T:             \ttoggle stay on top\n"
+	    "  W:             \tset line width\n"
+	    "  Escape, Q:     \texit\n\n"
+	    "=== Mouse control ===\n\n"
+	    "  L-click:       \tprint cursor coordinate\n"
+	    "  R-click:       \tshow menu\n"
+	    "  M-click:       \tfix cross-hair cursor\n"
+	    "  L-drag:        \tmove plots\n"
+	    "  R-drag:        \tzoom in/out plots\n"
+	    "  L-double-click:\tzoom in plots\n"
+	    "  +shift:        \texchange L and R for drag\n"
+	    "                 \tand zoom in and out for double click\n";
+
 	mboxCls *m;
-	m=new mboxCls ( NULL,NULL,Qt::WDestructiveClose,
-	                usage,"RelKinema-Plotter: Usage",
-	                theuifont );
+	m = new mboxCls ( NULL, NULL, Qt::WDestructiveClose,
+	                  usage, "RelKinema-Plotter: Usage",
+	                  theuifont, 500, 300 );
 	m->show();
 }
 
 void kinemaPlotCls::closeEvent ( QCloseEvent *e )
 {
-	if ( rveto.locked() ||pveto.locked() )
+	if ( rveto.locked() || pveto.locked() || closemt.locked() )
 	{
 		e->ignore();
 	}
 	else
 	{
-		delete fm;
-		delete thePlot;
-		FREE ( pas );
-		delete pa;
+		closemt.lock();
+		if ( fm!=0 ) delete fm;
+		fm=0;
+		if ( thePlot!=0 ) delete thePlot;
+		thePlot=0;
+		if ( pas!=0 ) FREE ( pas );
+		pas=0;
+		if ( pa!=0 ) delete pa;
+		pa=0;
 		emit done();
 		e->accept();
+		closemt.unlock();
 	}
 }
 
-void kinemaPlotCls::procLB ( QPoint p )
+void kinemaPlotCls::procBP ( QPoint p )
 {
-	drag=1;
-	drgpos0=p;
-	drgxmax0=xmax;
-	drgxmin0=xmin;
-	drgymax0=ymax;
-	drgymin0=ymin;
+	drgpos0 = p;
+	drgxmax0 = xmax;
+	drgxmin0 = xmin;
+	drgymax0 = ymax;
+	drgymin0 = ymin;
 	// the same as tegX and tegY
-	drgdx= ( xmax-xmin ) / ( double ) ( theWidth-1-x0 );
-	drgdy=- ( ymax-ymin ) / ( double ) ( y0 );
-
-	QPainter q ( this );
-	q.setFont ( thefont );
-	q.setPen ( "yellow" );
-	q.drawPoint ( p.x(),p.y() );
-	QString pos=QString::number ( tegX ( p.x() ) ) +", "+QString::number ( tegY ( p.y() ) );
-	q.drawText ( p.x() +4,p.y() +fph+2,pos );
+	drgdx = ( xmax - xmin ) / ( double ) ( theWidth - 1 - x0 );
+	drgdy = - ( ymax - ymin ) / ( double ) ( y0 );
 }
 
 void kinemaPlotCls::mouseDoubleClickEvent ( QMouseEvent *e )
 {
 	e->accept();
-	double dx=tegX ( e->x() )- ( xmax+xmin ) /2.0;
-	double dy=tegY ( e->y() )- ( ymax+ymin ) /2.0;
-	xmax+=dx; xmin+=dx;
-	ymax+=dy; ymin+=dy;
-	double r=rescaleFactor;
-	if ( e->state() & Qt::ControlButton ) r=2.0*r;
-	if ( ! ( e->state() & Qt::ShiftButton ) ) r=-r;
+	double dx = tegX ( e->x() ) - ( xmax + xmin ) / 2.0;
+	double dy = tegY ( e->y() ) - ( ymax + ymin ) / 2.0;
+	xmax += dx;
+	xmin += dx;
+	ymax += dy;
+	ymin += dy;
+	double r = rescaleFactor;
+	if ( e->state() & Qt::ControlButton ) r = 2.0 * r;
+	if ( ! ( e->state() & Qt::ShiftButton ) ) r = -r;
 	rescaleX ( r );
 	rescaleY ( r );
 	updateA();
@@ -1388,28 +1411,125 @@ void kinemaPlotCls::mouseDoubleClickEvent ( QMouseEvent *e )
 
 void kinemaPlotCls::mousePressEvent ( QMouseEvent *e )
 {
-	switch ( e->button() )
+	int eb=e->button();
+	switch ( eb )
 	{
 		case LeftButton:
-			procLB ( e->pos() );
-			e->accept();
+			if ( e->state() &Qt::ShiftButton ) {eb=RightButton;}
 			break;
 		case RightButton:
-			showMenu();
-			e->accept();
+			if ( e->state() &Qt::ShiftButton ) {eb=LeftButton;}
 			break;
 		case MidButton:
-			if ( crossOn ) putCross ( e->x(),e->y() );
-			e->accept();
 			break;
 		default:
 			e->ignore();
+			return;
 	}
+	drag = eb;
+	procBP ( e->pos() );
+	e->accept();
 }
 
-void kinemaPlotCls::mouseReleaseEvent ( QMouseEvent *unused )
+void kinemaPlotCls::showPos ( QPoint p )
 {
-	drag=0;
+	QPainter q ( this );
+	q.setFont ( thefont );
+	q.setPen ( "yellow" );
+	q.drawPoint ( p.x(), p.y() );
+	QString pos = QString::number ( tegX ( p.x() ) ) + ", " + QString::number ( tegY ( p.y() ) );
+	q.drawText ( p.x() + 4, p.y() + fph + 2, pos );
+}
+
+void kinemaPlotCls::mouseMoveEvent ( QMouseEvent *e )
+{
+	if ( e->x() < x0 || e->y() > y0 )
+	{
+		e->ignore();
+		return;
+	}
+	else if ( drag == 0 )
+	{
+		QBrush b ( "black" );
+		QString pos = QString::number ( tegX ( e->x() ) ) + ", " + QString::number ( tegY ( e->y() ) );
+		mveto.lock();
+		if ( crossOn ) eraseCross();
+		unsigned int l = fm->width ( ( const QString& ) pos );
+		if ( crossOn ) drawCross ( e->x(), e->y() );
+		mveto.unlock();
+		if ( lendigitmax < l ) lendigitmax = l;
+		QPainter p ( this );
+		p.setFont ( thefont );
+		p.setPen ( "yellow" );
+		eraseCoord ( &p );
+		p.drawText ( 0, height() - 1, pos );
+		e->accept();
+		return;
+	}
+
+	if ( drag > 0 )
+	{
+		drag = -drag;
+	};
+
+	double dx, dy;
+	dx = drgdx * ( drgpos0.x() - e->pos().x() );
+	dy = drgdy * ( drgpos0.y() - e->pos().y() );
+	xmax = drgxmax0;
+	xmin = drgxmin0;
+	ymax = drgymax0;
+	ymin = drgymin0;
+
+	switch ( -drag )
+	{
+		case LeftButton:
+			xmax += dx;
+			xmin += dx;
+			ymax += dy;
+			ymin += dy;
+			break;
+		case MidButton:
+			xmax += dx;
+			ymax += dy;
+		case RightButton:
+			xmax += dx / 2.;
+			xmin -= dx / 2.;
+			ymax += dy / 2.;
+			ymin -= dy / 2.;
+			break;
+		default:
+			e->ignore();
+			return;
+	}
+	updateA(); // repaint?
+}
+
+void kinemaPlotCls::mouseReleaseEvent ( QMouseEvent *e )
+{
+	if ( drag <= 0 )
+	{
+		e->ignore();
+	}
+	else
+	{
+		switch ( e->button() )
+		{
+			case LeftButton:
+				showPos ( e->pos() );
+				break;
+			case RightButton:
+				showMenu();
+				break;
+			case MidButton:
+				if ( crossOn ) putCross ( e->x(), e->y() );
+				break;
+			default:
+				e->ignore();
+				return;
+		}
+		e->accept();
+	}
+	drag = 0;
 }
 
 void kinemaPlotCls::setXMin()
@@ -1420,6 +1540,18 @@ void kinemaPlotCls::setXMax()
 {
 	getInput ( "X Max = ", IR_XMAX );
 }
+void kinemaPlotCls::setNdx()
+{
+	getInput ( "Number of ticks in X = ", IR_NDX );
+}
+void kinemaPlotCls::setSdx()
+{
+	getInput ( "Number of Subdiv in X = ", IR_SDX );
+}
+void kinemaPlotCls::setdx()
+{
+	getInput ( "Ticks in X = ", IR_DX );
+}
 void kinemaPlotCls::setYMin()
 {
 	getInput ( "Y Min = ", IR_YMIN );
@@ -1428,46 +1560,72 @@ void kinemaPlotCls::setYMax()
 {
 	getInput ( "Y Max = ", IR_YMAX );
 }
+void kinemaPlotCls::setNdy()
+{
+	getInput ( "Number of ticks in Y = ", IR_NDY );
+}
+void kinemaPlotCls::setSdy()
+{
+	getInput ( "Number of subdiv in Y = ", IR_SDY );
+}
+void kinemaPlotCls::setdy()
+{
+	getInput ( "Ticks in Y = ", IR_DY );
+}
 void kinemaPlotCls::toggleDotOn()
 {
-	dotOn=!dotOn;
+	dotOn = !dotOn;
 	updateA();
 }
 void kinemaPlotCls::toggleMsrOn()
 {
-	msrOn=!msrOn;
+	msrOn = !msrOn;
 	updateA();
 }
 void kinemaPlotCls::toggleCrossOn()
 {
-	crossOn=!crossOn;
+	crossOn = !crossOn;
 	updateA();
 }
 void kinemaPlotCls::showMenu()
 {
 	QPopupMenu pm ( this );
+	QPopupMenu x ( this ),y ( this );
+
+	x.insertItem ( "Set Min", this, SLOT ( setXMin() ), ALT + Key_Left );
+	x.insertItem ( "Set Max", this, SLOT ( setXMax() ), ALT + Key_Right );
+	x.insertItem ( "Set Ticks", this, SLOT ( setdx() ), Key_X );
+	x.insertItem ( "Set Num Ticks", this, SLOT ( setNdx() ), CTRL + Key_X );
+	x.insertItem ( "Set Num Subdiv", this, SLOT ( setSdx() ), SHIFT + Key_X );
+
+	y.insertItem ( "Set Min", this, SLOT ( setYMin() ), ALT + Key_Down );
+	y.insertItem ( "Set Max", this, SLOT ( setYMax() ), ALT + Key_Up );
+	y.insertItem ( "Set Ticks", this, SLOT ( setdy() ), Key_Y );
+	y.insertItem ( "Set Num Ticks", this, SLOT ( setNdy() ), CTRL + Key_Y );
+	y.insertItem ( "Set Num Subdiv", this, SLOT ( setSdy() ), SHIFT + Key_Y );
+
 	pm.setFont ( theuifont );
 	pm.setCheckable ( true );
-	pm.insertItem ( "Set X Min",this,SLOT ( setXMin() ), ALT+Key_Left );
-	pm.insertItem ( "Set X Max",this,SLOT ( setXMax() ), ALT+Key_Right );
-	pm.insertItem ( "Set Y Min",this,SLOT ( setYMin() ), ALT+Key_Down );
-	pm.insertItem ( "Set Y Max",this,SLOT ( setYMax() ), ALT+Key_Up );
-	pm.insertSeparator();
-	int monid=pm.insertItem ( "Show grid", this, SLOT ( toggleMsrOn() ), Key_M );
-	int donid=pm.insertItem ( "Show dots", this, SLOT ( toggleDotOn() ), Key_D );
-	int conid=pm.insertItem ( "Show cross-hair", this, SLOT ( toggleCrossOn() ), Key_C );
-	pm.insertSeparator();
-	int pscid=pm.insertItem ( "Color (e)ps", this, SLOT ( toggleColorPS() ), Key_K );
-	pm.insertItem ( "Save/Print image as",this,SLOT ( saveas() ), QKeySequence ( CTRL+Key_S,CTRL+Key_P ) );
-	pm.insertSeparator();
-	pm.insertItem ( "Usage",this,SLOT ( showUsage() ), Key_H );
-	pm.insertSeparator();
-	pm.insertItem ( "Close",this,SLOT ( close() ), QKeySequence ( Key_Q, Key_Escape ) );
 
-	pm.setItemChecked ( pscid,colorps );
-	pm.setItemChecked ( donid,dotOn );
-	pm.setItemChecked ( monid,msrOn );
-	pm.setItemChecked ( conid,crossOn );
+	pm.insertItem ( "X axis", &x );
+	pm.insertItem ( "Y axis", &y );
+
+	pm.insertSeparator();
+	int monid = pm.insertItem ( "Show grid", this, SLOT ( toggleMsrOn() ), Key_M );
+	int donid = pm.insertItem ( "Show dots", this, SLOT ( toggleDotOn() ), Key_D );
+	int conid = pm.insertItem ( "Show cross-hair", this, SLOT ( toggleCrossOn() ), Key_C );
+	pm.insertSeparator();
+	int pscid = pm.insertItem ( "Color (e)ps", this, SLOT ( toggleColorPS() ), Key_K );
+	pm.insertItem ( "Save/Print image as", this, SLOT ( saveas() ), QKeySequence ( CTRL + Key_S, CTRL + Key_P ) );
+	pm.insertSeparator();
+	pm.insertItem ( "Usage", this, SLOT ( showUsage() ), Key_H );
+	pm.insertSeparator();
+	pm.insertItem ( "Close", this, SLOT ( close() ), QKeySequence ( Key_Q, Key_Escape ) );
+
+	pm.setItemChecked ( pscid, colorps );
+	pm.setItemChecked ( donid, dotOn );
+	pm.setItemChecked ( monid, msrOn );
+	pm.setItemChecked ( conid, crossOn );
 
 	pm.exec ( QCursor::pos() );
 }
@@ -1500,19 +1658,19 @@ void kinemaPlotCls::printPlot ( QString f )
 	}
 	pr.setResolution ( 100 ); // <<<<<<
 
-	QRect plotRectOrig=plotRect;
+	QRect plotRectOrig = plotRect;
 	QPainter p;
-	double const sf=8.0;
-	theWidth=width() *sf;
-	theHeight=height() *sf;
-	QWMatrix um ( 1./sf, 0., 0., 1./sf, 0., 0. );
+	double const sf = 8.0;
+	theWidth = width() * sf;
+	theHeight = height() * sf;
+	QWMatrix um ( 1. / sf, 0., 0., 1. / sf, 0., 0. );
 
 	p.begin ( &pr, this );
 	p.setWorldMatrix ( um );
-	int fontszorig=fontsz;
+	int fontszorig = fontsz;
 	setFontSize ( fontsz*sf );
 
-	setMeasureGeom ( theWidth,theHeight );
+	setMeasureGeom ( theWidth, theHeight );
 
 	if ( colorps )
 	{
@@ -1532,7 +1690,7 @@ void kinemaPlotCls::printPlot ( QString f )
 	drawPlots ( &p );
 	p.setClipping ( false );
 
-	if ( nycol>1&&showlegend && nlegend>0 ) drawLegend ( &p );
+	if ( nycol > 1 && showlegend && nlegend > 0 ) drawLegend ( &p );
 
 // draw Title
 	drawTitle ( &p );
@@ -1544,31 +1702,31 @@ void kinemaPlotCls::printPlot ( QString f )
 	setFontSize ( fontszorig );
 	if ( !colorps ) setPlotColors ( PC_COLOR );
 
-	setBB ( f,sf );
+	setBB ( f, sf );
 }
 
 void kinemaPlotCls::setBB ( QString f, double sf )
 {
-	QString ff=f+".kinemaplot-tmp"; // <<<<<<<<<
-	double const ptfac=1.389;
-	int xpt=NIN ( ( double ) theWidth/ptfac ) /sf;
-	int ypt=NIN ( ( double ) theHeight/ptfac ) /sf;
+	QString ff = f + ".kinemaplot-tmp"; // <<<<<<<<<
+	double const ptfac = 1.389;
+	int xpt = NIN ( ( double ) theWidth / ptfac ) / sf;
+	int ypt = NIN ( ( double ) theHeight / ptfac ) / sf;
 	QString com;
 	if ( f.endsWith ( ".eps" ) )
 	{
-		com="sed 's/%%BoundingBox.*/%%BoundingBox 0 0 "
-		    +QString::number ( ypt )
-		    +" "
-		    +QString::number ( xpt )
-		    +"/' ";
+		com = "sed 's/%%BoundingBox.*/%%BoundingBox 0 0 "
+		      + QString::number ( ypt )
+		      + " "
+		      + QString::number ( xpt )
+		      + "/' ";
 	}
 	else
 	{
-		com="sed '/%%BoundingBox.*/d' ";
+		com = "sed '/%%BoundingBox.*/d' ";
 	}
-	com.append ( f+">"+ff );
+	com.append ( f + ">" + ff );
 	system ( com );
-	com="mv "+ff+" "+f;
+	com = "mv " + ff + " " + f;
 	system ( com );
 }
 
@@ -1577,35 +1735,35 @@ void kinemaPlotCls::setPlotColors ( int mode )
 	switch ( mode )
 	{
 		case PC_COLOR:
-			colTitle="green"; // green
-			colLegendRect="gray"; // gray
-			colLegendText="green"; // green
-			colAxis="green"; // green
-			colSubMeasure=qRgb ( 0,50,0 ); // 0 50 0
-			colMeasureLabel="green"; // green
-			colMeasure="darkgreen";      // darkgreen
-			for ( int i=0;i<nycol;i++ ) pc[i]=pc_col[pc_indx[i]];
+			colTitle = "green"; // green
+			colLegendRect = "gray"; // gray
+			colLegendText = "green"; // green
+			colAxis = "green"; // green
+			colSubMeasure = qRgb ( 0, 50, 0 ); // 0 50 0
+			colMeasureLabel = "green"; // green
+			colMeasure = "darkgreen";    // darkgreen
+			for ( int i = 0;i < nycol;i++ ) pc[i] = pc_col[pc_indx[i]];
 			break;
 		case PC_MONO:
 		case PC_GRAY:
-			colTitle="black"; // green
-			colLegendRect="gray"; // gray
-			colLegendText="black"; // green
-			colAxis="black"; // green
-			colSubMeasure=qRgb ( 50,50,50 ); // 0 50 0
-			colMeasureLabel="black"; // green
-			colMeasure=qRgb ( 20,20,20 );   // darkgreen
-			for ( int i=0;i<nycol;i++ ) pc[i]="black";
+			colTitle = "black"; // green
+			colLegendRect = "gray"; // gray
+			colLegendText = "black"; // green
+			colAxis = "black"; // green
+			colSubMeasure = qRgb ( 50, 50, 50 ); // 0 50 0
+			colMeasureLabel = "black"; // green
+			colMeasure = qRgb ( 20, 20, 20 );  // darkgreen
+			for ( int i = 0;i < nycol;i++ ) pc[i] = "black";
 			break;
 	}
 }
 
 void kinemaPlotCls::toggleColorPS()
 {
-	colorps=!colorps;
-	messStr="colorps mode set to "+bool2str ( colorps );
-	messCol="skyblue";
-	timerid=startTimer ( messTime );
+	colorps = !colorps;
+	messStr = "colorps mode set to " + bool2str ( colorps );
+	messCol = "skyblue";
+	timerid = startTimer ( messTime );
 	updateA();
 }
 
@@ -1616,69 +1774,69 @@ void kinemaPlotCls::updateA()
 }
 void kinemaPlotCls::putCross ( int x, int y )
 {
-	if ( x<0||y<0 ) return;
+	if ( x < 0 || y < 0 ) return;
 	QPainter p ( this );
 	p.setRasterOp ( Qt::XorROP );
 	p.setPen ( "red" );
-	p.drawLine ( x0,y,width()-1,y );
-	p.drawLine ( x,0,x,y0 );
+	p.drawLine ( x0, y, width() - 1, y );
+	p.drawLine ( x, 0, x, y0 );
 }
 void kinemaPlotCls::drawCross ( int x, int y )
 {
-	if ( x<0||y<0 ) return;
-	putCross ( x,y );
-	cx=x;
-	cy=y;
+	if ( x < 0 || y < 0 ) return;
+	putCross ( x, y );
+	cx = x;
+	cy = y;
 }
 void kinemaPlotCls::eraseCross()
 {
-	drawCross ( cx,cy );
-	cx=-1;
-	cy=-1;
+	drawCross ( cx, cy );
+	cx = -1;
+	cy = -1;
 }
 
 int kinemaPlotCls::countPlotOn()
 {
-	int n=0;
-	for ( int iy=0;iy<nycol;iy++ ) if ( plotOn[iy] ) n++;
+	int n = 0;
+	for ( int iy = 0;iy < nycol;iy++ ) if ( plotOn[iy] ) n++;
 	return n;
 }
 
 void kinemaPlotCls::togglePlotOn ( int i )
 {
-	if ( i>nlinemax ) return;
-	plotOn[i-1]=!plotOn[i-1];
+	if ( i > nlinemax ) return;
+	plotOn[i-1] = !plotOn[i-1];
 	setYLabel();
 	updateA();
 }
 
 void kinemaPlotCls::changeLineCol ( int i, QColor c )
 {
-	pc[i]=c;
+	pc[i] = c;
 	updateA();
 }
 void kinemaPlotCls::changeLineCol ( int i, int ic )
 {
-  //	QColor myColor;
-  //	int result = KColorDialog::getColor ( myColor );
-	int iic=ic;
-	if ( iic>=nlinemax ) iic=0;
-	if ( iic<0 ) iic=nlinemax-1;
-	pc_indx[i]=iic;
-	changeLineCol ( i,pc_col[iic] );
+	//	QColor myColor;
+	//	int result = KColorDialog::getColor ( myColor );
+	int iic = ic;
+	if ( iic >= nlinemax ) iic = 0;
+	if ( iic < 0 ) iic = nlinemax - 1;
+	pc_indx[i] = iic;
+	changeLineCol ( i, pc_col[iic] );
 }
 
 #include <X11/Xlib.h>
 void kinemaPlotCls::getRootWindowSize ( int *w, int *h )
 {
-	*w=0;
-	*h=0;
+	*w = 0;
+	*h = 0;
 	Display *dpy = XOpenDisplay ( NULL );
-	if ( dpy==NULL ) return; // cannot open display
-	int screen=DefaultScreen ( dpy );
+	if ( dpy == NULL ) return; // cannot open display
+	int screen = DefaultScreen ( dpy );
 //	Window root=RootWindow ( dpy,screen );
-	*h=DisplayHeight ( dpy,screen );
-	*w=DisplayWidth ( dpy,screen );
+	*h = DisplayHeight ( dpy, screen );
+	*w = DisplayWidth ( dpy, screen );
 	XCloseDisplay ( dpy );
 }
 

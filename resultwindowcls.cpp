@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2014 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -43,6 +43,7 @@
 resultWindowCls::resultWindowCls ( QWidget *parent, const char *name, WFlags wf, int plotmask, bool *ext_in, KHistoryCombo **exprBox, int col_first, int nr, QString el, QString al, QString pl )
 		:resultWindow ( parent, name, wf )
 {
+	closemt.lock();
 	this->plotmask=plotmask;
 	msgLbl->clear();
 	nplots=0;
@@ -156,7 +157,7 @@ void resultWindowCls::setTable()
 			switch ( KMessageBox::questionYesNoCancel ( this,
 			         "Too Large Table!\n"
 			         +QString::number ( ir-nrow_hdr+1 ) +" of "+QString::number ( nrow-nrow_hdr )
-			         +"("+QString::number ( float ( ir-nrow_hdr+1 ) /float ( nrow-nrow_hdr ) *100. ) +"%) read\n"
+			         +" ("+QString::number ( float ( ir-nrow_hdr+1 ) /float ( nrow-nrow_hdr ) *100. ,'f',0 ) +"%) read\n"
 			         +"Continue?",
 			         "kinemaTable: Warning!",yes,no ) )
 			{
@@ -175,13 +176,26 @@ void resultWindowCls::setTable()
 	}
 done:
 	adjTable();
-	msgLbl->setPaletteForegroundColor ( "Green" );
-	msgLbl->setText ( "<b> Ready" );
+	msgLbl->setPaletteForegroundColor ( "DarkGreen" );
+	msgLbl->setText ( "<b>Ready" );
 	emit done();
+	closemt.unlock();
 }
 
 void resultWindowCls::timerEvent ( QTimerEvent *unused )
 {
+	if ( killmt.locked() )
+	{
+		killTimer ( timerid );
+		timerid=0;
+		eth->terminate(); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< danger
+		eth->wait();
+		closemt.unlock();
+		killmt.unlock();
+		this->close();
+		emit done();
+		return;
+	}
 	if ( *ndone>=0 )
 	{
 		msgLbl->setPaletteForegroundColor ( "blue" );
@@ -189,8 +203,10 @@ void resultWindowCls::timerEvent ( QTimerEvent *unused )
 		                  +QString::number ( *ndone ) +" of "+QString::number ( nrow-nrow_hdr ) +" done." );
 		return;
 	}
+	msgLbl->setText ( "<b>Loading table... Please wait" );
+	msgLbl->repaint();
 	killTimer ( timerid );
-	msgLbl->setText ( "<b> Loading table... Please wait" );
+	timerid=0;
 	setTable();
 }
 
@@ -202,8 +218,8 @@ void resultWindowCls::initResultDescBox ( QString reaction, double incidentEnerg
 	plotLbl=reaction+" K1="+s.sprintf ( fmt, incidentEnergy );
 	plotLbl+=" "+eu+" Ex="+s.sprintf ( fmt, Ex ) +" "+eu;
 	resultDescBox->append ( "Reaction: "+reaction );
-	resultDescBox->append ( "Mass: m2(m1, m3)m4 in AMU:" );
-	t=s.sprintf ( fmt,m2 ) +" ( ";
+	t="Mass: m2(m1, m3)m4 in AMU: ";
+	t+=s.sprintf ( fmt,m2 ) +" ( ";
 	t+=s.sprintf ( fmt,m1 ) +", ";
 	t+=s.sprintf ( fmt,m3 ) +" ) ";
 	t+=s.sprintf ( fmt,m4 );
@@ -235,10 +251,10 @@ void resultWindowCls::initCTI()
 		cti[ic]->setStringList ( s );
 		resultTable->setItem ( 0,ic,cti[ic] );
 	}
-	for ( int ir=1;ir<nrow;ir++ )
-	{
-		resultTable->setRowReadOnly ( ir,true );
-	}
+//	for ( int ir=1;ir<nrow;ir++ )
+//	{
+//		resultTable->setRowReadOnly ( ir,true );
+//	}
 }
 
 void resultWindowCls::saveasSlot()
@@ -306,10 +322,10 @@ void resultWindowCls::saveasSlot()
 void resultWindowCls::keyPressEvent ( QKeyEvent *e )
 {
 
-	if(e->state() & Qt::ControlButton)
+	if ( e->state() & Qt::ControlButton )
 	{
 		e->accept();
-		switch(e->key())
+		switch ( e->key() )
 		{
 			case Qt::Key_A:
 				selectAllTableItems();
@@ -323,7 +339,7 @@ void resultWindowCls::keyPressEvent ( QKeyEvent *e )
 			default:
 				break;
 		}
-	} 
+	}
 
 	switch ( e->key() )
 	{
@@ -343,7 +359,7 @@ void resultWindowCls::keyPressEvent ( QKeyEvent *e )
 		case Qt::Key_Minus:
 			changeFontSize ( -1 );
 			break;
-		case Qt::Key_F:
+		case Qt::Key_D:
 			if ( resultDescBox->isVisible() )
 			{
 				resultDescBox->hide();
@@ -353,6 +369,30 @@ void resultWindowCls::keyPressEvent ( QKeyEvent *e )
 			{
 				resultDescBox->show();
 				hideDescBut->setOn ( false );
+			}
+			break;
+		case Qt::Key_F:
+			if ( windowState() & Qt::WindowFullScreen )
+			{
+				setWindowState ( Qt::WindowNoState );
+			}
+			else
+			{
+				setWindowState ( Qt::WindowFullScreen );
+			}
+			break;
+		case Qt::Key_M:
+			if ( windowState() & Qt::WindowMaximized )
+			{
+				setWindowState ( Qt::WindowNoState );
+			}
+			else
+			{
+				if ( windowState() & Qt::WindowFullScreen )
+				{
+					setWindowState ( Qt::WindowNoState );
+				}
+				setWindowState ( Qt::WindowMaximized );
 			}
 			break;
 		default:
@@ -467,7 +507,7 @@ void resultWindowCls::changeFontSize ( int d )
 	}
 	f.setPointSize ( p );
 	setFont ( f );
-	resultTable->setFont(f);
+	resultTable->setFont ( f );
 	adjTable();
 }
 
@@ -491,6 +531,8 @@ void resultWindowCls::adjTable()
 	int h=resultTable->rowHeight ( 0 );
 	resultTable->setTopMargin ( h );
 	resultTable->horizontalHeader()->setFixedHeight ( h );
+	resultTable->setColumnMovingEnabled(true);
+	resultTable->setRowMovingEnabled(false);
 }
 
 void resultWindowCls::redSlot()
@@ -523,14 +565,26 @@ void resultWindowCls::plotDone()
 
 void resultWindowCls::closeEvent ( QCloseEvent *e )
 {
+	if ( closemt.locked() )
+	{
+		if ( !killmt.locked() )
+		{
+			killmt.lock();
+			msgLbl->setPaletteForegroundColor ( "red" );
+			msgLbl->setText ( "<b>Canceling..." );
+		}
+		e->ignore();
+		return;
+	}
 	if ( nplots==0 )
 	{
 		for ( int ic=0;ic<resultTable->numCols();ic++ )
 		{
+			if ( cti[ic]==0 ) break;
 			delete cti[ic];
+			cti[ic]=0;
 		}
 		e->accept();
-		emit done(); 
 	}
 	else
 	{
@@ -610,7 +664,7 @@ void resultWindowCls::showTableMenu()
 	pm.insertItem ( "clear plot selection",this,SLOT ( clearPlotSelect() ), CTRL+Key_U );
 	pm.insertSeparator();
 	pm.insertSeparator();
-	pm.insertItem ( "close",this,SLOT ( close() ), QKeySequence(Key_Q, Key_Escape) );
+	pm.insertItem ( "close",this,SLOT ( close() ), QKeySequence ( Key_Q, Key_Escape ) );
 	pm.exec ( QCursor::pos() );
 }
 

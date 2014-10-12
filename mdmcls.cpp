@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2014 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -72,7 +72,15 @@ void mdmCls::openMassData ( int A )
 		f+=QString::number ( A );
 	}
 	f+=".dat";
+	EBox->blockSignals(true);
 	EBox->clear();
+	EBox->blockSignals(false);
+	EeditBox->blockSignals(true);
+	EeditBox->clear();
+	EeditBox->blockSignals(false);
+	massBox->blockSignals(true);
+	massBox->clear();
+	massBox->blockSignals(false);
 
 	QStringList EList;
 	EList.clear();
@@ -91,10 +99,11 @@ void mdmCls::openMassData ( int A )
 			MList += line.section ( " ",1,1 );
 		}
 		file.close();
-		setReady ( true );
 		EBox->insertStringList ( EList );
+		setReady ( true );
 		mess ( "Data file opened: "+f );
 		currentFileExists=true;
+		EBox->setCurrentItem(0);
 	}
 	else
 	{
@@ -180,7 +189,6 @@ double mdmCls::readMass ( double m )
 }
 
 void mdmCls::showMass ( QString m )
-
 {
 	bool ok;
 	double mass=m.toDouble ( &ok );
@@ -269,28 +277,25 @@ void mdmCls::EBoxSlot()
 	QStringList::Iterator it = MList.at ( EBox->currentItem() );
 	if ( it!=NULL )
 	{
-		showMass ( *it );
+		int z=getZ ( EBox->currentText().simplifyWhiteSpace() );
+		if(z>0)
+		{
+			currentZ=z;
+			ZLbl->setText ( QString::number ( z ) );
+			stripBox->setEnabled ( true );
+		}else{
+			currentZ=0;
+			stripBox->setEnabled ( false );
+			if(currentA==0){
+				ZLbl->setText ( "N/A" );
+			}else{
+				ZLbl->setText ( "0" );
+			}
+		}
 		EeditBox->blockSignals ( true );
 		EeditBox->setText ( EBox->currentText() );
 		EeditBox->blockSignals ( false );
-		if ( currentA>0 )
-		{
-			int z=getZ ( EBox->currentText().simplifyWhiteSpace() );
-			if ( z>0 ) ZLbl->setText ( QString::number ( z ) );
-			currentZ=z;
-			if ( z>0 )
-			{
-				stripBox->setEnabled ( true );
-			}
-			else
-			{
-				stripBox->setEnabled ( false );
-			}
-		}
-		else
-		{
-			ZLbl->setText ( "N/A" );
-		}
+		showMass ( *it );
 	}
 }
 
@@ -311,12 +316,9 @@ void mdmCls::changeASlot()
 		return;
 	}
 	discardOk=0;
-
 	currentA=ABox->value();
 	showExcessBox->setEnabled ( currentA!=0 );
 	openMassData ( currentA );
-	EeditBox->clear();
-	massBox->clear();
 	appBut->setEnabled ( false );
 }
 
@@ -591,9 +593,9 @@ void mdmCls::extMassDataSlot()
 		ofile.close();
 		if ( start )
 		{
-			*massdata=foutd;
 			mess ( "Creating mass data done: "+QString::number ( nf ) +" files","blue" );
-			emit ( updateMass() );
+			setDefaultBut->setEnabled(true);
+			newmassdata=foutd;
 		}
 		else
 		{
@@ -604,7 +606,14 @@ void mdmCls::extMassDataSlot()
 	{
 		warn ( "Failed to read: "+fin );
 	}
-	openMassData ( 0 );
+}
+
+void mdmCls::setDefaultSlot()
+{
+	*massdata=newmassdata;
+	emit ( updateMass() );
+	openMassData(0);
+	setDefaultBut->setEnabled(false);
 }
 
 void mdmCls::warn ( QString mess )
@@ -691,14 +700,12 @@ int mdmCls::getZ_from_List ( QString n, const char **el )
 int mdmCls::getZ ( QString n )
 {
 	int z;
-
 	z=getZ_from_List ( n, Element );
 	if ( z==-1 )
 	{
 		z=getZ_from_List ( n, newElement );
 		if ( z!=-1 ) z+=Zmin_new-1;
 	}
-
 	return z;
 }
 

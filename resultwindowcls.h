@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2012,2014 by Kazuaki Kumagai                       *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -64,6 +64,7 @@ class resultWindowCls: public resultWindow
 		QString *homedir;
 		QStringList *sl;
 		int *ndone;
+		rwThreadCls *eth;
 
 	private:
 		void setPlotPoints ( int ,int ,int,int );
@@ -85,6 +86,8 @@ class resultWindowCls: public resultWindow
 		int nplots;
 		bool ext[nexpmax];
 		int ncolext;
+		QMutex closemt;
+		QMutex killmt;
 
 	private slots:
 		void saveasSlot();
@@ -94,7 +97,7 @@ class resultWindowCls: public resultWindow
 		void hideDescSlot();
 		void plotDone();
 		void setTable();
-		void clearPlotSelect(int s=0);
+		void clearPlotSelect ( int s=0 );
 		void showTableMenu();
 		void copyTableItems();
 		void selectAllTableItems();
@@ -106,7 +109,6 @@ class resultWindowCls: public resultWindow
 
 	signals:
 		void done ( void );
-
 };
 
 #endif

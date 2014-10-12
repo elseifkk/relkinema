@@ -1,8 +1,8 @@
-RelKinema version 0.5.4
+RelKinema version 0.5.5
 ========= ======= =====
 
 Relativistic two-body kinematics calculator for nuclear reaction,
-including mass data manager, table browser and plotter.
+including atomic mass data manager, table viewer and plotter.
 
 
 
@@ -12,12 +12,12 @@ Requirements
 
 RelKinema mainly depends on the following packages:
 
-libfzcal-0.0.4
-gfortran-4.6.1 or higher
-kdelibs-3.5.10
-qt-3.3.8
+  libfzcal-0.0.5_1
+  gfortran-4.6.1 or higher
+  kdelibs-3.5.10
+  qt-3.3.8
 
-Note that it cannot build with qt4/kde4 or above.
+Note that it cannot build with qt4/kde4 environment or above.
 
 
 
@@ -34,28 +34,29 @@ by FC and FCFLAGS variable, respectively. For some fortran compilers
 that does not support quad-precision, the following parameter might be
 necessary:
 
-setenv FCFLAGS "-D_NO_REAL10_ -D_NO_REAL16_"
+  setenv FCFLAGS "-D_NO_REAL10_ -D_NO_REAL16_"
 
 RelKinema depends on libfzcal for evaluating user-defined expressions
 with kinematic parameters, available at: 
 
-http://sourceforge.net/projects/fzcal/
+  http://sourceforge.net/projects/fzcal/
 
-When compiled by gfortran libfzcal will depend on libgfortran, and
-path for the library might be necessary for LDFLAGS.
+Since libfzcal depends on libgfortran, path for the library might be
+necessary for LDFLAGS.
 
 Note that for some systems, qt3/kde3 environment might work
 unexpectedly if qt4/kde4 coexists. Coexistence of different versions
 of gcc (gfortran) can also cause problem at run-time, to which we
-suggest use of LD_RUN_PATH at linking-time as a workaround.
+suggest use of LD_RUN_PATH at linking-time as a workaround. In some
+cases it is necessary to make LIBRARY_PATH include path for crti.o. 
 
 Here's an example of build steps:
 
-setenv FC /usr/local/bin/gfortran
-setenv FCFLAGS "-cpp -fcray-pointer -O2 -g0 -fdefault-integer-8"
-setenv CXXFLAGS "-O2 -g0"
-./configure --prefix=/usr/local --without-arts
-gmake install
+  setenv FC /usr/local/bin/gfortran
+  setenv FCFLAGS "-cpp -fcray-pointer -O2 -g0 -fdefault-integer-8"
+  setenv CXXFLAGS "-O2 -g0"
+  ./configure --prefix=/usr/local --without-arts
+  gmake install
 
 
 
@@ -65,9 +66,9 @@ Atomic mass data
 
 RelKinema depends on atomic mass data files located in a local directory.
 The current version uses files extracted from a source data file available
-at (as of Aug 29, 2013):
+at (as of Oct 12, 2014):
 
-http://amdc.in2p3.fr/masstables/Ame2003/mass.mas03
+  http://amdc.in2p3.fr/masstables/Ame2012/mass.mas12
 
 
 
@@ -89,7 +90,8 @@ Note
 
 Key bindings
 ============
-Escape	discard keyboard input focus
+
+Escape	discard keyboard input focus on text box
 A	show popup menu
 M	invoke mass data manager
 T	open table&plot window
@@ -109,10 +111,10 @@ Notations
 =========
 
 We assume a nuclear reaction of type m2(m1,m3)m4', where
-  m1:    projectile,
-  m2:    target,
-  m3:    ejectile,
-  m4':   residual including excitation energy (m4+Ex).
+    m1:    projectile,
+    m2:    target,
+    m3:    ejectile,
+    m4':   residual including excitation energy (m4+Ex).
 
 (Lab. frame)
                      m3
@@ -140,7 +142,7 @@ and the total energy of the projectile is written as,
 The four-momentum in center of mass (CM) frame can be written as, for
 example,
 
-    E3c = gamma ( E3 - beta * p3 * cos(th3)),
+    E3c = gamma * ( E3 - beta * p3 * cos(th3)),
 
 where gamma=1/sqrt(1-beta^2), and beta is relative speed of Lab. frame
 to CM.
@@ -179,16 +181,22 @@ KS;               kinematic shift (dK3/dth3),
 KF;               kinematic factor (dp3/dth3/p3).
 
 These parameters are case-sensitive and read-only, and passed by
-reference to libfzcal in quad-precsion, if possible.
+reference to libfzcal in quad-precision, if possible.
 
 The results are always in MeV for energy and the angles in radian. 
 
-In the calculator you can define new parameters such as, v3=p3/E3,
+In the calculator you can define new parameters such as, 
+
+  v3=p3/E3
+
 which can also be used in the custom evaluation box. Note that the
 newly defined parameters are temporary, i.e., parameters in RHS are
-passed by value. If defined as v3="p3/E3", v3 becomes a macro para-
-meter and will reflect changes (parameters in RHS will be passed by 
-reference).
+passed by value, however, if defined as 
+
+  v3="p3/E3"
+
+v3 becomes a macro parameter and will reflect changes in p3 and E3
+(parameters in RHS will be passed by reference).
 
 
 
@@ -207,5 +215,6 @@ Contacts
 ========
 
 All reports and requests are welcome to
-http://sourceforge.net/projects/relkinema/
-E-Mail: elseifkk@gmail.com
+
+  http://sourceforge.net/projects/relkinema/
+  E-Mail: elseifkk@gmail.com

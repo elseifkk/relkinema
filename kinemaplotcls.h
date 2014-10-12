@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2012,2014 by Kazuaki Kumagai                       *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -83,12 +83,13 @@ class kinemaPlotCls: public kinemaPlot
 		void eraseCross();
 		void putCross ( int,int );
 		void updateA();
-		void procLB ( QPoint );
+		void procBP ( QPoint );
 		void setYLabel();
 		void togglePlotOn ( int );
 		int countPlotOn();
 		void changeLineCol ( int,int );
 		void changeLineCol ( int,QColor );
+		void showPos(QPoint p);
 
 	private:
 		QString *homedir;
@@ -140,6 +141,7 @@ class kinemaPlotCls: public kinemaPlot
 		QMutex rveto;
 		QMutex pveto;
 		QMutex mveto;
+		QMutex closemt;
 		QColor colTitle; // green
 		QColor colLegendRect; // gray
 		QColor colLegendText; // green
@@ -167,6 +169,8 @@ class kinemaPlotCls: public kinemaPlot
 		int lg_lw;
 		int lg_hmar,lg_vmar;
 		int nlegend;
+		int theMeasurePrecX;
+		int theMeasurePrecY;
 
 		template<typename T>T**AllocMatrix ( int u,int v )
 		{
@@ -187,8 +191,14 @@ class kinemaPlotCls: public kinemaPlot
 		void readInput();
 		void setXMin();
 		void setXMax();
+		void setSdx();
+		void setNdx();
+		void setdx();
 		void setYMin();
 		void setYMax();
+		void setSdy();
+		void setNdy();
+		void setdy();
 		void showUsage();
 		void toggleColorPS();
 		void saveas ( int mode=0 );

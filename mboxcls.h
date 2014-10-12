@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2010 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2010,2014 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -22,17 +22,13 @@
 
 #include "message.h"
 
-#include <qlabel.h>
-
 class mboxCls: public mBox
 {
 		Q_OBJECT
 	public:
-		mboxCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, QString mess="", QString title="",
-		          QFont font = QFont ( "Sans Serif", 11) );
+		mboxCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, QString mess="", QString title="", QFont font = QFont ( "Sans Serif", 11), int w=300, int h=200 );
 
 	public:
-		QLabel *mlbl;
 
 	protected:
 		void keyPressEvent ( QKeyEvent* );

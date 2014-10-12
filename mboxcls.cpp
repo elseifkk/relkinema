@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Kazuaki Kumagai                                 *
+ *   Copyright (C) 2011,2014 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -20,18 +20,19 @@
 #include "mboxcls.h"
 #include <qlabel.h>
 #include <qevent.h>
+#include <qtextedit.h>
+#include <qcursor.h>
 
-mboxCls::mboxCls ( QWidget *parent, const char *name, WFlags wf, QString mess , QString title, QFont font )
+mboxCls::mboxCls ( QWidget *parent, const char *name, WFlags wf,
+		   QString mess , QString title, QFont font, int w, int h )
 		:mBox ( parent, name, wf )
 {
+	textEdit->setReadOnly(true);
 	setFont ( font );
-	QLabel *mlbl=new QLabel ( this );
 	setCaption ( title );
-	mlbl->setFont ( font );
-	mlbl->setText ( mess );
-	mlbl->adjustSize();
-	resize ( mlbl->size().width(),mlbl->size().height() );
-	mlbl->move ( ( width()-mlbl->width() ) /2., ( height()-mlbl->height() ) /2. );
+	textEdit->setFont(font);
+	textEdit->setText(mess);
+	resize(w,h);
 }
 
 void mboxCls::keyPressEvent ( QKeyEvent*e )
@@ -43,12 +44,16 @@ void mboxCls::keyPressEvent ( QKeyEvent*e )
 		case Qt::Key_Return:
 		case Qt::Key_Enter:
 			close();
+			e->accept();
+			return;
 	}
+	e->ignore();
 }
 
 void mboxCls::closeEvent ( QCloseEvent *e )
 {
-//	delete mlbl; cause SIGINV
+	if(textEdit!=0) delete textEdit;
+	textEdit=0;
 	e->accept();
 }
 

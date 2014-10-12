@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2012,2014 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -43,9 +43,9 @@ QString const expr[nexpmax]={"expr1", "expr2", "expr3", "expr4"};
 class rwThreadCls: public QThread
 {
 	public:
-		rwThreadCls ( double step, double rmin, int irmax, size_t prkc, int sid, QString fmt,
+		rwThreadCls ( double step, double rmin, double rmax, int irmax, size_t prkc, int sid, QString fmt,
 		              int col_first, size_t pfzc, int plotmask, bool *ext_in )
-				:step ( step ), rmin ( rmin ), irmax ( irmax ),
+				:step ( step ), rmin ( rmin ), rmax ( rmax ), irmax ( irmax ),
 				prkc ( prkc ), sid ( sid ), fmt ( fmt ),
 				col_first ( col_first ), pfzc ( pfzc ), plotmask ( plotmask ) {ndone=0; memcpy ( &ext, ext_in, sizeof ( bool ) *nexpmax );}
 
@@ -55,7 +55,7 @@ class rwThreadCls: public QThread
 
 	private:
 		double step;
-		double rmin;
+		double rmin,rmax;
 		int irmax;
 		size_t prkc;
 		int sid;

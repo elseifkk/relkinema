@@ -1,5 +1,5 @@
 !/***************************************************************************
-! *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+! *   Copyright (C) 2011-2014 by Kazuaki Kumagai                            *
 ! *   elseifkk@users.sf.net                                                 *
 ! *                                                                         *
 ! *   This program is free software; you can redistribute it and/or modify  *
@@ -1286,7 +1286,11 @@ contains
     c=cos(th3c)
     J3=(gamma*p3*(p3c+beta*E3c*c))/(p3c*p3c)
     J4=(gamma*p4*(p4c-beta*E4c*c))/(p4c*p4c)
-    KShift=sin(th3)*J3*gamma*p3c*beta
+    if(th3/=pi) then
+       KShift=sin(th3)*J3*gamma*p3c*beta
+    else
+       KShift=rzero
+    end if
     if(p3/=rzero) then
        KFactor=KShift*E3/(p3*p3)
     else

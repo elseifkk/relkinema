@@ -33,6 +33,7 @@ class rkCalcCls: public rkCalcDlg
 		rkCalcCls ( QWidget *parent = 0, const char *name = 0, WFlags wf=0, const QString *configfile = 0, size_t pfzc = 0 )
 				:rkCalcDlg ( parent, name, wf ), configfile ( configfile ), pfzc ( pfzc ) {nextpara=0;};
 		bool initRKC();
+		static QString rkcErrStr(int rc); 
 
 	private:
 		void saveConfig ( QString );

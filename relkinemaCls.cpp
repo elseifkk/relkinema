@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2014 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -52,6 +52,7 @@
 #include <qtable.h>
 #include <qcursor.h>
 #include <qdialog.h>
+#include <qcursor.h>
 
 #include <kconfig.h>
 #include <knuminput.h>
@@ -134,7 +135,7 @@ rwThreadCls *rwt=0;
 
 double const thetaStepMin=0.0001;
 int const thetaStepPrec = 4;
-double const thetaStepMax = 1.0e4;
+double const thetaStepMax = 180.;
 
 RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
                              const char *v, QString conf )
@@ -221,6 +222,7 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	}
 	else
 	{
+		fzc_set_mode ( pfzc,FZCOPT_NO_AUTO_ADD_PAR | FZCOPT_NO_STDOUT );
 		registParams ( prkc,pfzc );
 	}
 
@@ -266,10 +268,8 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	calcBut->setEnabled ( false );
 	EmissionBox->setEnabled ( false );
 
-	thetaStepBox->setPrecision ( thetaStepPrec );
-	thetaStepBox->setMaxValue ( thetaStepMax );
 	thetaStepBox->blockSignals ( true );
-	thetaStepBox->setValue ( 1.0 );
+	thetaStepBox->setText ( "1.0" );
 	thetaStepBox->blockSignals ( false );
 
 	int aa1=a1,aa2=a2,aa3=a3,aa4=a4;
@@ -288,6 +288,23 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	for ( int i=4;i<8;i++ ) flipoff[i]=- ( i-4 ) *8;
 	flipoff[8]=-4;//<<<<<<<<<<<<
 	timerid=startTimer ( 80 );
+
+	MProjLbl->setCursor ( IbeamCursor );
+	MTargLbl->setCursor ( IbeamCursor );
+	MResiLbl->setCursor ( IbeamCursor );
+	MEjecLbl->setCursor ( IbeamCursor );
+
+	K1thLbl->setCursor ( IbeamCursor );
+	K1cthLbl->setCursor ( IbeamCursor );
+	p1thLbl->setCursor ( IbeamCursor );
+	p1cthLbl->setCursor ( IbeamCursor );
+	ExmaxLbl->setCursor ( IbeamCursor );
+
+	betaLbl->setCursor ( IbeamCursor );
+	gammaLbl->setCursor ( IbeamCursor );
+	gammabetaLbl->setCursor ( IbeamCursor );
+
+	thetaMaxLbl->setCursor ( IbeamCursor );
 }
 
 int RelKinemaCls::adjCol ( bool *d, int c, int *off )
@@ -484,7 +501,7 @@ void  RelKinemaCls::closeEvent ( QCloseEvent *unused )
 {
 	saveConfig ( CONFIGFILE );
 	close();
-	printf("thank you\n٩(๑❛ᴗ❛๑)۶\n");
+	printf ( "thank you\n٩(๑❛ᴗ❛๑)۶\n" );
 	exit ( 0 );
 }
 
@@ -1158,7 +1175,6 @@ void RelKinemaCls::compRect()
 	af=abs ( a3 ) +abs ( a4 );
 	zf=z3+z4;
 
-	int k;
 	for ( i=0;i<4;i++ )
 	{
 		if ( !rectSet[i] )
@@ -1192,7 +1208,6 @@ void RelKinemaCls::compRect()
 					EB=EResiBox;
 					break;
 			}
-			k=i;
 			break;
 		}
 	}
@@ -1261,21 +1276,29 @@ void RelKinemaCls::setK1cth()
 {
 	K1cth=rkc_get_K1cMin ( prkc );
 	p1cth=rkc_get_p1cMin ( prkc );
-	showEnergyL ( K1cth,K1cthLbl,"> " );
-	showEnergyL ( p1cth,p1cthLbl,"> " );
+	showEnergyL ( K1cth,K1cthLbl,rectCondSym );
+	showEnergyL ( p1cth,p1cthLbl,rectCondSym );
 }
 
 void RelKinemaCls::setK1th()
 {
 	K1th=rkc_get_K1Min ( prkc );
 	p1th=rkc_get_p1Min ( prkc );
-	showEnergyL ( K1th,K1thLbl,"> " );
-	showEnergyL ( p1th, p1thLbl,"> " );
+	showEnergyL ( K1th,K1thLbl,rectCondSym );
+	showEnergyL ( p1th, p1thLbl,rectCondSym );
 }
 
 void RelKinemaCls::setQValue()
 {
 	QValue=rkc_get_QValue ( prkc );
+	if ( QValue>0.0 )
+	{
+		rectCondSym=">=";
+	}
+	else
+	{
+		rectCondSym=">";
+	}
 	showEnergyLE ( QValue,QValueBox );
 }
 
@@ -1350,7 +1373,7 @@ void RelKinemaCls::rectCondSlot_p1()
 	showStrLE ( "",K1cBox );
 	showStrLE ( "",p1cBox );
 	showStrLE ( "",ExmaxLbl );
-	if ( !ok || v<=0. ) return;
+	if ( !ok || v<0. ) return;
 
 	rkc_set_p1 ( prkc,v );
 	p1=rkc_get_p1 ( prkc );
@@ -1371,7 +1394,7 @@ void RelKinemaCls::rectCondSlot_p1c()
 	showStrLE ( "",K1cBox );
 	showStrLE ( "",p1Box );
 	showStrLE ( "",ExmaxLbl );
-	if ( !ok || v<=0. ) return;
+	if ( !ok || v<0. ) return;
 
 	rkc_set_p1c ( prkc,v );
 	p1c=rkc_get_p1c ( prkc );
@@ -1437,7 +1460,7 @@ void RelKinemaCls::rectCondSlot_K1()
 	showStrLE ( "",p1Box );
 	showStrLE ( "",p1cBox );
 	showStrLE ( "",ExmaxLbl );
-	if ( !ok || v<= 0. ) return;
+	if ( !ok || v< 0. ) return;
 
 	rkc_set_K1 ( prkc,v );
 	K1=rkc_get_K1 ( prkc );
@@ -1466,7 +1489,7 @@ void RelKinemaCls::rectCondSlot_K1c()
 	showStrLE ( "",p1Box );
 	showStrLE ( "",p1cBox );
 	showStrLE ( "",ExmaxLbl );
-	if ( !ok || v<= 0. ) return;
+	if ( !ok || v< 0. ) return;
 
 	rkc_set_K1c ( prkc,v );
 	K1c=rkc_get_K1c ( prkc );
@@ -1502,7 +1525,7 @@ void RelKinemaCls::rectCondSlot_Ex()
 
 bool RelKinemaCls::checkRectCond()
 {
-	K1Set= ( K1>=K1th );
+	K1Set= ( K1>=K1th ) &&! ( QValue==0&&K1==0 );
 	ExOk= ( Ex<=Exmax );
 	if ( ExOk )
 	{
@@ -1635,14 +1658,19 @@ void RelKinemaCls::changeAUnitSlot()
 			v=th3c;
 			break;
 		case ST_Q:
+			th3c=rkc_get_th3c ( prkc );
+			th3=rkc_get_th3 ( prkc );
 			min=qmin;
 			max=qmax;
 			v=theq;
 			break;
 	}
 	showThetaMax();
-	setThetaBarStep ( min,max,thetaStepBox->value(),v );
-	if ( ThetaLabBox->text().toDouble() ==0. ) resetThetaLab();
+	bool ok;
+	double d=thetaStepBox->text().toDouble ( &ok );
+	if ( ok ) setThetaBarStep ( min,max,d,v );
+	if ( ThetaLabBox->text().toDouble() == 0. ) resetThetaLab();
+	if ( scrTypeBox->currentItem() ==ST_Q ) qSlot ( true );
 }
 
 void RelKinemaCls::showValueLE ( double v, QLineEdit *b )
@@ -1686,7 +1714,7 @@ void RelKinemaCls::initResultBox()
 
 double RelKinemaCls::getThetaBarPos()
 {
-	double v=thetaBar->value() *thetaStepBox->value() +*tbMin;
+	double v=thetaBar->value() *thetaStepBox->text().toDouble() +*tbMin;
 	return v>*tbMax? *tbMax: v;
 }
 
@@ -2021,7 +2049,7 @@ void RelKinemaCls::scrTypeSlot()
 {
 	bool ok;
 	double v=0;
-	double d=thetaStepBox->value();
+	double d=thetaStepBox->text().toDouble();
 	double max=0,min=0;
 	void ( RelKinemaCls::*eval ) ();
 	QString unit;
@@ -2096,11 +2124,13 @@ void RelKinemaCls::setThetaBarStep ( double min, double max, double d, double v 
 		d=max/100.0;
 		if ( d<min ) d=min;
 		thetaStepBox->blockSignals ( true );
-		thetaStepBox->setValue ( d=getExpValue ( d ) );
+		QString s;
+		s.setNum ( d=getExpValue ( d ) );
+		thetaStepBox->setText ( s );
 		thetaStepBox->blockSignals ( false );
 	}
 	int n=floor ( ( max-min ) /d+0.5 );
-	if ( *tbMax>n*thetaStepBox->value() +*tbMin ) n++;
+	if ( *tbMax>n*thetaStepBox->text().toDouble() +*tbMin ) n++;
 	thetaBar->setMinValue ( 0 );
 	thetaBar->setMaxValue ( n );
 	int i=floor ( ( v-*tbMin ) /d+0.5 );
@@ -2284,6 +2314,14 @@ void RelKinemaCls::stripSlot()
 
 void RelKinemaCls::showResultListSlot()
 {
+	bool ok;
+	double d=thetaStepBox->text().toDouble ( &ok );
+	if ( !ok || d<=0 )
+	{
+		KMessageBox::sorry ( this,"Invalid steps of the calculation ","" );
+		return;
+	}
+
 	bool exprPlot[4]={plot1Box->isChecked(),
 	                  plot2Box->isChecked(),
 	                  plot3Box->isChecked(),
@@ -2318,14 +2356,40 @@ void RelKinemaCls::showResultListSlot()
 	}
 	if ( np==0&&plotmask==0 )
 	{
-		KMessageBox::sorry ( this,"No item specified for plot.","" );
+		KMessageBox::sorry ( this,"No item specified for table","" );
 		return;
 	}
+	QString range;
+	double smin,smax;
+	range=scrMinBox->text();
+	if ( !range.isEmpty() )
+	{
+		smin=range.toDouble ( &ok );
+		if ( !ok||smin<*tbMin ) smin=*tbMin;
+	}
+	else
+	{
+		smin=*tbMin;
+	}
+	range=scrMaxBox->text();
+	if ( !range.isEmpty() )
+	{
+		smax=range.toDouble ( &ok );
+		if ( !ok||smax>*tbMax ) smax=*tbMax;
+	}
+	else
+	{
+		smax=*tbMax;
+	}
+	if ( smax<=smin )
+	{
+		KMessageBox::sorry ( this,"Invalid range","" );
+		return;
+	}
+	int nr= ( smax-smin ) /d+1;
+	if ( ( nr-1 ) *d+smin<smax ) nr++;
 
 	tableBut->setEnabled ( false );
-	int irmin=thetaBar->minValue();
-	int irmax=thetaBar->maxValue();
-	int nr=irmax-irmin+1;
 	QString el=EUnitBox->currentText();
 	QString pl=el+"/c";
 	QString al;
@@ -2353,16 +2417,16 @@ void RelKinemaCls::showResultListSlot()
 	{
 		pfzc_dmy=0;
 	}
-	rwt = new rwThreadCls ( thetaStepBox->value(), *tbMin, irmax,
+	rwt = new rwThreadCls ( d, smin, smax, nr-1,
 	                        prkc_dmy, scrTypeBox->currentItem(), double_format,
 	                        col_first, pfzc_dmy, plotmask, exprPlot );
 	connect ( win,SIGNAL ( done ( void ) ),this,SLOT ( teDone ( void ) ) );
+	win->eth=rwt;
 	win->sl=&rwt->sl;
 	win->ndone=&rwt->ndone;
-	stopBut->setEnabled ( true );
-	win->show();
 	rwt->start();
 	win->startPoll();
+	win->show();
 }
 
 void RelKinemaCls::teDone ( void )
@@ -2372,15 +2436,15 @@ void RelKinemaCls::teDone ( void )
 	if ( pfzc_dmy!=0 ) fzc_uinit ( pfzc_dmy );
 	rwt=0; prkc_dmy=0; pfzc_dmy=0;
 	tableBut->setEnabled ( true );
-	stopBut->setEnabled ( false );
 }
 
 void RelKinemaCls::thetaStepSlot()
 {
-	double d=thetaStepBox->value();
+	bool ok;
+	double d=thetaStepBox->text().toDouble ( &ok );
+	if ( !ok ) return;
 	double max=0,min=0;
 	double v;
-	bool ok;
 	switch ( scrTypeBox->currentItem() )
 	{
 		case ST_THETALAB:
@@ -2411,7 +2475,9 @@ void RelKinemaCls::thetaStepSlot()
 void RelKinemaCls::updateThetaBar()
 {
 	double v=0;
-	double d=thetaStepBox->value();
+	bool ok;
+	double d=thetaStepBox->text().toDouble ( &ok );
+	if ( !ok ) return;
 	switch ( scrTypeBox->currentItem() )
 	{
 		case ST_THETALAB:
@@ -2512,13 +2578,13 @@ void RelKinemaCls::keyPressEvent ( QKeyEvent *e )
 				showMenu();
 				break;
 			case Qt::Key_1:
-				EmissionBox->showPage(EmissionBox->page(0));
+				EmissionBox->showPage ( EmissionBox->page ( 0 ) );
 				break;
 			case Qt::Key_2:
-				EmissionBox->showPage(EmissionBox->page(1));
+				EmissionBox->showPage ( EmissionBox->page ( 1 ) );
 				break;
 			case Qt::Key_3:
-				EmissionBox->showPage(EmissionBox->page(2));
+				EmissionBox->showPage ( EmissionBox->page ( 2 ) );
 				break;
 			default:
 				e->ignore();
@@ -2796,10 +2862,12 @@ void RelKinemaCls::calcSlot()
 	win->show();
 }
 
+/*
 void RelKinemaCls::stopSlot()
 {
 	stopBut->setEnabled ( false );
 }
+*/
 
 void RelKinemaCls::mousePressEvent ( QMouseEvent *e )
 {
@@ -3060,20 +3128,6 @@ void RelKinemaCls::loadDefConfSlot()
 	initSettingsPage ( true );
 }
 
-void RelKinemaCls::decStepSlot()
-{
-	double v=thetaStepBox->value() /10.0;
-	v=thetaStepMin>v?thetaStepMin:v;
-	thetaStepBox->setValue ( v );
-}
-
-void RelKinemaCls::incStepSlot()
-{
-	double v=thetaStepBox->value() *10.0;
-	v=thetaStepMax<v?thetaStepMax:v;
-	thetaStepBox->setValue ( v );
-}
-
 void RelKinemaCls::expr1Slot()
 {
 	exprSlot ( 0 );
@@ -3144,10 +3198,8 @@ void RelKinemaCls::exprSetSlot ( int id, bool setHist )
 	char cstr[LEN_FZCSTR_MAX];
 	strcpy ( cstr,str.latin1() );
 
-	fzc_set_mode ( pfzc,FZCOPT_NOAUTO_ADDPAR | FZCOPT_NOSTDOUT );
-	int k=0;
-
-	if ( fzc_setparse_formula ( pfzc, ( size_t ) &cstr ) == FZCSTA_MACSET )
+	int rc=fzc_setparse_formula ( pfzc, ( size_t ) &cstr );
+	if ( rc == FZCSTA_MACSET )
 	{
 		exprSet[id]=true;
 		updateExprSlot();
@@ -3169,10 +3221,9 @@ void RelKinemaCls::exprSetSlot ( int id, bool setHist )
 	}
 	else
 	{
-		exprWarn ( id, "Syntax error" );
+		exprWarn ( id, rkCalcCls::rkcErrStr ( rc ) );
 		plotBox[id]->setEnabled ( false );
 	}
-	fzc_cle_mode ( pfzc,FZCOPT_NOAUTO_ADDPAR | FZCOPT_NOSTDOUT );
 }
 
 void RelKinemaCls::updateExprSlot()

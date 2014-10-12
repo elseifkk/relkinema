@@ -1,3 +1,20 @@
+v0.5.5
+
+* FIX: main loop crashes when table window is closed.
+* FIX: deg/rad button does not work when scrtype=q
+* FIX: zero incident energy not accepted even if QValue is positive.
+* FIX: setting major ticks division fails for larger values.
+* FIX?: setting number of major ticks sometimes fails.
+* FIX: KShift does not become 0 for th3=pi because sin(pi)/=0 in rkcore.f90
+* mass data manager now wont automatically load the newly created mass data as default and
+  "Set as Default" button was added.
+* mbox now uses QTextEdit to show message.
+* M-key to toggle maximize/unmaximize plot window and result window.
+* Right-Button drag zooms in/out in plot window.
+* thetaStepBox replaced with QLineEdit to accept arbitrary number of digits.
+* BUG?: mbox fails to show IbeamCursor after mouse button is pressed on.
+* BUG: closing plot window crashes main (hard to reproduce).
+	
 v0.5.4
 * FIX: failed to open mass data manager with the message:
   "RelKinemaDlg::mdmSlot(): Not implemented yet".

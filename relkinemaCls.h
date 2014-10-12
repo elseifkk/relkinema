@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2014 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -55,18 +55,18 @@ class RelKinemaCls: public RelKinemaDlg
 		void setReactionLbl();
 		void setResultBox ( bool );
 		bool checkRectCond();
-		void setE3c ( );
+		void setE3c();
 		void initResultBox();
 		void initEmissionAngleBox();
 		void showAngleLE ( double, QLineEdit*, QString prep="" );
 		void setThetaMax();
-		void setExmax ( );
-		void setK3 ( );
+		void setExmax();
+		void setK3();
 		void showValueLE ( double, QLineEdit* );
-		void setJ34 ( );
+		void setJ34();
 		void initThetaBar();
-		void setth3 ( );
-		void setth4 ( );
+		void setth3();
+		void setth4();
 		void setAngle ( bool );
 		double calcMass ( int, int );
 		void massTypeProc ( int id, QComboBox*,QLineEdit* );
@@ -91,8 +91,8 @@ class RelKinemaCls: public RelKinemaDlg
 		void showKp4();
 		void showKp34c();
 		void showTheta4();
-		void setK3vCM ( );
-		void setK4 ( );
+		void setK3vCM();
+		void setK4();
 		double getThetaBarPos();
 		void resetThetaLab();
 		void showMenu();
@@ -136,6 +136,7 @@ class RelKinemaCls: public RelKinemaDlg
 		int a1,a2,a3,a4;
 		int z1,z2,z3,z4;
 		double QValue;
+		QString rectCondSym;
 		double qmin,qmax;
 		bool inv,thetaMaxNe;
 		bool K1Set;
@@ -205,7 +206,6 @@ class RelKinemaCls: public RelKinemaDlg
 		void confAppSlot();
 		void redoSlot();
 		void returnSlot();
-		void stopSlot();
 		void teDone ();
 		void massDataDirSlot();
 		void calcSlot();
@@ -220,8 +220,6 @@ class RelKinemaCls: public RelKinemaDlg
 		void checkAppSlot();
 		void setDispFont();
 		void loadDefConfSlot();
-		void incStepSlot();
-		void decStepSlot();
 		void exprSlot ( int );
 		void expr1Slot();
 		void expr2Slot();
