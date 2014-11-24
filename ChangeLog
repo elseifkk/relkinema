@@ -1,3 +1,17 @@
+v0.5.6
+
+* child windows now inherit the font of the main window.
+* FIX: KS dose not reflect the energy unit change.
+* the main window design changed to allow resizing.
+* FIX: rkCalc UI fails to add history.
+* FIX: rclist.ui fails to show scrollbar.
+* FIX?: rkcore contains many inadequate codes esp. for elastic reactions.
+* BUG: mouse events on plot window crashes WM or X11? (hard to reproduce).
+* BUG?: the maximum recoil angle is not shown in the main window although 
+	it is defined in rkcore and accessible by rkcalc as "th4Max".
+* BUG?: when doubleNumFormat is "%.16g" or such like thetaLAB is printed as
+	6.100000000000001 for d=0.1.
+
 v0.5.5
 
 * FIX: main loop crashes when table window is closed.

@@ -1,5 +1,5 @@
-RelKinema version 0.5.5
-========= ======= =====
+RelKinema version 0.5.6
+=======================
 
 Relativistic two-body kinematics calculator for nuclear reaction,
 including atomic mass data manager, table viewer and plotter.
@@ -93,15 +93,19 @@ Key bindings
 
 Escape	discard keyboard input focus on text box
 A	show popup menu
-M	invoke mass data manager
+D	invoke mass data manager
 T	open table&plot window
 K	call calculator
-R	refresh
+F5	refresh; reload the settings and reclculate
 S	turn to settings page
 C	clear reaction
 Ctrl+O	load saved reaction
 Ctrl+S	save current reaction
 1,2,3	show energy, momentum and custom page in the emission box
+F	toggle fullscreen
+R	collapse to right to show only initial frame
+L	collapse to left to show only final frame
+U	undo collapse to show both frame
 Q	quit
 
 
@@ -172,6 +176,7 @@ p1cMin;           minimum p1 in CM frame,
 theM;             the invariant mass,
 gamma, beta;      CM to Lab. conversion factor,
 th3, th4;         theta3 and theta4,
+th3Max,th4Max;    maximum theta3 and theta4,
 th3c, th4c;       theta3 and theta4 in CM frame,
 q;                momentum transfer in 1/fm,
 qMin;             minimum momentum transfer,
