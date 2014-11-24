@@ -101,6 +101,7 @@ class resultWindowCls: public resultWindow
 		void showTableMenu();
 		void copyTableItems();
 		void selectAllTableItems();
+		void fsSlot();
 
 	protected:
 		void keyPressEvent ( QKeyEvent* );

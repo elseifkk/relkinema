@@ -110,6 +110,8 @@ class RelKinemaCls: public RelKinemaDlg
 		bool setTheta3c ( double );
 		void openMdm ( int page=0 );
 		void setParMass();
+		void changeFontSize(int);
+		void setEunitLabel();
 
 	private:
 		size_t prkc;
@@ -239,6 +241,13 @@ class RelKinemaCls: public RelKinemaDlg
 		void checkNonePlotSlot();
 		void clearHistSlot();
 		void updateMassSlot();
+		void sfSlot();
+		void efSlot();
+		void fsSlot();
+		void ifSlot();
+		void ffSlot();
+		void afSlot();
+
 
 	protected:
 		void timerEvent ( QTimerEvent *e );

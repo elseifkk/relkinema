@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2012 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2012,2014 by Kazuaki Kumagai                       *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -90,6 +90,7 @@ extern "C"
   double __rkcore_MOD_rkc_get_th3c ( const size_t );
   double __rkcore_MOD_rkc_get_th4c ( const size_t );
   double __rkcore_MOD_rkc_get_th3max ( const size_t );
+  double __rkcore_MOD_rkc_get_th4max ( const size_t );
   double __rkcore_MOD_rkc_get_th3cmax ( const size_t );
   double __rkcore_MOD_rkc_get_q ( const size_t );
   double __rkcore_MOD_rkc_get_j3 ( const size_t );
@@ -136,6 +137,7 @@ extern "C"
   size_t __rkcore_MOD_rkc_get_gamma_ref ( const size_t );
   size_t __rkcore_MOD_rkc_get_beta_ref ( const size_t );
   size_t __rkcore_MOD_rkc_get_th3max_ref ( const size_t );
+  size_t __rkcore_MOD_rkc_get_th4max_ref ( const size_t );
   size_t __rkcore_MOD_rkc_get_th3_ref ( const size_t );
   size_t __rkcore_MOD_rkc_get_th4_ref ( const size_t );
   size_t __rkcore_MOD_rkc_get_th3c_ref ( const size_t );
@@ -220,6 +222,7 @@ int const RKCERR_RANGE_OVER  = 2;
 #define rkc_get_th3c             __rkcore_MOD_rkc_get_th3c
 #define rkc_get_th4c             __rkcore_MOD_rkc_get_th4c
 #define rkc_get_th3Max           __rkcore_MOD_rkc_get_th3max
+#define rkc_get_th4Max           __rkcore_MOD_rkc_get_th4max
 #define rkc_get_th3cMax          __rkcore_MOD_rkc_get_th3cmax
 #define rkc_get_q                __rkcore_MOD_rkc_get_q
 #define rkc_get_J3               __rkcore_MOD_rkc_get_j3
@@ -266,6 +269,7 @@ int const RKCERR_RANGE_OVER  = 2;
 #define rkc_getp_gamma           __rkcore_MOD_rkc_get_gamma_ref
 #define rkc_getp_beta            __rkcore_MOD_rkc_get_beta_ref
 #define rkc_getp_th3Max          __rkcore_MOD_rkc_get_th3max_ref
+#define rkc_getp_th4Max          __rkcore_MOD_rkc_get_th4max_ref
 #define rkc_getp_th3             __rkcore_MOD_rkc_get_th3_ref
 #define rkc_getp_th4             __rkcore_MOD_rkc_get_th4_ref
 #define rkc_getp_th3c            __rkcore_MOD_rkc_get_th3c_ref

@@ -53,6 +53,8 @@
 #include <qcursor.h>
 #include <qdialog.h>
 #include <qcursor.h>
+#include <qsplitter.h>
+#include <qlayout.h>
 
 #include <kconfig.h>
 #include <knuminput.h>
@@ -299,12 +301,26 @@ RelKinemaCls::RelKinemaCls ( QWidget *parent, const char *name, WFlags wf,
 	p1thLbl->setCursor ( IbeamCursor );
 	p1cthLbl->setCursor ( IbeamCursor );
 	ExmaxLbl->setCursor ( IbeamCursor );
-
 	betaLbl->setCursor ( IbeamCursor );
 	gammaLbl->setCursor ( IbeamCursor );
 	gammabetaLbl->setCursor ( IbeamCursor );
-
 	thetaMaxLbl->setCursor ( IbeamCursor );
+	K3Box->setCursor(IbeamCursor);
+	K3cBox->setCursor(IbeamCursor);
+	K4Box->setCursor(IbeamCursor);
+	K4cBox->setCursor(IbeamCursor);
+	p3Box->setCursor(IbeamCursor);
+	p3cBox->setCursor(IbeamCursor);
+	p4Box->setCursor(IbeamCursor);
+	p4cBox->setCursor(IbeamCursor);
+	J3Box->setCursor(IbeamCursor);
+	J4Box->setCursor(IbeamCursor);
+	dK3_dth3Box->setCursor(IbeamCursor);
+	KparamBox->setCursor(IbeamCursor);
+	val1Box->setCursor(IbeamCursor);
+	val2Box->setCursor(IbeamCursor);
+	val3Box->setCursor(IbeamCursor);
+	val4Box->setCursor(IbeamCursor);
 }
 
 int RelKinemaCls::adjCol ( bool *d, int c, int *off )
@@ -468,18 +484,11 @@ void RelKinemaCls::setParMass()
 
 void RelKinemaCls::setDispFont()
 {
+	if(EmissionAngleBox->width()==1||ReactionBox->width()==1) afSlot();
 	setFont ( thefont );
 	mainStack->setFont ( thefont );
 	QFont f=thefont;
 	f.setPointSize ( thefont.pointSize()-1 );
-	k3unitLbl->setFont ( f );
-	k4unitLbl->setFont ( f );
-	k3cunitLbl->setFont ( f );
-	k4cunitLbl->setFont ( f );
-	p3unitLbl->setFont ( f );
-	p4unitLbl->setFont ( f );
-	p3cunitLbl->setFont ( f );
-	p4cunitLbl->setFont ( f );
 	dK3_dth3_unitLbl->setFont ( f );
 	KparamUnitLbl->setFont ( f );
 	setScrTypeFont();
@@ -494,7 +503,6 @@ void RelKinemaCls::setTitleFont()
 	pkgLbl->setFont ( f );
 	verLbl->setFont ( f );
 	mess1Lbl->setFont ( f );
-	mess2Lbl->setFont ( f );
 }
 
 void  RelKinemaCls::closeEvent ( QCloseEvent *unused )
@@ -615,6 +623,7 @@ void RelKinemaCls::loadConfig ( QString f )
 	EUnitBox->setCurrentItem ( historyGroup.readNumEntry ( "Energy unit", 1 ) );
 	MUnitBox->setCurrentItem ( historyGroup.readNumEntry ( "Mass unit", 1 ) );
 	rkc_set_eunit ( prkc, EUnitBox->currentItem() +1 );
+	setEunitLabel();
 	changeMassUnitSlot();
 	delete conf;
 }
@@ -1010,7 +1019,7 @@ void RelKinemaCls::seeIfMassSet()
 
 void RelKinemaCls::setReactionLbl()
 {
-	QString s,a;
+	QString s,a,e,r;
 	a="";
 	if ( a2>0 ) a.sprintf ( "%d",a2 );
 	s=a+nc2+"(";
@@ -1019,14 +1028,24 @@ void RelKinemaCls::setReactionLbl()
 	s+=a+nc1+",";
 	a="";
 	if ( a3>0 ) a.sprintf ( "%d",a3 );
-	s+=a+nc3+")";
+	e=a+nc3;
+	s+=e+")";
 	a="";
 	if ( a4>0 ) a.sprintf ( "%d",a4 );
-	s+=a+nc4;
+	r=a+nc4;
+	s+=r;
 	theReaction=s;
+	if(Ex!=0.0){
+		s+="*";
+		r+="*";
+	}
 	setCaption ( myname+": "+s );
-	s="Reaction: "+s;
-	ReactionBox->setTitle ( s );
+	ReactionBox->setTitle ( "Reaction: "+s );
+	EmissionAngleBox->setTitle("Emission Angle: "+s);
+	emiAngBox->setTitle("Emission: "+e+" - th3");
+	recAngBox->setTitle("Recoil: "+r+" - th4");
+	ejecKpBox->setTitle("Ejectile: "+e);
+	resiKpBox->setTitle("Residual: "+r);
 }
 
 void RelKinemaCls::initReactionConditionBox()
@@ -1490,7 +1509,7 @@ void RelKinemaCls::rectCondSlot_K1c()
 	showStrLE ( "",p1cBox );
 	showStrLE ( "",ExmaxLbl );
 	if ( !ok || v< 0. ) return;
-
+// 
 	rkc_set_K1c ( prkc,v );
 	K1c=rkc_get_K1c ( prkc );
 	E1c=rkc_get_E1c ( prkc );
@@ -1515,6 +1534,7 @@ void RelKinemaCls::rectCondSlot_Ex()
 		setK1cth();
 		setE3c ( );
 		setResultBox ( checkRectCond() );
+		setReactionLbl();
 	}
 	else
 	{
@@ -1527,6 +1547,7 @@ bool RelKinemaCls::checkRectCond()
 {
 	K1Set= ( K1>=K1th ) &&! ( QValue==0&&K1==0 );
 	ExOk= ( Ex<=Exmax );
+/*
 	if ( ExOk )
 	{
 		if ( Ex==0. )
@@ -1540,6 +1561,7 @@ bool RelKinemaCls::checkRectCond()
 			ExLbl->setText ( "*" );
 		}
 	}
+*/
 	return ExOk&&K1Set;
 }
 
@@ -1557,6 +1579,7 @@ void RelKinemaCls::setThetaMax()
 
 void RelKinemaCls::setResultBox ( bool on )
 {
+	if(on&&EmissionAngleBox->width()==1) afSlot();
 	EmissionBox->setEnabled ( on );
 	EmissionAngleBox->setEnabled ( on );
 	tableBut->setEnabled ( on );
@@ -1573,8 +1596,19 @@ void RelKinemaCls::setResultBox ( bool on )
 	}
 }
 
+void RelKinemaCls::setEunitLabel()
+{
+	QString s=EUnitBox->currentText();
+	ejecKBox->setTitle("K3 ["+s+"]");
+	ejecpBox->setTitle("p3 ["+s+"/c]");
+	resiKBox->setTitle("K4 ["+s+"]");
+	resipBox->setTitle("p4 ["+s+"/c]");
+}
+
 void RelKinemaCls::changeEUnitSlot()
 {
+	setEunitLabel();
+
 	rkc_set_eunit ( prkc,EUnitBox->currentItem() +1 );
 
 	K1=rkc_get_K1 ( prkc );
@@ -1598,17 +1632,6 @@ void RelKinemaCls::changeEUnitSlot()
 	K4c=rkc_get_K4c ( prkc );
 	p3c=rkc_get_p3c ( prkc );
 	p4c=rkc_get_p4c ( prkc );
-
-	QString s=EUnitBox->currentText();
-	k3unitLbl->setText ( s );
-	k3cunitLbl->setText ( s );
-	k4unitLbl->setText ( s );
-	k4cunitLbl->setText ( s );
-	s.append ( "/c" );
-	p3unitLbl->setText ( s );
-	p3cunitLbl->setText ( s );
-	p4unitLbl->setText ( s );
-	p4cunitLbl->setText ( s );
 
 	showEnergyLE ( K1,K1Box );
 	showEnergyLE ( K1c,K1cBox );
@@ -1760,7 +1783,7 @@ void RelKinemaCls::setAngle ( bool on )
 		dK3_dth3Box->clear();
 		KparamBox->clear();
 	}
-	RecoilAngleBox->setEnabled ( on );
+	recAngBox->setEnabled ( on );
 	scrTypeBox->setEnabled ( on );
 	thetaBar->setEnabled ( on );
 }
@@ -2102,7 +2125,6 @@ void RelKinemaCls::scrTypeSlot()
 	}
 	stepUnitLbl->setText ( unit );
 	if ( !ok || d == 0. ) return;
-
 	setScrTypeFont();
 	setThetaBarStep ( min,max,d,v );
 	thetaBar->setEnabled ( true );
@@ -2556,13 +2578,13 @@ void RelKinemaCls::keyPressEvent ( QKeyEvent *e )
 			case Qt::Key_T:
 				if ( tableBut->isEnabled() ) showResultListSlot();
 				break;
-			case Qt::Key_M:
+			case Qt::Key_D:
 				mdmSlot();
 				break;
 			case Qt::Key_K:
 				if ( calcBut->isEnabled() ) calcSlot();
 				break;
-			case Qt::Key_R:
+			case Qt::Key_F5:
 				if ( redoBut->isEnabled() ) redoSlot();
 				break;
 			case Qt::Key_V:
@@ -2585,6 +2607,33 @@ void RelKinemaCls::keyPressEvent ( QKeyEvent *e )
 				break;
 			case Qt::Key_3:
 				EmissionBox->showPage ( EmissionBox->page ( 2 ) );
+				break;
+			case Qt::Key_M:
+				if ( windowState() & Qt::WindowMaximized )
+				{
+					setWindowState ( Qt::WindowNoState );
+				}
+				else
+				{
+					if ( windowState() & Qt::WindowFullScreen )
+					{
+						setWindowState ( Qt::WindowNoState );
+					}
+					setWindowState ( Qt::WindowMaximized );
+				}
+				fsBut->setOn(false);
+				break;
+			case Qt::Key_F:
+				fsSlot();
+				break;
+			case Qt::Key_U:
+				afSlot();
+				break;
+			case Qt::Key_R:
+				ifSlot();
+				break;
+			case Qt::Key_L:
+				ffSlot();
 				break;
 			default:
 				e->ignore();
@@ -2629,6 +2678,9 @@ void RelKinemaCls::initSettingsPage ( bool first )
 	confDoubleNumberFormatBox->blockSignals ( true );
 	confMassDataDirBox->blockSignals ( true );
 	configEdit->blockSignals ( true );
+	confMassDataDirLbl->clear();
+	confDoubleNumberFormatLbl->clear();
+
 	if ( first )
 	{
 		confMassDataDirBox->setText ( MASSDATA );
@@ -2692,7 +2744,7 @@ void RelKinemaCls::confAppSlot()
 	}
 	else
 	{
-		showMessL ( "Invalid Directory", "red", confMassDataDirLbl );
+		showMessL ( "NG", "red", confMassDataDirLbl );
 	}
 
 	if ( checkDoubleNumberFormat ( confDoubleNumberFormatBox->text() ) )
@@ -2703,7 +2755,7 @@ void RelKinemaCls::confAppSlot()
 	}
 	else
 	{
-		showMessL ( "Invalid Format!","red",confDoubleNumberFormatLbl );
+		showMessL ( "NG","red",confDoubleNumberFormatLbl );
 	}
 	if ( rc==3 )
 	{
@@ -2832,6 +2884,7 @@ void RelKinemaCls::registParams ( size_t prkc_, size_t pfzc_ )
 	registParam ( pfzc_, rkc_getp_beta ( prkc_ ), "beta" );
 
 	registParam ( pfzc_, rkc_getp_th3Max ( prkc_ ), "th3Max" );
+	registParam ( pfzc_, rkc_getp_th4Max ( prkc_ ), "th4Max" );
 	registParam ( pfzc_, rkc_getp_th3 ( prkc_ ), "th3" );
 	registParam ( pfzc_, rkc_getp_th4 ( prkc_ ), "th4" );
 	registParam ( pfzc_, rkc_getp_th3c ( prkc_ ), "th3c" );
@@ -2902,7 +2955,7 @@ void RelKinemaCls::showMenu()
 	p.setColor ( QColorGroup::HighlightedText, qRgb ( 0,71,171 ) );
 	pm.setPalette ( p );
 
-	if ( ReactionBox->rect().contains ( QCursor::pos() ) )
+	if ( !settingsBut->isOn() && ReactionBox->rect().contains ( QCursor::pos() ) )
 	{
 		pm.insertItem ( "inverse reaction",this,SLOT ( inverseSlot() ) );
 		pm.insertItem ( "reverse reaction",this,SLOT ( reverseSlot() ) );
@@ -3286,6 +3339,78 @@ void RelKinemaCls::updateMassSlot()
 {
 	setParMass();
 	redoSlot();
+}
+
+void RelKinemaCls::sfSlot()
+{
+changeFontSize(-1);
+}
+
+void RelKinemaCls::efSlot()
+{
+changeFontSize(1);
+}
+
+void RelKinemaCls::changeFontSize(int d)
+{
+	int const min_pointsize=4;
+	int const max_pointsize=32;
+	int p=thefont.pointSize();
+	p+=d;
+	if ( p<min_pointsize )
+	{
+		p=min_pointsize;
+	}
+	else if ( p>max_pointsize )
+	{
+		p=max_pointsize;
+	}
+	thefont.setPointSize(p);
+	setDispFont();
+	if(settingsBut->isOn())
+	{
+		fontBut->blockSignals ( true );
+		fontBut->setFont ( thefont );
+		fontBut->blockSignals ( false );
+	}
+}
+
+void RelKinemaCls::fsSlot()
+{
+	if ( windowState() & Qt::WindowFullScreen )
+	{
+		setWindowState ( Qt::WindowNoState );
+		fsBut->setOn(false);
+	}
+	else
+	{
+		setWindowState ( Qt::WindowFullScreen );
+		fsBut->setOn(true);
+	}
+}
+
+void RelKinemaCls::ifSlot()
+{
+	QValueList<int> s;
+	s.append(500);
+	s.append(0);
+	theSplitter->setSizes(s);
+}
+
+void RelKinemaCls::ffSlot()
+{
+	QValueList<int> s;
+	s.append(0);
+	s.append(500);
+	theSplitter->setSizes(s);
+}
+
+void RelKinemaCls::afSlot()
+{
+	QValueList<int> s;
+	s.append(500);
+	s.append(500);
+	theSplitter->setSizes(s);
 }
 
 #include "relkinemaCls.moc"

@@ -14,7 +14,7 @@
  *                                                                         *
  *   You should have received a copy of the GNU General Public License     *
  *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
+ *   Free Software Foundation, Inc.,                                   E    *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <stdlib.h>
@@ -60,14 +60,14 @@ resultWindowCls::resultWindowCls ( QWidget *parent, const char *name, WFlags wf,
 	switch ( col_first )
 	{
 		case 1:
-			plotLbl[0]="Theta3CM";
-			plotLbl[1]="Theta3LAB";
+			plotLbl[0]="th3c";
+			plotLbl[1]="th3";
 			plotLbl[2]="q";
 			break;
 		case 2:
 			plotLbl[0]="q";
-			plotLbl[1]="Theta3LAB";
-			plotLbl[2]="Theta3CM";
+			plotLbl[1]="th3";
+			plotLbl[2]="th3c";
 			uLbl[0]="1/fm";
 			uLbl[2]=al;
 			break;
@@ -140,6 +140,7 @@ void resultWindowCls::setTable()
 {
 	QStringList::Iterator it=sl->begin();
 	resultTable->setNumRows ( nrow>nrmax ? nrmax: nrow );
+	resultTable->setFont(this->font());
 	int ir=nrow_hdr-1;
 	for ( ;; )
 	{
@@ -344,8 +345,10 @@ void resultWindowCls::keyPressEvent ( QKeyEvent *e )
 	switch ( e->key() )
 	{
 		case Qt::Key_Q:
-		case Qt::Key_Escape:
 			close();
+			break;
+		case Qt::Key_Escape:
+			setFocus();
 			break;
 		case Qt::Key_P:
 			plotSlot();
@@ -372,14 +375,7 @@ void resultWindowCls::keyPressEvent ( QKeyEvent *e )
 			}
 			break;
 		case Qt::Key_F:
-			if ( windowState() & Qt::WindowFullScreen )
-			{
-				setWindowState ( Qt::WindowNoState );
-			}
-			else
-			{
-				setWindowState ( Qt::WindowFullScreen );
-			}
+			fsSlot();
 			break;
 		case Qt::Key_M:
 			if ( windowState() & Qt::WindowMaximized )
@@ -394,6 +390,7 @@ void resultWindowCls::keyPressEvent ( QKeyEvent *e )
 				}
 				setWindowState ( Qt::WindowMaximized );
 			}
+			fsBut->setOn(false);
 			break;
 		default:
 			e->ignore();
@@ -666,6 +663,20 @@ void resultWindowCls::showTableMenu()
 	pm.insertSeparator();
 	pm.insertItem ( "close",this,SLOT ( close() ), QKeySequence ( Key_Q, Key_Escape ) );
 	pm.exec ( QCursor::pos() );
+}
+
+void resultWindowCls::fsSlot()
+{
+	if ( windowState() & Qt::WindowFullScreen )
+	{
+		setWindowState ( Qt::WindowNoState );
+		fsBut->setOn(false);
+	}
+	else
+	{
+		setWindowState ( Qt::WindowFullScreen );
+		fsBut->setOn(true);
+	}
 }
 
 #include "resultwindowcls.moc"

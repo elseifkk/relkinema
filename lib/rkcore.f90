@@ -98,7 +98,7 @@ module rkcore
      real(rp) K1cMin_, p1cMin_
      real(rp) theM_
      real(rp) gamma_, beta_
-     real(rp) th3Max_
+     real(rp) th3Max_,th4Max_
      real(rp) th3_, th4_
      real(rp) theq_, qMin_, qMax_
      real(rp) th3c_, th4c_
@@ -285,6 +285,7 @@ module rkcore
 #define p1cMin rkc%p1cMin_
 
 #define th3Max rkc%th3Max_
+#define th4Max rkc%th4Max_
 #define th3 rkc%th3_
 #define th4 rkc%th4_
 #define th3c rkc%th3c_
@@ -495,6 +496,24 @@ contains
     call rkc_set_is_elastic(rkc)
   end subroutine rkc_set_mass
 
+  pure real(rp) function ksin(x)
+    real(rp),intent(in)::x
+    if(x==pi) then
+       ksin=rzero
+    else
+       ksin=sin(x)
+    end if
+  end function ksin
+ 
+  pure real(rp) function kcos(x)
+    real(rp),intent(in)::x
+    if(x==pi_2) then
+       kcos=rzero
+    else
+       kcos=cos(x)
+    end if
+  end function kcos
+ 
   ! internal
   pure real(rp) function K_To_p(K,m)
     real(rp),intent(in)::K,m
@@ -610,14 +629,20 @@ contains
   ! internal
   subroutine rkc_set_K3_via_LB(rkc)
     type(t_rkc),intent(inout)::rkc
-    E3=gamma*(E3c+beta*p3c*cos(th3c))
-    K3=E3-m3
-    if(K3<rzero) then
-       call warn(rkc,"set_K3_via_LB",RKCST_K_NEG,K3)
+    if(th3c==pi.and.th3Max==pi_2) then
        K3=rzero
        p3=rzero
+       E3=K3+m3
     else
-       p3=K_To_p(K3,m3)
+       E3=gamma*(E3c+beta*p3c*kcos(th3c))
+       K3=E3-m3
+       if(K3<rzero) then
+          call warn(rkc,"set_K3_via_LB",RKCST_K_NEG,K3)
+          K3=rzero
+          p3=rzero
+       else
+          p3=K_To_p(K3,m3)
+       end if
     end if
   end subroutine rkc_set_K3_via_LB
 
@@ -682,6 +707,26 @@ contains
   end subroutine rkc_set_th3Max
 
   ! internal
+  subroutine rkc_set_th4Max(rkc)
+    type(t_rkc),intent(inout)::rkc
+    real(rp) b,d
+    b=p4c-E4c*beta
+    if(abs(b)<reps.or.rkc%pelastic.or.rkc%relastic) then
+       th4Max=pi_2
+    else if(b<rzero) then
+       d=p4c/(gamma*beta*(m4+Ex))
+       if(d>1.0_rp) then
+          call warn(rkc,"set_th4Max",RKCST_ASIN_OVER,d)
+          th4Max=pi_2
+       else
+          th4Max=asin(d)
+       end if
+    else
+       th4Max=pi
+    end if
+  end subroutine rkc_set_th4Max
+
+  ! internal
   subroutine rkc_set_qMinMax(rkc)
     type(t_rkc),intent(inout)::rkc
     qMin=abs(p1c-p3c)/hbarc
@@ -694,6 +739,7 @@ contains
     call rkc_set_K3c(rkc)
     call rkc_set_K4c(rkc)
     call rkc_set_th3Max(rkc)
+    call rkc_set_th4Max(rkc)
     call rkc_set_qMinMax(rkc)
   end subroutine rkc_set_K34c
 
@@ -701,18 +747,25 @@ contains
   subroutine rkc_set_K3(rkc)
     type(t_rkc),intent(inout)::rkc
     real(rp) c,ss,d
-    c=cos(th3)
-    if(rkc%invKin) c=abs(c)
-    ss=1.0_rp-(beta*c)**2.0_rp
-    d=1.0_rp-(m3/E3c*gamma)**2.0_rp*ss
-    if(d<rzero) then
-       call warn(rkc,"set_K3",RKCST_SQRT_UNDER,d)
-       d=rzero
-    end if
-    if(.not.rkc%K3Sign) then
-       E3=E3c/gamma*(1.0_rp+beta*c*sqrt(d))/ss
+    c=kcos(th3)
+    if(abs(c)==1.0_rp) then
+       if(rkc%K3Sign) c=-c
+       E3=gamma*(E3c+c*beta*p3c)
+    else if(c==rzero) then
+       E3=E3c/gamma
     else
-       E3=E3c/gamma*(1.0_rp-beta*c*sqrt(d))/ss
+       if(rkc%invKin) c=abs(c)
+       ss=1.0_rp-(beta*c)**2.0_rp
+       d=1.0_rp-(m3/E3c*gamma)**2.0_rp*ss
+       if(d<rzero) then
+          call warn(rkc,"set_K3",RKCST_SQRT_UNDER,d)
+          d=rzero
+       end if
+       if(.not.rkc%K3Sign) then
+          E3=E3c/gamma*(1.0_rp+beta*c*sqrt(d))/ss
+       else
+          E3=E3c/gamma*(1.0_rp-beta*c*sqrt(d))/ss
+       end if
     end if
     K3=E3-m3
     if(K3<rzero) then
@@ -728,8 +781,13 @@ contains
   ! internal
   subroutine rkc_set_K4(rkc)
     type(t_rkc),intent(inout)::rkc
-    E4=(E1+E2)-E3
-    K4=E4-(m4+Ex)
+    if(rkc%pelastic.or.rkc%nelastic) then
+       K4=K1-K3
+       E4=K4+(m4+Ex)
+    else
+       E4=(E1+E2)-E3
+       K4=E4-(m4+Ex)       
+    end if
     if(K4<rzero) then
        call warn(rkc,"set_K4",RKCST_K_NEG,K4)
        K4=rzero
@@ -750,13 +808,17 @@ contains
     else if(p3==rzero) then
        th4=rzero
        return
-    else if(th3==rzero.or.abs(pi-th3)<reps) then
-       if(.not.rkc%th3MaxNe) then
+    end if
+    if(th3==rzero) then
+       ! th3c=0,th4c=pi
+       ! th4=0.or.th4=pi
+       if(p1-p3>rzero) then
           th4=rzero
+          return
        else
-          th4=pi_2 ! p4 should be zero...
+          th4=pi
+          return
        end if
-       return
     end if
     c=(p1*p1-(p3*p3+p4*p4))/(2.0_rp*p3*p4)
     if(c>1.0_rp) then
@@ -767,6 +829,10 @@ contains
        th4=pi-th3
     else
        th4=acos(c)-th3
+       if(th4<rzero) then
+          call warn(rkc,"th3_To_th4",RKCST_TRUNC,th4)
+          th4=rzero
+       end if
     end if
   end subroutine th3_To_th4
 
@@ -788,7 +854,7 @@ contains
        th3c=pi
        return
     end if
-    c=gamma*(p3*cos(th3)-beta*E3)/p3c
+    c=gamma*(p3*kcos(th3)-beta*E3)/p3c
     if(c>1.0_rp) then
        call warn(rkc,"th3_To_th3c",RKCST_ACOS_OVER,c)
        th3c=rzero
@@ -824,7 +890,7 @@ contains
           return
        end if
     end if
-    c=gamma*(p3c*cos(th3c)+beta*E3c)/p3
+    c=gamma*(p3c*kcos(th3c)+beta*E3c)/p3
     if(c>1.0_rp) then
        call warn(rkc,"th3c_To_th3",RKCST_ACOS_OVER,c)
        th3=rzero
@@ -838,20 +904,23 @@ contains
   ! internal
   subroutine th4c_To_th4(rkc)
     type(t_rkc),intent(inout)::rkc
-    real(rp) c
+    real(rp) c,d
     if(p4==rzero) then
        th4=pi_2
        return
     end if
-    if(th4c==rzero) then
-       th4=rzero
-       return
+    c=kcos(th4c)
+    if(abs(c)==1.0_rp) then
+       d=c*p4c+beta*E4c
+       if(d>rzero) then
+          th4=rzero
+          return
+       else if(d<rzero) then
+          th4=pi
+          return
+       end if
     end if
-    if(.not.rkc%th3MaxNe.and..not.rkc%invKin.and.th3==rzero) then
-       th4=rzero
-       return
-    end if
-    c=gamma*(p4c*cos(th4c)+beta*E4c)/p4
+    c=gamma*(p4c*c+beta*E4c)/p4
     if(c>1.0_rp) then
        call warn(rkc,"th4c_To_th4",RKCST_ACOS_OVER,c)
        th4=rzero
@@ -874,7 +943,7 @@ contains
     type(t_rkc),intent(inout)::rkc
     real(rp),intent(in)::tcm,p_i,p_f
     real(rp) q
-    q=p_i*p_i+p_f*p_f-2.0*p_i*p_f*cos(tcm)
+    q=p_i*p_i+p_f*p_f-2.0*p_i*p_f*kcos(tcm)
     if(q<rzero) then
        call warn(rkc,"tcm2q",RKCST_SQRT_UNDER,q)
        tcm2q=rzero
@@ -1223,6 +1292,18 @@ contains
     rkc_get_th3Max=real(x,kind=outp)
   end function rkc_get_th3Max
 
+  retreal function rkc_get_th4Max(p)
+    real(rp) x
+    prkc_inout(p)
+    x=th4Max
+    if(x<oeps.and.x/=rzero) then
+       call warn(rkc,"get_th4Max",RKCST_TRUNC,x)
+       x=rzero
+    end if
+    if(rkc%deg) x=x/pirad
+    rkc_get_th4Max=real(x,kind=outp)
+  end function rkc_get_th4Max
+  
   retreal function rkc_get_th3cMax(p)
     real(rp) x
     prkc_inout(p)
@@ -1283,14 +1364,10 @@ contains
   subroutine rkc_set_other_params(rkc)
     type(t_rkc),intent(inout)::rkc
     real(rp) c
-    c=cos(th3c)
+    c=kcos(th3c)
     J3=(gamma*p3*(p3c+beta*E3c*c))/(p3c*p3c)
     J4=(gamma*p4*(p4c-beta*E4c*c))/(p4c*p4c)
-    if(th3/=pi) then
-       KShift=sin(th3)*J3*gamma*p3c*beta
-    else
-       KShift=rzero
-    end if
+    KShift=ksin(th3)*J3*gamma*p3c*beta
     if(p3/=rzero) then
        KFactor=KShift*E3/(p3*p3)
     else
@@ -1313,7 +1390,7 @@ contains
     prkc_inout(p)
     x=KShift
     if(rkc%deg) x=x*pirad
-    rkc_get_KShift=real(x,kind=outp)
+    rkc_get_KShift=real(x*ENGUR(rkc%eu),kind=outp)
   end function rkc_get_KShift
 
   retreal function rkc_get_KFactor(p)
@@ -1523,6 +1600,11 @@ contains
     prkc_inout(p)
     rkc_get_th3Max_ref=loc(th3Max)
   end function rkc_get_th3Max_ref
+
+  size_t function rkc_get_th4Max_ref(p)
+    prkc_inout(p)
+    rkc_get_th4Max_ref=loc(th4Max)
+  end function rkc_get_th4Max_ref
 
   size_t function rkc_get_th3_ref(p)
     prkc_inout(p)

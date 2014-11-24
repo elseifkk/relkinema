@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011-2013 by Kazuaki Kumagai                            *
+ *   Copyright (C) 2011-2014 by Kazuaki Kumagai                            *
  *   elseifkk@users.sf.net                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -82,8 +82,6 @@ void rkCalcCls::enterSlot ( void )
 	if ( formulaBox->currentText().isEmpty() ) return;
 	strcpy ( cstr,formulaBox->currentText().latin1() );
 
-	if ( autoClearBox->isChecked() ) clearSlot();
-
 	mess ( QString ( cstr ) +" =","black", false );
 	rc=fzc_setparse_formula ( pfzc, pcstr );
 	if ( rc>0 )
@@ -93,6 +91,7 @@ void rkCalcCls::enterSlot ( void )
 	else if ( rc<0 )
 	{
 		mess ( "ok","blue" );
+		formulaBox->lineEdit()->clear();
 	}
 	else
 	{
@@ -103,10 +102,12 @@ void rkCalcCls::enterSlot ( void )
 			fzc_get_strans ( pfzc, pcstr );
 			str=cstr;
 			mess ( str );
+			formulaBox->lineEdit()->clear();
 		}
 		else if ( rc<0 )
 		{
 			mess ( "ok","blue" );
+			formulaBox->lineEdit()->clear();
 		}
 		else
 		{
@@ -129,7 +130,6 @@ QString rkCalcCls::rkcErrStr(int rc)
 void rkCalcCls::clearSlot()
 {
 	ansBox->clear();
-	formulaBox->clear();
 }
 
 void rkCalcCls::keyPressEvent ( QKeyEvent *e )
@@ -155,6 +155,6 @@ void rkCalcCls::clearHistSlot()
 
 void rkCalcCls::closeEvent ( QCloseEvent *e )
 {
-	e->accept();
 	saveConfig ( *configfile );
+	e->accept();
 }
