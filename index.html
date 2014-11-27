@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <title>Relkinema by elseifkk</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Relkinema</h1>
+        <h2>Relativistic two-body kinematics calculator for nuclear reaction</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/elseifkk/relkinema/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/elseifkk/relkinema/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/elseifkk/relkinema" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>
+<a id="relkinema-version-056" class="anchor" href="#relkinema-version-056" aria-hidden="true"><span class="octicon octicon-link"></span></a>RelKinema version 0.5.6</h1>
+
+<p>Relativistic two-body kinematics calculator for nuclear reaction,
+including atomic mass data manager, table viewer and plotter.</p>
+
+<h1>
+<a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements</h1>
+
+<p>RelKinema mainly depends on the following packages:</p>
+
+<p>libfzcal-0.0.5_1
+  gfortran-4.6.1 or higher
+  kdelibs-3.5.10
+  qt-3.3.8</p>
+
+<p>Note that it cannot build with qt4/kde4 environment or above.</p>
+
+<h1>
+<a id="build" class="anchor" href="#build" aria-hidden="true"><span class="octicon octicon-link"></span></a>Build</h1>
+
+<p>RelKinema uses fortran codes for calculations of nuclear physics and
+the configure script should know what to use as a fortran compiler.
+The calculation is performed with quad-precision, which is supported
+by gfortran since version 4.6, and truncated to double precision on
+display. The compiler name and flags can be passed to configure script
+by FC and FCFLAGS variable, respectively. For some fortran compilers
+that does not support quad-precision, the following parameter might be
+necessary:</p>
+
+<p>setenv FCFLAGS "-D_NO_REAL10_ -D_NO_REAL16_"</p>
+
+<p>RelKinema depends on libfzcal for evaluating user-defined expressions
+with kinematic parameters, available at: </p>
+
+<p><a href="http://sourceforge.net/projects/fzcal/">http://sourceforge.net/projects/fzcal/</a></p>
+
+<p>Since libfzcal depends on libgfortran, path for the library might be
+necessary for LDFLAGS.</p>
+
+<p>Note that for some systems, qt3/kde3 environment might work
+unexpectedly if qt4/kde4 coexists. Coexistence of different versions
+of gcc (gfortran) can also cause problem at run-time, to which we
+suggest use of LD_RUN_PATH at linking-time as a workaround. In some
+cases it is necessary to make LIBRARY_PATH include path for crti.o. </p>
+
+<p>Here's an example of build steps:</p>
+
+<p>setenv FC /usr/local/bin/gfortran
+  setenv FCFLAGS "-cpp -fcray-pointer -O2 -g0 -fdefault-integer-8"
+  setenv CXXFLAGS "-O2 -g0"
+  ./configure --prefix=/usr/local --without-arts
+  gmake install</p>
+
+<h1>
+<a id="atomic-mass-data" class="anchor" href="#atomic-mass-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Atomic mass data</h1>
+
+<p>RelKinema depends on atomic mass data files located in a local directory.
+The current version uses files extracted from a source data file available
+at (as of Oct 12, 2014):</p>
+
+<p><a href="http://amdc.in2p3.fr/masstables/Ame2012/mass.mas12">http://amdc.in2p3.fr/masstables/Ame2012/mass.mas12</a></p>
+
+<h1>
+<a id="note" class="anchor" href="#note" aria-hidden="true"><span class="octicon octicon-link"></span></a>Note</h1>
+
+<ul>
+<li>In main window, the reaction can be set when four of three nuclei
+are specified; hit enter for completion.</li>
+<li>massdata/A.dat contains particle masses in MeV, which includes
+photon(g), electron(e), proton(p), neutron(n) deuteron(d), triton(t)
+and alpha(a). </li>
+<li>For a pure decay process, i.e., no target, you can set "g" as target.</li>
+<li>In plot window, hit H key to show key-bindings.</li>
+<li>Some configurations are saved in ~/.relkinemarc.</li>
+</ul>
+
+<h1>
+<a id="key-bindings" class="anchor" href="#key-bindings" aria-hidden="true"><span class="octicon octicon-link"></span></a>Key bindings</h1>
+
+<p>Escape  discard keyboard input focus on text box
+A   show popup menu
+D   invoke mass data manager
+T   open table&amp;plot window
+K   call calculator
+F5  refresh; reload the settings and reclculate
+S   turn to settings page
+C   clear reaction
+Ctrl+O  load saved reaction
+Ctrl+S  save current reaction
+1,2,3   show energy, momentum and custom page in the emission box
+F   toggle fullscreen
+R   collapse to right to show only initial frame
+L   collapse to left to show only final frame
+U   undo collapse to show both frame
+Q   quit</p>
+
+<h1>
+<a id="notations" class="anchor" href="#notations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Notations</h1>
+
+<p>We assume a nuclear reaction of type m2(m1,m3)m4', where
+    m1:    projectile,
+    m2:    target,
+    m3:    ejectile,
+    m4':   residual including excitation energy (m4+Ex).</p>
+
+<p>(Lab. frame)
+                     m3
+                     /
+                    /
+                   /
+                  / ) th3
+m1 -----------&gt; m2 -----------------
+                  \ ) th4
+                   \
+                    \
+                     \
+                    m4+Ex</p>
+
+<p>Each particle has four-momentum whose magnitude is denoted as</p>
+
+<pre><code>m^2 = E^2 - p^2,
+</code></pre>
+
+<p>where E and p are energy and magnitude of spatial momentum,
+respectively. The kinetic energy of the particle is represented as K
+and the total energy of the projectile is written as,</p>
+
+<pre><code>E = K + m.
+</code></pre>
+
+<p>The four-momentum in center of mass (CM) frame can be written as, for
+example,</p>
+
+<pre><code>E3c = gamma * ( E3 - beta * p3 * cos(th3)),
+</code></pre>
+
+<p>where gamma=1/sqrt(1-beta^2), and beta is relative speed of Lab. frame
+to CM.</p>
+
+<h1>
+<a id="parameters" class="anchor" href="#parameters" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parameters</h1>
+
+<p>The on-line calculator and the custom evaluation box in the main window
+accept mathematical expressions with kinematic parameters, which include:</p>
+
+<p>m1,m2,m3,m4;      mass,
+p1,p2,p3,p4;      spatial momentum,
+E1,E2,E3,E4;      total energy,
+K1,K3,K4;         kinetic energy,
+p1c,p2c,p3c,p4c;  spatial momentum in CM frame,
+E1c,E2c,E3c,E4c;  total energy in CM frame,
+K1c,K2c,K3c,K4c;  kinetic energy in CM frame,
+QValue;           Q-value of the reaction,
+Ex;               excitation energy of residual,
+K1Min;            minimum K1,
+p1Min;            minimum p1,
+K1cMin;           minimum K1 in CM frame,
+p1cMin;           minimum p1 in CM frame,
+theM;             the invariant mass,
+gamma, beta;      CM to Lab. conversion factor,
+th3, th4;         theta3 and theta4,
+th3Max,th4Max;    maximum theta3 and theta4,
+th3c, th4c;       theta3 and theta4 in CM frame,
+q;                momentum transfer in 1/fm,
+qMin;             minimum momentum transfer,
+qMax;             maximum momentum transfer,
+J3,J4;            solid angle Jacobian,
+KS;               kinematic shift (dK3/dth3), 
+KF;               kinematic factor (dp3/dth3/p3).</p>
+
+<p>These parameters are case-sensitive and read-only, and passed by
+reference to libfzcal in quad-precision, if possible.</p>
+
+<p>The results are always in MeV for energy and the angles in radian. </p>
+
+<p>In the calculator you can define new parameters such as, </p>
+
+<p>v3=p3/E3</p>
+
+<p>which can also be used in the custom evaluation box. Note that the
+newly defined parameters are temporary, i.e., parameters in RHS are
+passed by value, however, if defined as </p>
+
+<p>v3="p3/E3"</p>
+
+<p>v3 becomes a macro parameter and will reflect changes in p3 and E3
+(parameters in RHS will be passed by reference).</p>
+
+<h1>
+<a id="references-" class="anchor" href="#references-" aria-hidden="true"><span class="octicon octicon-link"></span></a>References </h1>
+
+<p>1) L.D. Landau, E.M. Lifshitz (1975), "The Classical Theory of
+Fields", Vol. 2 (4th ed.). Butterworth-Heinemann. ISBN
+978-0-750-62768-9.</p>
+
+<h1>
+<a id="contacts" class="anchor" href="#contacts" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contacts</h1>
+
+<p>All reports and requests are welcome to</p>
+
+<p><a href="http://sourceforge.net/projects/relkinema/">http://sourceforge.net/projects/relkinema/</a>
+  E-Mail: <a href="mailto:elseifkk@gmail.com">elseifkk@gmail.com</a></p>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
