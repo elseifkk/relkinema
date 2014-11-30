@@ -1,0 +1,16 @@
+Begin3
+Title:          relkinema -- Some description
+Version:        0.0.0
+Entered-date:   
+Description:    
+Keywords:       KDE Qt
+Author:         kazuaki kumagai <elseifkk@gmai.com>
+Maintained-by:  kazuaki kumagai <elseifkk@gmai.com>
+Home-page:      
+Alternate-site: 
+Primary-site:   ftp://ftp.kde.org/pub/kde/unstable/apps/utils
+                xxxxxx  relkinema-0.0.0.tar.gz
+                xxx     relkinema-0.0.0.lsm
+Platform:       Linux. Needs KDE
+Copying-policy: GPL
+End

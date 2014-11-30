@@ -1,0 +1,15 @@
+#MIN_CONFIG(3.2.0)
+AM_INIT_AUTOMAKE(relkinema, 0.5.6)
+AC_C_BIGENDIAN
+AC_CHECK_KDEMAXPATHLEN
+AC_DEFINE_UNQUOTED(__HOST__,"`hostname`",[hostname])
+AC_DEFUN([AC_CHECK_STRNSTR],
+[
+	KDE_CHECK_FUNC_EXT(strnstr, [], 
+		[strnstr("VAR", "VALUE", 1);],
+	        [char * strnstr (const char *, const char *, size_t len)],
+		[STRNSTR])
+])
+AC_CHECK_STRNSTR
+AC_PROG_FC
+CXXFLAGS="$CXXFLAGS $USE_EXCEPTIONS" 
